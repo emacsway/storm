@@ -6078,6 +6078,10 @@ class EmptyResultSetTest(object):
         self.empty.config(distinct=True, offset=1, limit=1)
         self.assertEquals(list(self.result), list(self.empty))
 
+    def test_config_returns_self(self):
+        self.assertIs(self.result, self.result.config())
+        self.assertIs(self.empty, self.empty.config())
+
     def test_slice(self):
         self.assertEquals(list(self.result[:]), [])
         self.assertEquals(list(self.empty[:]), [])
