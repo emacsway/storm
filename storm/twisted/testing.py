@@ -1,5 +1,3 @@
-import transaction
-
 from twisted.python.failure import Failure
 from twisted.internet.defer import execute
 
@@ -23,6 +21,15 @@ class FakeThreadPool(object):
         onResult(success, result)
 
 
+class FakeTransaction(object):
+
+    def commit(self):
+        pass
+
+    def abort(self):
+        pass
+
+
 class FakeTransactor(Transactor):
     """
     A fake C{Transactor} wrapper that runs the given function in the main
@@ -37,10 +44,10 @@ class FakeTransactor(Transactor):
 
     sleep = lambda *args, **kwargs: None
 
-    def __init__(self, _transaction=None):
-        if _transaction is None:
-            _transaction = transaction
-        self._transaction = _transaction
+    def __init__(self, transaction=None):
+        if transaction is None:
+            transaction = FakeTransaction()
+        self._transaction = transaction
 
     def run(self, function, *args, **kwargs):
         deferred = execute(self._wrap, function, *args, **kwargs)

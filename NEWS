@@ -38,6 +38,10 @@ Improvements
   will keep the same behavior on Postgres < 9 as it's equivalent to
   SERIALIZABLE, but it will be less strict on Postgres >= 9.
 
+- The store.twisted.testing.FakeTransactor test helper now uses a fake
+  transaction by default, so tests won't perform real commits as it's
+  not generally needed.
+
 Bug fixes
 ---------
 

@@ -1,6 +1,6 @@
 import time
 import random
-import transaction
+import transaction as zope_transaction
 
 from functools import wraps
 
@@ -45,11 +45,11 @@ class Transactor(object):
     sleep = time.sleep
     uniform = random.uniform
 
-    def __init__(self, threadpool, _transaction=None):
+    def __init__(self, threadpool, transaction=None):
         self._threadpool = threadpool
-        if _transaction is None:
-            _transaction = transaction
-        self._transaction = _transaction
+        if transaction is None:
+            transaction = zope_transaction
+        self._transaction = transaction
 
     def run(self, function, *args, **kwargs):
         """Run C{function} in a thread.
