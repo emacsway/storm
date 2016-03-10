@@ -22,8 +22,7 @@ Design:
  * Storm is well designed (different classes have very clear
    boundaries, with small and clean public APIs).
  * Designed from day one to work both with thin relational
-   databases, such as SQLite, and big iron systems like PostgreSQL
-   and MySQL.
+   databases, such as SQLite, and big iron systems like PostgreSQL.
  * Storm is easy to debug, since its code is written with a KISS
    principle, and thus is easy to understand.
  * Designed from day one to work both at the low end, with trivial
@@ -106,22 +105,15 @@ The following instructions assume that you're using Ubuntu.  The
 same procedure will probably work without changes on a Debian system
 and with minimal changes on a non-Debian-based linux distribution.
 In order to run the test suite, and exercise all supported backends,
-you will need to install MySQL and PostgreSQL, along with the
+you will need to install  PostgreSQL, along with the
 related Python database drivers:
 
  $ sudo apt-get install \
-       python-mysqldb mysql-server \
        postgresql pgbouncer \
        build-essential
 
 These will take a few minutes to download (its a bit under 200MB all
-together).  Once the download is complete, a screen called
-"configuring mysql-server-5.0" will be shown.  When asked for a
-password for the root user leave the field blank and hit enter to
-continue.  This is not a recommended setting for a production
-server, but makes life easier on a development machine.  You may be
-asked to enter a password multiple times.  Leave it blank in each
-case.
+together).
 
 The Python dependencies for running tests can mostly be installed with
 apt-get:
@@ -167,38 +159,18 @@ Now save and close, then restart the server:
 
  $ sudo /etc/init.d/postgresql-8.4 restart
 
-Next, you probably noticed that, while MySQL asked us about a root
-user several times, PostgreSQL didn't ask us at all.  Lets create
-our PostgreSQL user now.  As noted in the Ubuntu PostgreSQL
-documentation, the easiest thing is to create a user with the same
-name as your username.  Run the following command to create a user
-for yourself (if prompted for a password, leave it blank):
+Lets create our PostgreSQL user now.  As noted in the Ubuntu PostgreSQL
+documentation, the easiest thing is to create a user with the same name as your
+username.  Run the following command to create a user for yourself (if prompted
+for a password, leave it blank):
 
  $ sudo -u postgres createuser --superuser $USER
-
-Despite having created our root user already, MySQL requires an
-extra step. First we start mysql as the root user (which, you may
-recall, has no password) with:
-
- $ mysql -u root
-
-Then we create a new user. Be sure to replace YOUR_USERNAME with
-your actual user name (leaving the quotes in place).
-
-mysql> GRANT ALL PRIVILEGES ON *.* TO 'YOUR_USERNAME'@'localhost'
-IDENTIFIED BY '' WITH GRANT OPTION;
 
 Creating test databases
 -----------------------
 
-The test suite needs some local databases in place to exercise MySQL
-and PostgreSQL functionality.  While still at the MySQL command
-prompt run:
-
-mysql> CREATE DATABASE storm_test CHARACTER SET utf8;
-
-Use Ctrl+D to exit, then, once back on the standard terminal, run
-the command for PostgreSQL:
+The test suite needs some local databases in place to exercise PostgreSQL
+functionality. Run:
 
  $ createdb storm_test
 
