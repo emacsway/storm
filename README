@@ -101,12 +101,11 @@ development environment and running the test suite.
 Installing dependencies
 -----------------------
 
-The following instructions assume that you're using Ubuntu.  The
-same procedure will probably work without changes on a Debian system
-and with minimal changes on a non-Debian-based linux distribution.
-In order to run the test suite, and exercise all supported backends,
-you will need to install  PostgreSQL, along with the
-related Python database drivers:
+The following instructions assume that you're using Ubuntu.  The same procedure
+will probably work without changes on a Debian system and with minimal changes
+on a non-Debian-based linux distribution.  In order to run the test suite, and
+exercise all supported backends, you will need to install PostgreSQL, along
+with the related Python database drivers:
 
  $ sudo apt-get install \
        postgresql pgbouncer \
