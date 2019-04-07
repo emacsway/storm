@@ -112,6 +112,7 @@ static PyObject *default_compile_join = NULL;
 
 typedef struct {
     PyObject_HEAD
+    PyObject *__weakreflist;
     PyObject *_owner_ref;
     PyObject *_hooks;
 } EventSystemObject;
@@ -267,6 +268,8 @@ EventSystem_init(EventSystemObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &owner))
         return -1;
 
+    self->__weakreflist = NULL;
+
     /* self._owner_ref = weakref.ref(owner) */
     self->_owner_ref = PyWeakref_NewRef(owner, NULL);
     if (self->_owner_ref) {
@@ -291,6 +294,8 @@ EventSystem_traverse(EventSystemObject *self, visitproc visit, void *arg)
 static int
 EventSystem_clear(EventSystemObject *self)
 {
+    if (self->__weakreflist)
+        PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->_owner_ref);
     Py_CLEAR(self->_hooks);
     return 0;
@@ -547,7 +552,7 @@ statichere PyTypeObject EventSystem_Type = {
     (traverseproc)EventSystem_traverse,  /*tp_traverse*/
     (inquiry)EventSystem_clear,          /*tp_clear*/
     0,                      /*tp_richcompare*/
-    0,                      /*tp_weaklistoffset*/
+    offsetof(EventSystemObject, __weakreflist), /*tp_weaklistoffset*/
     0,                      /*tp_iter*/
     0,                      /*tp_iternext*/
     EventSystem_methods,        /*tp_methods*/
@@ -662,10 +667,18 @@ Variable_init(VariableObject *self, PyObject *args, PyObject *kwargs)
     Py_INCREF(column);
     self->column = column;
 
-    /* self.event = event */
+    /* self.event = weakref.proxy(event) if event is not None else None */
     Py_DECREF(self->event);
-    Py_INCREF(event);
-    self->event = event;
+    if (event != Py_None) {
+        PyObject *event_proxy = PyWeakref_NewProxy(event, NULL);
+        if (event_proxy)
+            self->event = event_proxy;
+        else
+            goto error;
+    } else {
+        Py_INCREF(Py_None);
+        self->event = Py_None;
+    }
 
     return 0;
 
@@ -770,11 +783,14 @@ Variable_get(VariableObject *self, PyObject *args, PyObject *kwargs)
 
     /* if self._lazy_value is not Undef and self.event is not None: */
     if (self->_lazy_value != Undef && self->event != Py_None) {
-        PyObject *tmp;
+        PyObject *event, *tmp;
         /* self.event.emit("resolve-lazy-value", self, self._lazy_value) */
-        CATCH(NULL, tmp = PyObject_CallMethod(self->event, "emit", "sOO",
+        event = PyWeakref_GetObject(self->event);
+        Py_INCREF(event);
+        CATCH(NULL, tmp = PyObject_CallMethod(event, "emit", "sOO",
                                               "resolve-lazy-value", self,
                                               self->_lazy_value));
+        Py_DECREF(event);
         Py_DECREF(tmp);
     }
 
@@ -908,6 +924,8 @@ Variable_set(VariableObject *self, PyObject *args, PyObject *kwargs)
         (self->_lazy_value != Undef ||
          PyObject_RichCompareBool(new_value, old_value, Py_NE))) {
 
+        PyObject *event;
+
         /* if old_value is not None and old_value is not Undef: */
         if (old_value != Py_None && old_value != Undef) {
             /* old_value = self.parse_get(old_value, False) */
@@ -917,9 +935,12 @@ Variable_set(VariableObject *self, PyObject *args, PyObject *kwargs)
             old_value = tmp;
         }
         /* self.event.emit("changed", self, old_value, value, from_db) */
-        CATCH(NULL, tmp = PyObject_CallMethod((PyObject *)self->event, "emit",
+        event = PyWeakref_GetObject(self->event);
+        Py_INCREF(event);
+        CATCH(NULL, tmp = PyObject_CallMethod(event, "emit",
                                               "sOOOO", "changed", self,
                                               old_value, value, from_db));
+        Py_DECREF(event);
         Py_DECREF(tmp);
     }
 
@@ -956,6 +977,8 @@ Variable_delete(VariableObject *self, PyObject *args)
 
         /* if self.event is not None: */
         if (self->event != Py_None) {
+            PyObject *event;
+
             /* if old_value is not None and old_value is not Undef: */
             if (old_value != Py_None && old_value != Undef) {
                 /* old_value = self.parse_get(old_value, False) */
@@ -967,10 +990,13 @@ Variable_delete(VariableObject *self, PyObject *args)
             }
 
             /* self.event.emit("changed", self, old_value, Undef, False) */
+            event = PyWeakref_GetObject(self->event);
+            Py_INCREF(event);
             CATCH(NULL,
-                  tmp = PyObject_CallMethod((PyObject *)self->event, "emit",
+                  tmp = PyObject_CallMethod(event, "emit",
                                             "sOOOO", "changed", self, old_value,
                                             Undef, Py_False));
+            Py_DECREF(event);
             Py_DECREF(tmp);
         }
     }

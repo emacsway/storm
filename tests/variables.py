@@ -85,7 +85,7 @@ class VariableTest(TestHelper):
 
     def test_constructor_event(self):
         variable = CustomVariable(event=marker)
-        self.assertEquals(variable.event, marker)
+        self.assertEquals(variable.event, weakref.proxy(marker))
 
     def test_get_default(self):
         variable = CustomVariable()
