@@ -783,14 +783,11 @@ Variable_get(VariableObject *self, PyObject *args, PyObject *kwargs)
 
     /* if self._lazy_value is not Undef and self.event is not None: */
     if (self->_lazy_value != Undef && self->event != Py_None) {
-        PyObject *event, *tmp;
+        PyObject *tmp;
         /* self.event.emit("resolve-lazy-value", self, self._lazy_value) */
-        event = PyWeakref_GetObject(self->event);
-        Py_INCREF(event);
-        CATCH(NULL, tmp = PyObject_CallMethod(event, "emit", "sOO",
+        CATCH(NULL, tmp = PyObject_CallMethod(self->event, "emit", "sOO",
                                               "resolve-lazy-value", self,
                                               self->_lazy_value));
-        Py_DECREF(event);
         Py_DECREF(tmp);
     }
 
@@ -924,8 +921,6 @@ Variable_set(VariableObject *self, PyObject *args, PyObject *kwargs)
         (self->_lazy_value != Undef ||
          PyObject_RichCompareBool(new_value, old_value, Py_NE))) {
 
-        PyObject *event;
-
         /* if old_value is not None and old_value is not Undef: */
         if (old_value != Py_None && old_value != Undef) {
             /* old_value = self.parse_get(old_value, False) */
@@ -935,12 +930,9 @@ Variable_set(VariableObject *self, PyObject *args, PyObject *kwargs)
             old_value = tmp;
         }
         /* self.event.emit("changed", self, old_value, value, from_db) */
-        event = PyWeakref_GetObject(self->event);
-        Py_INCREF(event);
-        CATCH(NULL, tmp = PyObject_CallMethod(event, "emit",
+        CATCH(NULL, tmp = PyObject_CallMethod((PyObject *)self->event, "emit",
                                               "sOOOO", "changed", self,
                                               old_value, value, from_db));
-        Py_DECREF(event);
         Py_DECREF(tmp);
     }
 
@@ -977,8 +969,6 @@ Variable_delete(VariableObject *self, PyObject *args)
 
         /* if self.event is not None: */
         if (self->event != Py_None) {
-            PyObject *event;
-
             /* if old_value is not None and old_value is not Undef: */
             if (old_value != Py_None && old_value != Undef) {
                 /* old_value = self.parse_get(old_value, False) */
@@ -990,13 +980,10 @@ Variable_delete(VariableObject *self, PyObject *args)
             }
 
             /* self.event.emit("changed", self, old_value, Undef, False) */
-            event = PyWeakref_GetObject(self->event);
-            Py_INCREF(event);
             CATCH(NULL,
-                  tmp = PyObject_CallMethod(event, "emit",
+                  tmp = PyObject_CallMethod((PyObject *)self->event, "emit",
                                             "sOOOO", "changed", self, old_value,
                                             Undef, Py_False));
-            Py_DECREF(event);
             Py_DECREF(tmp);
         }
     }
