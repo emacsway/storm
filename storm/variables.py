@@ -26,6 +26,7 @@ try:
     import uuid
 except ImportError:
     uuid = None
+import weakref
 
 from storm.compat import json
 from storm.exceptions import NoneError
@@ -153,7 +154,7 @@ class Variable(object):
             self._validator_object_factory = validator_object_factory
             self._validator_attribute = validator_attribute
         self.column = column
-        self.event = event
+        self.event = weakref.proxy(event) if event is not None else None
 
     def get_lazy(self, default=None):
         """Get the current L{LazyValue} without resolving its value.
@@ -557,7 +558,7 @@ class MutableValueVariable(Variable):
             self.event.hook("object-deleted", self._detect_changes_and_stop)
 
     def _start_tracking(self, obj_info, event_system):
-        self._event_system = event_system
+        self._event_system = weakref.proxy(event_system)
         self.event.hook("stop-tracking-changes", self._stop_tracking)
 
     def _stop_tracking(self, obj_info, event_system):

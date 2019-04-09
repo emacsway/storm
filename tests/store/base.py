@@ -488,6 +488,35 @@ class StoreTest(object):
         blob = self.store.find(PickleBlob, PickleBlob.id == 4000).one()
         self.assertEquals(blob.bin, {"k1": "v1", "k": "v"})
 
+    def test_mutable_variable_no_reference_cycle(self):
+        """
+        Mutable variables only hold weak refs to EventSystem, to prevent
+        leaks.
+        """
+        class PickleBlob(Blob):
+            bin = Pickle()
+
+        blob = self.store.get(Blob, 20)
+        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        self.store.flush()
+        del blob
+
+        # Get an existing object and make an unflushed change to it so that
+        # a flush hook for the variable is registered with the event system.
+        pickle_blob = self.store.get(PickleBlob, 20)
+        pickle_blob.bin = "foobin"
+        pickle_blob_ref = weakref.ref(pickle_blob)
+        del pickle_blob
+
+        for store in self.stores:
+            store.close()
+        del store
+        self.store = None
+        self.stores = []
+        gc.collect()
+
+        self.assertIsNone(pickle_blob_ref())
+
     def test_wb_checkpoint_doesnt_override_changed(self):
         """
         This test ensures that we don't uselessly checkpoint when getting back

@@ -112,6 +112,7 @@ static PyObject *default_compile_join = NULL;
 
 typedef struct {
     PyObject_HEAD
+    PyObject *__weakreflist;
     PyObject *_owner_ref;
     PyObject *_hooks;
 } EventSystemObject;
@@ -267,6 +268,8 @@ EventSystem_init(EventSystemObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &owner))
         return -1;
 
+    self->__weakreflist = NULL;
+
     /* self._owner_ref = weakref.ref(owner) */
     self->_owner_ref = PyWeakref_NewRef(owner, NULL);
     if (self->_owner_ref) {
@@ -291,6 +294,8 @@ EventSystem_traverse(EventSystemObject *self, visitproc visit, void *arg)
 static int
 EventSystem_clear(EventSystemObject *self)
 {
+    if (self->__weakreflist)
+        PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->_owner_ref);
     Py_CLEAR(self->_hooks);
     return 0;
@@ -547,7 +552,7 @@ statichere PyTypeObject EventSystem_Type = {
     (traverseproc)EventSystem_traverse,  /*tp_traverse*/
     (inquiry)EventSystem_clear,          /*tp_clear*/
     0,                      /*tp_richcompare*/
-    0,                      /*tp_weaklistoffset*/
+    offsetof(EventSystemObject, __weakreflist), /*tp_weaklistoffset*/
     0,                      /*tp_iter*/
     0,                      /*tp_iternext*/
     EventSystem_methods,        /*tp_methods*/
@@ -662,10 +667,18 @@ Variable_init(VariableObject *self, PyObject *args, PyObject *kwargs)
     Py_INCREF(column);
     self->column = column;
 
-    /* self.event = event */
+    /* self.event = weakref.proxy(event) if event is not None else None */
     Py_DECREF(self->event);
-    Py_INCREF(event);
-    self->event = event;
+    if (event != Py_None) {
+        PyObject *event_proxy = PyWeakref_NewProxy(event, NULL);
+        if (event_proxy)
+            self->event = event_proxy;
+        else
+            goto error;
+    } else {
+        Py_INCREF(Py_None);
+        self->event = Py_None;
+    }
 
     return 0;
 
