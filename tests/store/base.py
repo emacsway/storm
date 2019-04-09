@@ -501,6 +501,8 @@ class StoreTest(object):
         self.store.flush()
         del blob
 
+        # Get an existing object and make an unflushed change to it so that
+        # a flush hook for the variable is registered with the event system.
         pickle_blob = self.store.get(PickleBlob, 20)
         pickle_blob.bin = "foobin"
         pickle_blob_ref = weakref.ref(pickle_blob)
