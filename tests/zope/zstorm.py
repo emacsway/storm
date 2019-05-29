@@ -27,6 +27,7 @@ from tests.zope import has_transaction, has_zope_component
 
 if has_transaction:
     import transaction
+    from transaction import ThreadTransactionManager
     from storm.zope.interfaces import IZStorm, ZStormError
     from storm.zope.zstorm import ZStorm, StoreDataManager
 
@@ -51,7 +52,19 @@ class ZStormTest(TestHelper):
         self.zstorm._reset()
         # Free the transaction to avoid having errors that cross
         # test cases.
-        transaction.manager.free(transaction.get())
+        # XXX cjwatson 2019-05-29: transaction 2.4.0 changed
+        # ThreadTransactionManager to wrap TransactionManager rather than
+        # inheriting from it.  For now, cope with either.  Simplify this
+        # once transaction 2.4.0 is old enough that we can reasonably just
+        # test-depend on it.
+        manager = transaction.manager
+        if isinstance(manager, ThreadTransactionManager):
+            try:
+                manager.free
+            except AttributeError:
+                # transaction >= 2.4.0
+                manager = manager.manager
+        manager.free(transaction.get())
 
     def test_create(self):
         store = self.zstorm.create(None, "sqlite:")
