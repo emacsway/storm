@@ -898,8 +898,6 @@ class StoreTest(object):
         result2 = self.store.find(Foo, Foo.id != 10)
         self.assertEquals(foo in result1.union(result2), True)
 
-        if self.__class__.__name__.startswith("MySQL"):
-            return
         self.assertEquals(foo in result1.intersection(result2), False)
         self.assertEquals(foo in result1.intersection(result1), True)
         self.assertEquals(foo in result1.difference(result2), True)
@@ -1351,8 +1349,6 @@ class StoreTest(object):
         result2 = self.store.find((Foo, Bar), Bar.foo_id == Foo.id)
         self.assertEquals((foo, bar) in result1.union(result2), True)
 
-        if self.__class__.__name__.startswith("MySQL"):
-            return
         self.assertEquals((foo, bar) in result1.intersection(result2), True)
         self.assertEquals((foo, bar) in result1.difference(result2), False)
 
@@ -1469,8 +1465,6 @@ class StoreTest(object):
         result2 = self.store.find(Foo.title)
         self.assertEquals(u"Title 10" in result1.union(result2), True)
 
-        if self.__class__.__name__.startswith("MySQL"):
-            return
         self.assertEquals(u"Title 10" in result1.intersection(result2), True)
         self.assertEquals(u"Title 10" in result1.difference(result2), False)
 
@@ -5662,9 +5656,6 @@ class StoreTest(object):
         self.assertEquals(result3.avg(Foo.id), 10)
 
     def test_result_difference(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo)
         result2 = self.store.find(Foo, id=20)
         result3 = result1.difference(result2)
@@ -5682,9 +5673,6 @@ class StoreTest(object):
                          ])
 
     def test_result_difference_with_empty(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo, id=30)
         result2 = EmptyResultSet()
 
@@ -5695,17 +5683,11 @@ class StoreTest(object):
                          ])
 
     def test_result_difference_incompatible(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo, id=10)
         result2 = self.store.find(Bar, id=100)
         self.assertRaises(FeatureError, result1.difference, result2)
 
     def test_result_difference_count(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo)
         result2 = self.store.find(Foo, id=20)
 
@@ -5723,9 +5705,6 @@ class StoreTest(object):
         self.assertEquals(result2.count(), 3)
 
     def test_result_intersection(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo)
         result2 = self.store.find(Foo, Foo.id.is_in((10, 30)))
         result3 = result1.intersection(result2)
@@ -5743,9 +5722,6 @@ class StoreTest(object):
                          ])
 
     def test_result_intersection_with_empty(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo, id=30)
         result2 = EmptyResultSet()
         result3 = result1.intersection(result2)
@@ -5753,17 +5729,11 @@ class StoreTest(object):
         self.assertEquals(len(list(result3)), 0)
 
     def test_result_intersection_incompatible(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo, id=10)
         result2 = self.store.find(Bar, id=100)
         self.assertRaises(FeatureError, result1.intersection, result2)
 
     def test_result_intersection_count(self):
-        if self.__class__.__name__.startswith("MySQL"):
-            return
-
         result1 = self.store.find(Foo, Foo.id.is_in((10, 20)))
         result2 = self.store.find(Foo, Foo.id.is_in((10, 30)))
         result3 = result1.intersection(result2)

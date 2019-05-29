@@ -6,13 +6,9 @@ TEST_COMMAND = $(PYTHON) setup.py test
 
 STORM_POSTGRES_URI = postgres:storm_test
 STORM_POSTGRES_HOST_URI = postgres://localhost:$(PGPORT)/storm_test
-STORM_MYSQL_URI = mysql:storm_test
-STORM_MYSQL_HOST_URI = mysql://localhost/storm_test
 
 export STORM_POSTGRES_URI
 export STORM_POSTGRES_HOST_URI
-export STORM_MYSQL_URI
-export STORM_MYSQL_HOST_URI
 
 all: build
 
