@@ -56,8 +56,14 @@ def test_with_runner(runner):
 
 
 def test_with_trial():
+    from twisted.trial import unittest as trial_unittest
     from twisted.trial.reporter import TreeReporter
     from twisted.trial.runner import TrialRunner
+
+    # This is only imported to work around
+    # https://twistedmatrix.com/trac/ticket/8267.
+    trial_unittest
+
     runner = TrialRunner(reporterFactory=TreeReporter, realTimeErrors=True)
     return test_with_runner(runner)
 
