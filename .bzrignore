@@ -10,6 +10,7 @@ debian/python-storm.preinst.debhelper
 debian/python-storm.prerm.debhelper
 debian/python-storm.substvars
 apidoc
+.tox
 _trial_temp
 *.egg
 TAGS

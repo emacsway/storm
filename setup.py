@@ -2,9 +2,6 @@
 import os
 import re
 
-import ez_setup
-ez_setup.use_setuptools()
-
 from setuptools import setup, Extension, find_packages
 
 
@@ -17,6 +14,28 @@ BUILD_CEXTENSIONS = True
 
 VERSION = re.search('version = "([^"]+)"',
                     open("storm/__init__.py").read()).group(1)
+
+
+tests_require = [
+    # Versions based on Lucid, where packaged.
+    "fixtures >= 0.3.5",
+    # pgbouncer (the Python module) is not yet packaged in Ubuntu.
+    "pgbouncer >= 0.0.7",
+    "psycopg2 >= 2.0.13",
+    "testresources >= 0.2.4",
+    "testtools >= 0.9.8",
+    # timeline is not yet packaged in Ubuntu.
+    "timeline >= 0.0.2",
+    "transaction >= 1.0.0",
+    "twisted >= 10.0.0",
+    "zope.component >= 3.8.0",
+    # zope.component 3.11.0 requires a version of zope.interface that no
+    # version of Ubuntu yet packages. The following rule exists for the
+    # sake of convenience rather than necessity, for the situation where
+    # zope.interface is installed via a package but zope.component is not.
+    "zope.component < 3.11.0",
+    "zope.security >= 3.7.2",
+    ]
 
 
 setup(
@@ -50,25 +69,7 @@ setup(
     # warning) by distutils.
     include_package_data=True,
     zip_safe=False,
-    test_suite = "tests.find_tests",
-    tests_require=[
-        # Versions based on Lucid, where packaged.
-        "fixtures >= 0.3.5",
-        # pgbouncer (the Python module) is not yet packaged in Ubuntu.
-        "pgbouncer >= 0.0.7",
-        "psycopg2 >= 2.0.13",
-        "testresources >= 0.2.4",
-        "testtools >= 0.9.8",
-        # timeline is not yet packaged in Ubuntu.
-        "timeline >= 0.0.2",
-        "transaction >= 1.0.0",
-        "twisted >= 10.0.0",
-        "zope.component >= 3.8.0",
-        # zope.component 3.11.0 requires a version of zope.interface that no
-        # version of Ubuntu yet packages. The following rule exists for the
-        # sake of convenience rather than necessity, for the situation where
-        # zope.interface is installed via a package but zope.component is not.
-        "zope.component < 3.11.0",
-        "zope.security >= 3.7.2",
-        ],
+    test_suite="tests.find_tests",
+    tests_require=tests_require,
+    extras_require={"test": tests_require},
     )
