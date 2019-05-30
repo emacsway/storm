@@ -157,7 +157,7 @@ class SQLiteConnection(Connection):
         while True:
             try:
                 return Connection.raw_execute(self, statement, params)
-            except sqlite.OperationalError, e:
+            except sqlite.OperationalError as e:
                 if str(e) != "database is locked":
                     raise
                 elif now() - started < self._database._timeout:

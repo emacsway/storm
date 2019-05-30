@@ -172,7 +172,7 @@ class Schema(object):
         except SchemaMissingError:
             # No schema at all. Create it from the ground.
             self.create(store)
-        except UnappliedPatchesError, error:
+        except UnappliedPatchesError as error:
             patch_applier.check_unknown()
             for version in error.unapplied_versions:
                 self.advance(store, version)

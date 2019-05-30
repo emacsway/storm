@@ -344,7 +344,7 @@ class DatabaseTest(object):
                 connection2.execute("UPDATE test SET title='Title 100' "
                                     "WHERE id=10")
                 connection2.commit()
-            except OperationalError, e:
+            except OperationalError as e:
                 self.assertEquals(str(e), "database is locked") # SQLite blocks
             result = connection1.execute("SELECT title FROM test WHERE id=10")
             self.assertEquals(result.get_one(), ("Title 10",))
@@ -770,7 +770,7 @@ class DatabaseDisconnectionTest(DatabaseDisconnectionMixin):
             cursor = self.connection._raw_connection.cursor()
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        except Error, exc:
+        except Error as exc:
             self.assertTrue(self.connection.is_disconnection_error(exc))
         else:
             self.fail("Disconnection was not caught.")
@@ -779,7 +779,7 @@ class DatabaseDisconnectionTest(DatabaseDisconnectionMixin):
         # error when called.
         try:
             self.connection._raw_connection.rollback()
-        except Error, exc:
+        except Error as exc:
             self.assertTrue(self.connection.is_disconnection_error(exc))
         else:
             self.fail("Disconnection was not raised.")
@@ -803,7 +803,7 @@ class DatabaseDisconnectionTest(DatabaseDisconnectionMixin):
             cursor = self.connection._raw_connection.cursor()
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        except DatabaseError, exc:
+        except DatabaseError as exc:
             self.assertTrue(self.connection.is_disconnection_error(exc))
         else:
             self.fail("Disconnection was not caught.")
