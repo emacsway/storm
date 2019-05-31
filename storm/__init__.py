@@ -53,6 +53,6 @@ if os.environ.get("STORM_CEXTENSIONS") != "0":
     try:
         from storm import cextensions
         has_cextensions = True
-    except ImportError, e:
+    except ImportError as e:
         if "cextensions" not in str(e):
            raise

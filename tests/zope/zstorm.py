@@ -368,7 +368,7 @@ class ZStormTest(TestHelper):
                     store.execute("SELECT 1")
                 except ZStormError:
                     failures.append("ZStormError raised")
-                except Exception, exc:
+                except Exception as exc:
                     failures.append("Expected ZStormError, got %r" % exc)
                 else:
                     failures.append("Expected ZStormError, nothing raised")

@@ -5929,7 +5929,7 @@ class StoreTest(object):
             self.store.commit()
             try:
                 self.assertEquals(myfoo.title, title)
-            except AssertionError, e:
+            except AssertionError as e:
                 raise AssertionError(unicode(e, 'replace') +
                     " (ensure your database was created with CREATE DATABASE"
                     " ... CHARACTER SET utf8)")
