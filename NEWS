@@ -13,6 +13,7 @@ Bug fixes
 
 - Fixed SQLObject tests to work with SQLObject 2.x by using Unicode strings for
   LIKE operations.
+- Cope with ThreadTransactionManager changes in transaction 2.4.0.
 
 API changes
 -----------
