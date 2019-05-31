@@ -603,12 +603,12 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_default_isolation(self):
         """
         The default isolation level is REPEATABLE READ, but it's only supported
-        by psycopg2 2.4 and newer. Before, SERIALIZABLE is used instead.
+        by psycopg2 2.4.2 and newer. Before, SERIALIZABLE is used instead.
         """
         result = self.connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
         import psycopg2
         psycopg2_version = psycopg2.__version__.split(None, 1)[0]
-        if psycopg2_version < "2.4":
+        if psycopg2_version < "2.4.2":
             self.assertEquals(result.get_one()[0], u"serializable")
         else:
             self.assertEquals(result.get_one()[0], u"repeatable read")
