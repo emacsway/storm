@@ -7,6 +7,7 @@ Improvements
 - A new storm.schema.sharding.Sharding class has been added to the schema
   package, which can apply patches "in parallel" against a set of stores. See
   the module docstring for more information.
+- Added tox testing support.
 
 Bug fixes
 ---------

@@ -8,7 +8,9 @@ function apt_get() {
 apt_get install --no-install-recommends \
     postgresql \
     pgbouncer \
+    libpq-dev \
     build-essential \
+    python-dev \
     python-fixtures \
     python-psycopg2 \
     python-testresources \
@@ -16,7 +18,8 @@ apt_get install --no-install-recommends \
     python-twisted \
     python-zope.component \
     python-zope.security \
-    python-setuptools
+    python-setuptools \
+    tox
 
 
 echo " * All Done!"
