@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import cPickle as pickle
 from cStringIO import StringIO
 import decimal
 import gc
@@ -4709,7 +4710,7 @@ class StoreTest(object):
 
         self.store.flush()
         self.store.reload(blob)
-        self.assertEquals(blob.bin, "\x80\x02}q\x01(U\x01aK\x01U\x01bK\x02u.")
+        self.assertEquals(pickle.loads(blob.bin), {"a": 1, "b": 2})
 
     def test_pickle_variable_remove(self):
         """
@@ -4931,7 +4932,7 @@ class StoreTest(object):
 
         self.store.flush()
         self.store.reload(blob)
-        self.assertEquals(blob.bin, "\x80\x02}q\x01(U\x01aK\x01U\x01bK\x02u.")
+        self.assertEquals(pickle.loads(blob.bin), {"a": 1, "b": 2})
 
     def test_unhashable_object(self):
 
