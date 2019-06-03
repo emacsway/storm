@@ -23,10 +23,7 @@ from decimal import Decimal
 import cPickle as pickle
 import gc
 import weakref
-try:
-    import uuid
-except ImportError:
-    uuid = None
+import uuid
 
 from storm.compat import json
 from storm.exceptions import NoneError
@@ -787,9 +784,6 @@ class ParseIntervalTest(TestHelper):
 
 class UUIDVariableTest(TestHelper):
 
-    def is_supported(self):
-        return uuid is not None
-
     def test_get_set(self):
         value = uuid.UUID("{0609f76b-878f-4546-baf5-c1b135e8de72}")
 
@@ -913,7 +907,7 @@ class JSONVariableTest(EncodedValueVariableTestMixin, TestHelper):
 
     def test_unicode_to_db(self):
         # JSONVariable._dumps() works around unicode/str handling issues in
-        # simplejson/json.
+        # json.
         variable = self.variable_type()
         variable.set({u"a": 1})
         self.assertTrue(isinstance(variable.get(to_db=True), unicode))

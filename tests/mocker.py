@@ -8,14 +8,9 @@ import tempfile
 import unittest
 import inspect
 import shutil
-import types
 import sys
 import os
 import gc
-
-
-if sys.version_info < (2, 4):
-    from sets import Set as set # pragma: nocover
 
 
 __all__ = ["Mocker", "expect", "IS", "CONTAINS", "IN", "MATCH",
@@ -304,10 +299,6 @@ class MockerTestCase(unittest.TestCase):
     assertApproximates = failUnlessApproximates
     assertNotApproximates = failIfApproximates
     assertMethodsMatch = failUnlessMethodsMatch
-
-    # The following are missing in Python < 2.4.
-    assertTrue = unittest.TestCase.failUnless
-    assertFalse = unittest.TestCase.failIf
 
     # The following is provided for compatibility with Twisted's trial.
     assertIdentical = assertIs

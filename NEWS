@@ -21,6 +21,7 @@ API changes
 
 - Removed Django support, storm.django is no more.
 - Removed MySQL support.
+- Removed support for Python < 2.6.
 
 0.20 (2013-06-28)
 =================

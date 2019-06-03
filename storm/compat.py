@@ -22,10 +22,4 @@
 __all__ = ["json"]
 
 
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError:
-        json = None
+import json

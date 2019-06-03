@@ -20,12 +20,10 @@
 #
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
+from functools import partial
 import cPickle as pickle
 import re
-try:
-    import uuid
-except ImportError:
-    uuid = None
+import uuid
 import weakref
 
 from storm.compat import json
@@ -75,22 +73,7 @@ def raise_none_error(column):
         raise NoneError("None isn't acceptable as a value for %s" % name)
 
 
-def VariableFactory(cls, **old_kwargs):
-    """Build cls with kwargs of constructor updated by kwargs of call.
-
-    This is really an implementation of partial/curry functions, and
-    is replaced by 'partial' when 2.5+ is in use.
-    """
-    def variable_factory(**new_kwargs):
-        kwargs = old_kwargs.copy()
-        kwargs.update(new_kwargs)
-        return cls(**kwargs)
-    return variable_factory
-
-try:
-    from functools import partial as VariableFactory
-except ImportError:
-    pass
+VariableFactory = partial
 
 
 class Variable(object):
@@ -502,7 +485,6 @@ class UUIDVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        assert uuid is not None, "The uuid module was not found."
         if from_db and isinstance(value, basestring):
             value = uuid.UUID(value)
         elif not isinstance(value, uuid.UUID):
@@ -629,8 +611,6 @@ class JSONVariable(EncodedValueVariable):
     __slots__ = ()
 
     def __init__(self, *args, **kwargs):
-        assert json is not None, (
-            "Neither the json nor the simplejson module was found.")
         super(JSONVariable, self).__init__(*args, **kwargs)
 
     def _loads(self, value):
