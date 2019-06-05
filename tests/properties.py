@@ -21,10 +21,7 @@
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal as decimal
 import gc
-try:
-    import uuid
-except ImportError:
-    uuid = None
+import uuid
 
 from storm.compat import json
 from storm.exceptions import NoneError, PropertyPathError
@@ -556,10 +553,6 @@ class PropertyKindsTest(TestHelper):
         self.assertRaises(TypeError, setattr, self.obj, "prop1", object())
 
     def test_uuid(self):
-        # Skip test if uuid module is not available.
-        if uuid is None:
-            return
-
         value1 = uuid.UUID("{0609f76b-878f-4546-baf5-c1b135e8de72}")
         value2 = uuid.UUID("{c9703f9d-0abb-47d7-a793-8f90f1b98d5e}")
         self.setup(UUID, default=value1, allow_none=False)

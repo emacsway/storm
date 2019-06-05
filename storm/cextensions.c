@@ -24,13 +24,6 @@
 #include <structmember.h>
 
 
-#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
-typedef int Py_ssize_t;
-#define PY_SSIZE_T_MAX INT_MAX
-#define PY_SSIZE_T_MIN INT_MIN
-#endif
-
-
 #define CATCH(error_value, expression) \
         do { \
             if ((expression) == error_value) {\
@@ -46,56 +39,6 @@ typedef int Py_ssize_t;
             Py_DECREF(tmp); \
         } while(0)
 
-
-/* Python 2.4 does not include the PySet_* API, so provide a minimal
-   implementation for the calls we care about. */
-#if PY_VERSION_HEX < 0x02050000 && !defined(PySet_GET_SIZE)
-#  define PySet_GET_SIZE(so) \
-     ((PyDictObject *)((PySetObject *)so)->data)->ma_used
-static PyObject *
-PySet_New(PyObject *p)
-{
-    return PyObject_CallObject((PyObject *)&PySet_Type, NULL);
-}
-
-static int
-PySet_Add(PyObject *set, PyObject *key)
-{
-    PyObject *dict;
-
-    if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    dict = ((PySetObject *)set)->data;
-    return PyDict_SetItem(dict, key, Py_True);
-}
-
-static int
-PySet_Discard(PyObject *set, PyObject *key)
-{
-    PyObject *dict;
-    int result;
-
-    if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    dict = ((PySetObject *)set)->data;
-    result = PyDict_DelItem(dict, key);
-    if (result == 0) {
-        /* key found and removed */
-        result = 1;
-    } else {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            /* key not found */
-            PyErr_Clear();
-            result = 0;
-        }
-    }
-    return result;
-}
-#endif
 
 static PyObject *Undef = NULL;
 static PyObject *LazyValue = NULL;

@@ -52,12 +52,7 @@ class TestHelper(mocker.MockerTestCase):
 
     @property
     def _testMethod(self):
-        try:
-            name = self._testMethodName
-        except AttributeError:
-            # On Python < 2.5
-            name = self._TestCase__testMethodName
-        return getattr(self, name)
+        return getattr(self, self._testMethodName)
 
     def run(self, result=None):
         # Skip if is_supported() does not return True.
