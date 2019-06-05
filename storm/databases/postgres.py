@@ -26,10 +26,9 @@ from distutils.version import LooseVersion
 
 from storm.databases import dummy
 
-# PostgreSQL support in Storm requires psycopg2 2.0.7 or greater.
-# Earlier versions of psyocpg2 contain data loss bugs.
-# See https://bugs.launchpad.net/storm/+bug/322206 for more details.
-REQUIRED_PSYCOPG2_VERSION = LooseVersion('2.0.7')
+# PostgreSQL support in Storm requires psycopg2 2.3.0 or greater, in order
+# to support the two-phase commit protocol.
+REQUIRED_PSYCOPG2_VERSION = LooseVersion('2.3.0')
 PSYCOPG2_VERSION = None
 try:
     import psycopg2
