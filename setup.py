@@ -29,11 +29,6 @@ tests_require = [
     "transaction >= 1.0.0",
     "twisted >= 10.0.0",
     "zope.component >= 3.8.0",
-    # zope.component 3.11.0 requires a version of zope.interface that no
-    # version of Ubuntu yet packages. The following rule exists for the
-    # sake of convenience rather than necessity, for the situation where
-    # zope.interface is installed via a package but zope.component is not.
-    "zope.component < 3.11.0",
     "zope.security >= 3.7.2",
     ]
 
