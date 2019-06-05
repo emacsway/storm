@@ -6,20 +6,20 @@ function apt_get() {
 }
 
 apt_get install --no-install-recommends \
-    postgresql \
-    pgbouncer \
-    libpq-dev \
     build-essential \
+    libpq-dev \
+    pgbouncer \
+    postgresql \
     python-dev \
-    python-six \
     python-fixtures \
     python-psycopg2 \
+    python-setuptools \
+    python-six \
     python-testresources \
     python-transaction \
     python-twisted \
     python-zope.component \
     python-zope.security \
-    python-setuptools \
     tox
 
 
