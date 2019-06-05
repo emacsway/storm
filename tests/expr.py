@@ -19,6 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from decimal import Decimal
+import unittest
+
+import six
 
 from tests.helper import TestHelper
 
@@ -584,9 +587,11 @@ class CompileTest(TestHelper):
         self.assertEquals(statement, "?")
         self.assertVariablesEqual(state.parameters, [IntVariable(1)])
 
+    @unittest.skipUnless(six.PY2, "Python 3 has no separate long type")
     def test_long(self):
         state = State()
-        statement = compile(1L, state)
+        # 1L was more idiomatic in Python 2, but is a syntax error in Python 3.
+        statement = compile(long(1), state)
         self.assertEquals(statement, "?")
         self.assertVariablesEqual(state.parameters, [IntVariable(1)])
 
@@ -2171,8 +2176,10 @@ class CompilePythonTest(TestHelper):
         py_expr = compile_python(1)
         self.assertEquals(py_expr, "1")
 
+    @unittest.skipUnless(six.PY2, "Python 3 has no separate long type")
     def test_long(self):
-        py_expr = compile_python(1L)
+        # 1L was more idiomatic in Python 2, but is a syntax error in Python 3.
+        py_expr = compile_python(long(1))
         self.assertEquals(py_expr, "1L")
 
     def test_bool(self):

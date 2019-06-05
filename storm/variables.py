@@ -26,6 +26,8 @@ import re
 import uuid
 import weakref
 
+import six
+
 from storm.compat import json
 from storm.exceptions import NoneError
 from storm import Undef, has_cextensions
@@ -313,7 +315,7 @@ class BoolVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (int, long, float, Decimal)):
+        if not isinstance(value, (six.integer_types, float, Decimal)):
             raise TypeError("Expected bool, found %r: %r"
                             % (type(value), value))
         return bool(value)
@@ -323,7 +325,7 @@ class IntVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (int, long, float, Decimal)):
+        if not isinstance(value, (six.integer_types, float, Decimal)):
             raise TypeError("Expected int, found %r: %r"
                             % (type(value), value))
         return int(value)
@@ -333,7 +335,7 @@ class FloatVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (int, long, float, Decimal)):
+        if not isinstance(value, (six.integer_types, float, Decimal)):
             raise TypeError("Expected float, found %r: %r"
                             % (type(value), value))
         return float(value)
@@ -345,7 +347,7 @@ class DecimalVariable(Variable):
     @staticmethod
     def parse_set(value, from_db):
         if (from_db and isinstance(value, basestring) or
-            isinstance(value, (int, long))):
+            isinstance(value, six.integer_types)):
             value = Decimal(value)
         elif not isinstance(value, Decimal):
             raise TypeError("Expected Decimal, found %r: %r"
@@ -406,7 +408,7 @@ class DateTimeVariable(Variable):
                 else:
                     value = value.astimezone(self._tzinfo)
         else:
-            if type(value) in (int, long, float):
+            if type(value) in six.integer_types + (float, ):
                 value = datetime.utcfromtimestamp(value)
             elif not isinstance(value, datetime):
                 raise TypeError("Expected datetime, found %s" % repr(value))

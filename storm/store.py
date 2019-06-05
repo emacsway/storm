@@ -28,6 +28,8 @@ from copy import copy
 from weakref import WeakValueDictionary
 from operator import itemgetter
 
+import six
+
 from storm.info import get_cls_info, get_obj_info, set_obj_info
 from storm.variables import Variable, LazyValue
 from storm.expr import (
@@ -1003,7 +1005,7 @@ class ResultSet(object):
             L{ResultSet} will be returned appropriately modified with
             C{OFFSET} and C{LIMIT} clauses.
         """
-        if isinstance(index, (int, long)):
+        if isinstance(index, six.integer_types):
             if index == 0:
                 result_set = self
             else:
