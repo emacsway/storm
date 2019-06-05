@@ -11,6 +11,7 @@ apt_get install --no-install-recommends \
     libpq-dev \
     build-essential \
     python-dev \
+    python-six \
     python-fixtures \
     python-psycopg2 \
     python-testresources \

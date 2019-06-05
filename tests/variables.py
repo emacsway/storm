@@ -25,6 +25,8 @@ import gc
 import weakref
 import uuid
 
+import six
+
 from storm.compat import json
 from storm.exceptions import NoneError
 from storm.variables import *
@@ -464,8 +466,11 @@ class DateTimeVariableTest(TestHelper):
         self.assertEquals(variable.get(), epoch)
         variable.set(0.0)
         self.assertEquals(variable.get(), epoch)
-        variable.set(0L)
-        self.assertEquals(variable.get(), epoch)
+        if six.PY2:
+            # 1L was more idiomatic in Python 2, but is a syntax error in
+            # Python 3.
+            variable.set(long(0))
+            self.assertEquals(variable.get(), epoch)
         variable.set(epoch)
         self.assertEquals(variable.get(), epoch)
         self.assertRaises(TypeError, variable.set, marker)

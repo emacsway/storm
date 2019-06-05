@@ -28,6 +28,8 @@ import operator
 from uuid import uuid4
 import weakref
 
+import six
+
 from storm.references import Reference, ReferenceSet, Proxy
 from storm.database import Result, STATE_DISCONNECTED
 from storm.properties import (
@@ -1576,7 +1578,7 @@ class StoreTest(object):
         result.group_by(FooValue.value2)
         result.order_by(Count(FooValue.id), Sum(FooValue.value1))
         result = list(result)
-        self.assertEquals(result, [(2L, 2L), (2L, 2L), (2L, 3L), (3L, 6L)])
+        self.assertEquals(result, [(2, 2), (2, 2), (2, 3), (3, 6)])
 
     def test_find_group_by_table(self):
         result = self.store.find(
@@ -5276,7 +5278,7 @@ class StoreTest(object):
         self.store.add(foo)
         foo.id = AutoReload
         foo.title = u"New Title"
-        self.assertTrue(isinstance(foo.id, (int, long)))
+        self.assertTrue(isinstance(foo.id, six.integer_types))
         self.assertEquals(foo.title, "New Title")
 
     def test_autoreload_primary_key_doesnt_reload_everything_else(self):
