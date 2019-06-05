@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from fixtures import Fixture
 
 from storm.tracer import BaseStatementTracer, install_tracer, remove_tracer
@@ -10,7 +12,7 @@ class CaptureTracer(BaseStatementTracer, Fixture):
 
         with CaptureTracer() as tracer:
             # Run queries
-        print tracer.queries  # Print the queries that have been run
+        print(tracer.queries)  # Print the queries that have been run
 
     @note: This class requires the fixtures package to be available.
     """

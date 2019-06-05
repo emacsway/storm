@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import Queue
 from unittest import TestCase
 import threading

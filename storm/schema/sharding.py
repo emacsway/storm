@@ -41,6 +41,8 @@ Patches will be applied "horizontally", meaning that the stores will always
 be at the same patch level. See L{storm.schema.patch.PatchSet}.
 """
 
+from __future__ import print_function
+
 from storm.schema.schema import SchemaMissingError, UnappliedPatchesError
 
 

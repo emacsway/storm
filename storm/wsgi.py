@@ -21,6 +21,8 @@
 
 """Glue to wire a storm timeline tracer up to a WSGI app."""
 
+from __future__ import print_function
+
 import threading
 import weakref
 

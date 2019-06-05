@@ -23,6 +23,8 @@
 L{SQLObjectBase} is the central point of compatibility.
 """
 
+from __future__ import print_function
+
 import re
 import warnings
 

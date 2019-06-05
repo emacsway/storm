@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
+
 from zope.component import adapter
 from zope.interface import implementer
 

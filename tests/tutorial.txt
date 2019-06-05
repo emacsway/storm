@@ -73,7 +73,7 @@ Let's create an object of the defined class.
 >>> joe = Person()
 >>> joe.name = u"Joe Johnes"
 
->>> print "%r, %r" % (joe.id, joe.name)
+>>> print("%r, %r" % (joe.id, joe.name))
 None, u'Joe Johnes'
 
 }}}
@@ -85,7 +85,7 @@ store we've created above.
 >>> store.add(joe)
 <...Person object at 0x...>
 
->>> print "%r, %r" % (joe.id, joe.name)
+>>> print("%r, %r" % (joe.id, joe.name))
 None, u'Joe Johnes'
 
 }}}
@@ -116,7 +116,7 @@ the person named ''Joe Johnes''?
 {{{#!python
 >>> person = store.find(Person, Person.name == u"Joe Johnes").one()
 
->>> print "%r, %r" % (person.id, person.name)
+>>> print("%r, %r" % (person.id, person.name))
 1, u'Joe Johnes'
 
 >>>
@@ -168,11 +168,11 @@ Flushes may also happen explicitly.
 >>> store.add(mary)
 <...Person object at 0x...>
 
->>> print "%r, %r" % (mary.id, mary.name)
+>>> print("%r, %r" % (mary.id, mary.name))
 None, u'Mary Margaret'
 
 >>> store.flush()
->>> print "%r, %r" % (mary.id, mary.name)
+>>> print("%r, %r" % (mary.id, mary.name))
 2, u'Mary Margaret'
 
 }}}
@@ -240,7 +240,7 @@ Erm.. nothing happened?
 Actually, something happened.. with Joe.  He's back!
 
 {{{#!python
->>> print "%r, %r" % (joe.id, joe.name)
+>>> print("%r, %r" % (joe.id, joe.name))
 1, u'Joe Johnes'
 
 }}}
@@ -279,7 +279,7 @@ Then, create a new company.
 {{{
 >>> circus = Company(u"Circus Inc.")
 
->>> print "%r, %r" % (circus.id, circus.name)
+>>> print("%r, %r" % (circus.id, circus.name))
 None, u'Circus Inc.'
 
 }}}
@@ -327,7 +327,7 @@ Let's give life to Ben now.
 {{{#!python
 >>> ben = store.add(Employee(u"Ben Bill"))
 
->>> print "%r, %r, %r" % (ben.id, ben.name, ben.company_id)
+>>> print("%r, %r, %r" % (ben.id, ben.name, ben.company_id))
 None, u'Ben Bill', None
 
 }}}
@@ -338,7 +338,7 @@ that Bill works on Circus.
 {{{#!python
 >>> ben.company = circus
 
->>> print "%r, %r" % (ben.company_id, ben.company.name)
+>>> print("%r, %r" % (ben.company_id, ben.company.name))
 None, u'Circus Inc.'
 
 }}}
@@ -354,7 +354,7 @@ updated as well (before being flushed!).
 {{{#!python
 >>> store.flush()
 
->>> print "%r, %r" % (ben.company_id, ben.company.name)
+>>> print("%r, %r" % (ben.company_id, ben.company.name))
 1, u'Circus Inc.'
 
 }}}
@@ -419,8 +419,8 @@ working for a given company.
 1
 
 >>> for employee in sweets.employees:
-...     print "%r, %r" % (employee.id, employee.name)
-...     print employee is ben
+...     print("%r, %r" % (employee.id, employee.name))
+...     print(employee is ben)
 ...
 1, u'Ben Bill'
 True
@@ -742,11 +742,11 @@ for that.
 {{{#!python
 >>> class PersonWithHook(Person):
 ...     def __init__(self, name):
-...         print "Creating %s" % name
+...         print("Creating %s" % name)
 ...         self.name = name
 ...
 ...     def __storm_loaded__(self):
-...         print "Loaded %s" % self.name
+...         print("Loaded %s" % self.name)
 
 
 >>> earl = store.add(PersonWithHook(u"Earl Easton"))
@@ -803,11 +803,11 @@ as shown below.
 
 >>> ruy = store.add(Person())
 >>> ruy.name = u"Ruy"
->>> print ruy.id
+>>> print(ruy.id)
 None
 
 >>> ruy.id = AutoReload
->>> print ruy.id
+>>> print(ruy.id)
 4
 
 }}}
@@ -865,7 +865,7 @@ Now we can easily make the query we want, in a straightforward way:
 ...                     Employee.id > AnotherEmployee.id)
 
 >>> for employee1, employee2 in result:
-...     print (employee1.name, employee2.name)
+...     print((employee1.name, employee2.name))
 (u'Mike Mayer', u'Ben Bill')
 
 }}}

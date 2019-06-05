@@ -3,6 +3,8 @@ Copyright (c) 2007  Gustavo Niemeyer <gustavo@niemeyer.net>
 
 Graceful platform for test doubles in Python (mocks, stubs, fakes, and dummies).
 """
+from __future__ import print_function
+
 import __builtin__
 import tempfile
 import unittest

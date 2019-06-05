@@ -43,6 +43,8 @@ where patch_module is a Python module containing database patches used to
 upgrade the schema over time.
 """
 
+from __future__ import print_function
+
 import types
 
 from storm.locals import StormError
@@ -96,7 +98,7 @@ class Schema(object):
             try:
                 store.execute(statement)
             except Exception:
-                print "Error running %s" % statement
+                print("Error running %s" % statement)
                 raise
         if self._autocommit:
             store.commit()
