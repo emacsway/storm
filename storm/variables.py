@@ -610,9 +610,6 @@ class JSONVariable(EncodedValueVariable):
 
     __slots__ = ()
 
-    def __init__(self, *args, **kwargs):
-        super(JSONVariable, self).__init__(*args, **kwargs)
-
     def _loads(self, value):
         if not isinstance(value, unicode):
             raise TypeError(
