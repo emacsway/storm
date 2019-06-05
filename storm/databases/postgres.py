@@ -305,16 +305,6 @@ class PostgresConnection(Connection):
 
         return Connection.execute(self, statement, params, noresult)
 
-    def raw_execute(self, statement, params):
-        """
-        Like L{Connection.raw_execute}, but encode the statement to
-        UTF-8 if it is unicode.
-        """
-        if type(statement) is unicode:
-            # psycopg breaks with unicode statements.
-            statement = statement.encode("UTF-8")
-        return Connection.raw_execute(self, statement, params)
-
     def to_database(self, params):
         """
         Like L{Connection.to_database}, but this converts datetime
