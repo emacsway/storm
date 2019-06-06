@@ -24,6 +24,8 @@
 This module contains the highest-level ORM interface in Storm.
 """
 
+from __future__ import print_function
+
 from copy import copy
 from weakref import WeakValueDictionary
 from operator import itemgetter
@@ -237,7 +239,7 @@ class Store(object):
         required. An example follows::
 
             join = LeftJoin(Person, Person.id == Company.person_id)
-            print list(store.using(Company, join).find((Company, Person)))
+            print(list(store.using(Company, join).find((Company, Person))))
 
         The previous code snippet will produce an SQL statement
         somewhat similar to this, depending on your backend::

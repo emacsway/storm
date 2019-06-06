@@ -25,6 +25,8 @@ This is the common code for database support; specific databases are
 supported in modules in L{storm.databases}.
 """
 
+from __future__ import print_function
+
 from storm.expr import Expr, State, compile
 # Circular import: imported at the end of the module.
 # from storm.tracer import trace

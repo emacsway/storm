@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from tests import has_psycopg
 from tests.helper import TestHelper
 from tests.zope import has_transaction, has_zope_component

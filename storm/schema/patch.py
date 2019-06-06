@@ -34,6 +34,8 @@ patches. After a patch has been applied, its version is recorded in a special
 'patch' table in the given L{Store}, and it won't be applied again.
 """
 
+from __future__ import print_function
+
 import sys
 import os
 import re
@@ -207,7 +209,7 @@ class PatchSet(object):
       >>> import mypackage
       >>> patch_set = PackagePackage(mypackage, sub_level="foo")
       >>> patch_module = patch_set.get_patch_module(1)
-      >>> print patch_module.__name__
+      >>> print(patch_module.__name__)
       'mypackage.patch_1.foo'
 
     Different sub-levels can be used to apply different patches to different
@@ -222,7 +224,7 @@ class PatchSet(object):
       >>> import mypackage
       >>> patch_set = PackagePackage(mypackage)
       >>> patch_module = patch_set.get_patch_module(1)
-      >>> print patch_module.__name__
+      >>> print(patch_module.__name__)
       'mypackage.patch_1'
 
     This simpler structure can be used if you have just one store to patch

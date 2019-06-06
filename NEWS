@@ -35,7 +35,7 @@ Improvements
     with CaptureTracer() as tracer:
       # Run queries
       pass
-    print tracer.queries  # Print all queries run in the context manager block
+    print(tracer.queries)  # Print all queries run in the context manager block
 
   You will need the python-fixtures package in order to use this feature.
 
