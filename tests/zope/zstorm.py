@@ -181,8 +181,8 @@ class ZStormTest(TestHelper):
         Two stores in two-phase-commit mode joining the same transaction share
         the same global transaction ID.
         """
-        self.zstorm.set_default_uri("name1", "sqlite:1")
-        self.zstorm.set_default_uri("name2", "sqlite:2")
+        self.zstorm.set_default_uri("name1", "sqlite:///%s" % self.makeFile())
+        self.zstorm.set_default_uri("name2", "sqlite:///%s" % self.makeFile())
         self.zstorm.set_default_tpc("name1", True)
         self.zstorm.set_default_tpc("name2", True)
         store1 = self.zstorm.get("name1")
@@ -236,8 +236,8 @@ class ZStormTest(TestHelper):
         to actually achieve two-phase commit behavior when only one store
         doesn't support TPC.
         """
-        self.zstorm.set_default_uri("name1", "sqlite:1")
-        self.zstorm.set_default_uri("name2", "sqlite:2")
+        self.zstorm.set_default_uri("name1", "sqlite:///%s" % self.makeFile())
+        self.zstorm.set_default_uri("name2", "sqlite:///%s" % self.makeFile())
         self.zstorm.set_default_tpc("name1", True)
         self.zstorm.set_default_tpc("name2", False)
         store1 = self.zstorm.get("name1")
