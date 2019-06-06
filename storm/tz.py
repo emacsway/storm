@@ -716,9 +716,9 @@ class tzical:
         if tzid is None:
             keys = self._vtz.keys()
             if len(keys) == 0:
-                raise "no timezones defined"
+                raise Exception("no timezones defined")
             elif len(keys) > 1:
-                raise "more than one timezone available"
+                raise Exception("more than one timezone available")
             tzid = keys[0]
         return self._vtz.get(tzid)
 
