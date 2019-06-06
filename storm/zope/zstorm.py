@@ -31,7 +31,7 @@ import weakref
 
 from uuid import uuid4
 
-from zope.interface import implements
+from zope.interface import implementer
 
 import transaction
 from transaction.interfaces import IDataManager
@@ -46,6 +46,7 @@ from storm.store import Store
 from storm.xid import Xid
 
 
+@implementer(IZStorm)
 class ZStorm(object):
     """A utility which integrates Storm with Zope.
 
@@ -62,8 +63,6 @@ class ZStorm(object):
 
       store = getUtility(IZStorm).get('main')
     """
-
-    implements(IZStorm)
 
     transaction_manager = transaction.manager
 
@@ -257,10 +256,9 @@ def register_store_with_transaction(store, zstorm_ref):
     return False
 
 
+@implementer(IDataManager)
 class StoreDataManager(object):
     """An L{IDataManager} implementation for C{ZStorm}."""
-
-    implements(IDataManager)
 
     def __init__(self, store, zstorm):
         self._store = store

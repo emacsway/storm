@@ -25,15 +25,15 @@ from tests.zope import has_zope_component
 
 
 if has_zope_component:
-    from zope.interface import implements
+    from zope.interface import implementer
     from zope.component import getGlobalSiteManager
 
     from storm.store import EmptyResultSet
     from storm.zope.adapters import sqlobject_result_set_to_storm_result_set
     from storm.zope.interfaces import IResultSet, ISQLObjectResultSet
 
+    @implementer(ISQLObjectResultSet)
     class TestSQLObjectResultSet(object):
-        implements(ISQLObjectResultSet)
         _result_set = EmptyResultSet()
 
 
