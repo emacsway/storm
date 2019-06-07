@@ -1665,7 +1665,7 @@ class RunCounter(Task):
     def __init__(self, min, max=False):
         self.min = min
         if max is None:
-            self.max = sys.maxint
+            self.max = sys.maxsize
         elif max is False:
             self.max = min
         else:
