@@ -23,12 +23,12 @@ from __future__ import print_function
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from functools import partial
-import cPickle as pickle
 import re
 import uuid
 import weakref
 
 import six
+from six.moves import cPickle as pickle
 
 from storm.compat import json
 from storm.exceptions import NoneError
