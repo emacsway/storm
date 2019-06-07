@@ -220,7 +220,7 @@ class CompilePython(Compile):
                 "    return match" %
                 (",".join("_%d" % i for i in range(len(state.parameters))),
                  source))
-        exec code in namespace
+        exec(code, namespace)
         return namespace['closure'](state.parameters, bool)
 
 
