@@ -51,11 +51,12 @@ compile = compile.create_child()
 def compile_select_sqlite(compile, select, state):
     if select.offset is not Undef and select.limit is Undef:
         if sys.maxsize > 2**32:
-            # On 64-bit platforms sqlite doesn't like maxint as LIMIT. See also
+            # On 64-bit platforms sqlite doesn't like maxsize as LIMIT. See
+            # also
             # https://lists.ubuntu.com/archives/storm/2013-June/001492.html
-            select.limit = sys.maxint - 1
+            select.limit = sys.maxsize - 1
         else:
-            select.limit = sys.maxint
+            select.limit = sys.maxsize
     statement = compile_select(compile, select, state)
     if state.context is SELECT:
         # SQLite breaks with (SELECT ...) UNION (SELECT ...), so we
