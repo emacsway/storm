@@ -24,6 +24,15 @@
 #include <structmember.h>
 
 
+#if PY_VERSION_HEX >= 0x03000000
+#define PyInt_FromLong PyLong_FromLong
+#define PyText_AsString _PyUnicode_AsString
+#define PyString_CheckExact(o) 0
+#else
+/* 2.x */
+#define PyText_AsString PyString_AsString
+#endif
+
 #define CATCH(error_value, expression) \
         do { \
             if ((expression) == error_value) {\
@@ -248,7 +257,7 @@ static void
 EventSystem_dealloc(EventSystemObject *self)
 {
     EventSystem_clear(self);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -469,9 +478,8 @@ static PyMemberDef EventSystem_members[] = {
 };
 #undef OFFSETOF
 
-statichere PyTypeObject EventSystem_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,            /*ob_size*/
+static PyTypeObject EventSystem_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "storm.variables.EventSystem",    /*tp_name*/
     sizeof(EventSystemObject), /*tp_basicsize*/
     0,            /*tp_itemsize*/
@@ -663,7 +671,7 @@ static void
 Variable_dealloc(VariableObject *self)
 {
     Variable_clear(self);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -1021,7 +1029,7 @@ Variable_copy(VariableObject *self, PyObject *args)
 
     /* variable = self.__class__.__new__(self.__class__) */
     noargs = PyTuple_New(0);
-    CATCH(NULL, variable = self->ob_type->tp_new(self->ob_type, noargs, NULL));
+    CATCH(NULL, variable = Py_TYPE(self)->tp_new(Py_TYPE(self), noargs, NULL));
 
     /* variable.set_state(self.get_state()) */
     CATCH(NULL,
@@ -1072,9 +1080,8 @@ static PyMemberDef Variable_members[] = {
 };
 #undef OFFSETOF
 
-statichere PyTypeObject Variable_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,            /*ob_size*/
+static PyTypeObject Variable_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "storm.variables.Variable",    /*tp_name*/
     sizeof(VariableObject), /*tp_basicsize*/
     0,            /*tp_itemsize*/
@@ -1223,7 +1230,7 @@ static void
 Compile_dealloc(CompileObject *self)
 {
     Compile_clear(self);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -1390,13 +1397,13 @@ error:
     return NULL;
 }
 
-staticforward PyTypeObject Compile_Type;
+static PyTypeObject Compile_Type;
 
 static PyObject *
 Compile_create_child(CompileObject *self, PyObject *args)
 {
     /* return self.__class__(self) */
-    return PyObject_CallFunctionObjArgs((PyObject *)self->ob_type, self, NULL);
+    return PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(self), self, NULL);
 }
 
 static PyObject *
@@ -1494,7 +1501,7 @@ Compile_single(CompileObject *self,
             if (repr) {
                 PyErr_Format(CompileError,
                              "Don't know how to compile type %s of %s",
-                             expr->ob_type->tp_name, PyString_AS_STRING(repr));
+                             expr->ob_type->tp_name, PyText_AsString(repr));
                 Py_DECREF(repr);
             }
             goto error;
@@ -1513,7 +1520,7 @@ Compile_single(CompileObject *self,
                                                          state, NULL));
 
     /* if inner_precedence < outer_precedence: */
-    if (PyObject_Compare(inner_precedence, outer_precedence) == -1) {
+    if (PyObject_RichCompareBool(inner_precedence, outer_precedence, Py_LT)) {
         PyObject *args, *tmp;
 
         if (PyErr_Occurred())
@@ -1736,9 +1743,8 @@ static PyMemberDef Compile_members[] = {
 };
 #undef OFFSETOF
 
-statichere PyTypeObject Compile_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,            /*ob_size*/
+static PyTypeObject Compile_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "storm.variables.Compile",    /*tp_name*/
     sizeof(CompileObject), /*tp_basicsize*/
     0,            /*tp_itemsize*/
@@ -2027,9 +2033,8 @@ static PyGetSetDef ObjectInfo_getset[] = {
     {NULL}
 };
 
-statichere PyTypeObject ObjectInfo_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,            /*ob_size*/
+static PyTypeObject ObjectInfo_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
     "storm.info.ObjectInfo", /*tp_name*/
     sizeof(ObjectInfoObject), /*tp_basicsize*/
     0,            /*tp_itemsize*/
@@ -2132,11 +2137,9 @@ prepare_type(PyTypeObject *type)
     return PyType_Ready(type);
 }
 
-DL_EXPORT(void)
-initcextensions(void)
+static int
+do_init(PyObject *module)
 {
-    PyObject *module;
-
     prepare_type(&EventSystem_Type);
     prepare_type(&Compile_Type);
     ObjectInfo_Type.tp_base = &PyDict_Type;
@@ -2144,7 +2147,6 @@ initcextensions(void)
     prepare_type(&ObjectInfo_Type);
     prepare_type(&Variable_Type);
 
-    module = Py_InitModule3("cextensions", cextensions_methods, "");
     Py_INCREF(&Variable_Type);
 
 #define REGISTER_TYPE(name) \
@@ -2157,7 +2159,42 @@ initcextensions(void)
     REGISTER_TYPE(ObjectInfo);
     REGISTER_TYPE(Compile);
     REGISTER_TYPE(EventSystem);
+    return 0;
 }
+
+#if PY_VERSION_HEX < 0x03000000
+DL_EXPORT(void)
+initcextensions(void)
+{
+    PyObject *module;
+
+    module = Py_InitModule3("cextensions", cextensions_methods, "");
+    do_init(module);
+}
+#else
+static struct PyModuleDef cextensionsmodule = {
+    PyModuleDef_HEAD_INIT,
+    "cextensions",
+    NULL,
+    -1,
+    cextensions_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_cextensions(void)
+{
+    PyObject *module = PyModule_Create(&cextensionsmodule);
+    if (module == NULL)
+        return NULL;
+    do_init(module);
+    return module;
+}
+#endif
+
 
 /* vim:ts=4:sw=4:et
 */
