@@ -40,9 +40,9 @@ class Func2(NamedFunc):
 # Create columnN, tableN, and elemN variables.
 for i in range(10):
     for name in ["column", "elem"]:
-        exec "%s%d = SQLToken('%s%d')" % (name, i, name, i)
+        exec("%s%d = SQLToken('%s%d')" % (name, i, name, i))
     for name in ["table"]:
-        exec "%s%d = '%s %d'" % (name, i, name, i)
+        exec("%s%d = '%s %d'" % (name, i, name, i))
 
 
 class TrackContext(FromExpr):
@@ -500,7 +500,7 @@ class CompileTest(TestHelper):
 
     def test_precedence(self):
         for i in range(10):
-            exec "e%d = SQLRaw('%d')" % (i, i)
+            exec("e%d = SQLRaw('%d')" % (i, i))
         expr = And(e1, Or(e2, e3),
                    Add(e4, Mul(e5, Sub(e6, Div(e7, Div(e8, e9))))))
         statement = compile(expr)
@@ -2137,7 +2137,7 @@ class CompilePythonTest(TestHelper):
 
     def test_precedence(self):
         for i in range(10):
-            exec "e%d = SQLRaw('%d')" % (i, i)
+            exec("e%d = SQLRaw('%d')" % (i, i))
         expr = And(e1, Or(e2, e3),
                    Add(e4, Mul(e5, Sub(e6, Div(e7, Div(e8, e9))))))
         py_expr = compile_python(expr)
