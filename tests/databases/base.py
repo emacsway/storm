@@ -23,10 +23,11 @@
 from __future__ import print_function
 
 from datetime import datetime, date, time, timedelta
-import cPickle as pickle
 import shutil
 import sys
 import os
+
+from six.moves import cPickle as pickle
 
 from storm.uri import URI
 from storm.expr import Select, Column, SQLToken, SQLRaw, Count, Alias

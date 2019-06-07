@@ -5,7 +5,6 @@ Graceful platform for test doubles in Python (mocks, stubs, fakes, and dummies).
 """
 from __future__ import print_function
 
-import __builtin__
 import tempfile
 import unittest
 import inspect
@@ -13,6 +12,8 @@ import shutil
 import sys
 import os
 import gc
+
+from six.moves import builtins
 
 
 __all__ = ["Mocker", "expect", "IS", "CONTAINS", "IN", "MATCH",
@@ -576,7 +577,7 @@ class MockerBase(object):
         if spec is True:
             spec = object
         if type is True:
-            type = __builtin__.type(object)
+            type = builtins.type(object)
         return Mock(self, spec=spec, type=type, object=object,
                     name=name, count=count, passthrough=passthrough)
 

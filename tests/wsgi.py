@@ -1,9 +1,10 @@
 from __future__ import print_function
 
-import Queue
 from unittest import TestCase
 import threading
 import time
+
+from six.moves import queue
 
 from storm.wsgi import make_app
 
@@ -67,7 +68,7 @@ class TestMakeApp(TestCase):
         # with two threads in a request at once, each only sees their own
         # timeline.
         app, find_timeline = make_app(self.stub_app)
-        errors = Queue.Queue()
+        errors = queue.Queue()
         sync = threading.Condition()
         waiting = []
         def check_timeline():

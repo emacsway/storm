@@ -20,7 +20,7 @@
 #
 from __future__ import print_function
 
-from urllib import quote
+from six.moves.urllib.parse import quote
 
 from storm.exceptions import URIError
 
