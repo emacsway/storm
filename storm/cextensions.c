@@ -64,7 +64,7 @@ static PyObject *default_compile_join = NULL;
 
 typedef struct {
     PyObject_HEAD
-    PyObject *__weakreflist;
+    PyObject *_weakreflist;
     PyObject *_owner_ref;
     PyObject *_hooks;
 } EventSystemObject;
@@ -84,7 +84,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *__weakreflist;
+    PyObject *_weakreflist;
     PyObject *_local_dispatch_table;
     PyObject *_local_precedence;
     PyObject *_local_reserved_words;
@@ -97,9 +97,9 @@ typedef struct {
 
 typedef struct {
     PyDictObject super;
-    PyObject *__weakreflist;
-    PyObject *__obj_ref;
-    PyObject *__obj_ref_callback;
+    PyObject *_weakreflist;
+    PyObject *_obj_ref;
+    PyObject *_obj_ref_callback;
     PyObject *cls_info;
     PyObject *event;
     PyObject *variables;
@@ -220,7 +220,7 @@ EventSystem_init(EventSystemObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &owner))
         return -1;
 
-    self->__weakreflist = NULL;
+    self->_weakreflist = NULL;
 
     /* self._owner_ref = weakref.ref(owner) */
     self->_owner_ref = PyWeakref_NewRef(owner, NULL);
@@ -246,7 +246,7 @@ EventSystem_traverse(EventSystemObject *self, visitproc visit, void *arg)
 static int
 EventSystem_clear(EventSystemObject *self)
 {
-    if (self->__weakreflist)
+    if (self->_weakreflist)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->_owner_ref);
     Py_CLEAR(self->_hooks);
@@ -503,7 +503,7 @@ static PyTypeObject EventSystem_Type = {
     (traverseproc)EventSystem_traverse,  /*tp_traverse*/
     (inquiry)EventSystem_clear,          /*tp_clear*/
     0,                      /*tp_richcompare*/
-    offsetof(EventSystemObject, __weakreflist), /*tp_weaklistoffset*/
+    offsetof(EventSystemObject, _weakreflist), /*tp_weaklistoffset*/
     0,                      /*tp_iter*/
     0,                      /*tp_iternext*/
     EventSystem_methods,        /*tp_methods*/
@@ -1213,7 +1213,7 @@ Compile_traverse(CompileObject *self, visitproc visit, void *arg)
 static int
 Compile_clear(CompileObject *self)
 {
-    if (self->__weakreflist)
+    if (self->_weakreflist)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->_local_dispatch_table);
     Py_CLEAR(self->_local_precedence);
@@ -1768,7 +1768,7 @@ static PyTypeObject Compile_Type = {
     (traverseproc)Compile_traverse,  /*tp_traverse*/
     (inquiry)Compile_clear,          /*tp_clear*/
     0,                      /*tp_richcompare*/
-    offsetof(CompileObject, __weakreflist), /*tp_weaklistoffset*/
+    offsetof(CompileObject, _weakreflist), /*tp_weaklistoffset*/
     0,                      /*tp_iter*/
     0,                      /*tp_iternext*/
     Compile_methods,        /*tp_methods*/
@@ -1824,12 +1824,12 @@ ObjectInfo_init(ObjectInfoObject *self, PyObject *args)
                                                               NULL));
 
     /* self.set_obj(obj) */
-    CATCH(NULL, self->__obj_ref_callback =
+    CATCH(NULL, self->_obj_ref_callback =
                     PyCFunction_NewEx(&ObjectInfo_deleted_callback,
                                       (PyObject *)self, NULL));
 
     CATCH(NULL,
-          self->__obj_ref = PyWeakref_NewRef(obj, self->__obj_ref_callback));
+          self->_obj_ref = PyWeakref_NewRef(obj, self->_obj_ref_callback));
 
     /* self.event = event = EventSystem(self) */
     CATCH(NULL,
@@ -1903,7 +1903,7 @@ error:
 static PyObject *
 ObjectInfo_get_obj(ObjectInfoObject *self, PyObject *args)
 {
-    PyObject *obj = PyWeakref_GET_OBJECT(self->__obj_ref);
+    PyObject *obj = PyWeakref_GET_OBJECT(self->_obj_ref);
     Py_INCREF(obj);
     return obj;
 }
@@ -1917,9 +1917,9 @@ ObjectInfo_set_obj(ObjectInfoObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &obj))
         return NULL;
 
-    Py_DECREF(self->__obj_ref);
-    self->__obj_ref = PyWeakref_NewRef(obj, self->__obj_ref_callback);
-    if (!self->__obj_ref)
+    Py_DECREF(self->_obj_ref);
+    self->_obj_ref = PyWeakref_NewRef(obj, self->_obj_ref_callback);
+    if (!self->_obj_ref)
         return NULL;
 
     Py_RETURN_NONE;
@@ -1953,8 +1953,8 @@ ObjectInfo__storm_object_info__(PyObject *self, void *closure)
 static int
 ObjectInfo_traverse(ObjectInfoObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->__obj_ref);
-    Py_VISIT(self->__obj_ref_callback);
+    Py_VISIT(self->_obj_ref);
+    Py_VISIT(self->_obj_ref_callback);
     Py_VISIT(self->cls_info);
     Py_VISIT(self->event);
     Py_VISIT(self->variables);
@@ -1965,8 +1965,8 @@ ObjectInfo_traverse(ObjectInfoObject *self, visitproc visit, void *arg)
 static int
 ObjectInfo_clear(ObjectInfoObject *self)
 {
-    Py_CLEAR(self->__obj_ref);
-    Py_CLEAR(self->__obj_ref_callback);
+    Py_CLEAR(self->_obj_ref);
+    Py_CLEAR(self->_obj_ref_callback);
     Py_CLEAR(self->cls_info);
     Py_CLEAR(self->event);
     Py_CLEAR(self->variables);
@@ -1997,10 +1997,10 @@ ObjectInfo_richcompare(PyObject *self, PyObject *other, int op)
 static void
 ObjectInfo_dealloc(ObjectInfoObject *self)
 {
-    if (self->__weakreflist)
+    if (self->_weakreflist)
         PyObject_ClearWeakRefs((PyObject *)self);
-    Py_CLEAR(self->__obj_ref);
-    Py_CLEAR(self->__obj_ref_callback);
+    Py_CLEAR(self->_obj_ref);
+    Py_CLEAR(self->_obj_ref_callback);
     Py_CLEAR(self->cls_info);
     Py_CLEAR(self->event);
     Py_CLEAR(self->variables);
@@ -2058,7 +2058,7 @@ static PyTypeObject ObjectInfo_Type = {
     (traverseproc)ObjectInfo_traverse, /*tp_traverse*/
     (inquiry)ObjectInfo_clear, /*tp_clear*/
     ObjectInfo_richcompare, /*tp_richcompare*/
-    offsetof(ObjectInfoObject, __weakreflist), /*tp_weaklistoffset*/
+    offsetof(ObjectInfoObject, _weakreflist), /*tp_weaklistoffset*/
     0,                      /*tp_iter*/
     0,                      /*tp_iternext*/
     ObjectInfo_methods,     /*tp_methods*/
