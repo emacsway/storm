@@ -8,6 +8,10 @@ Improvements
   package, which can apply patches "in parallel" against a set of stores. See
   the module docstring for more information.
 - Added tox testing support.
+- Re-raise DB-API exceptions wrapped in exception types that inherit from
+  both StormError and the appropriate DB-API exception type, rather than
+  injecting virtual base classes. This preserves existing exception handling
+  in applications while also being a viable approach in Python 3.
 
 Bug fixes
 ---------

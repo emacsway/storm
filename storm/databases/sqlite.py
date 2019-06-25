@@ -35,14 +35,12 @@ except ImportError:
         sqlite = dummy
 
 from storm.variables import Variable, RawStrVariable
-from storm.database import Database, Connection, Result
-from storm.exceptions import install_exceptions, DatabaseModuleError
+from storm.database import Database, Connection, ConnectionWrapper, Result
+from storm.exceptions import (
+    DatabaseModuleError, OperationalError, wrap_exceptions)
 from storm.expr import (
     Insert, Select, SELECT, Undef, SQLRaw, Union, Except, Intersect,
     compile, compile_insert, compile_select)
-
-
-install_exceptions(sqlite)
 
 
 compile = compile.create_child()
@@ -160,7 +158,7 @@ class SQLiteConnection(Connection):
         while True:
             try:
                 return Connection.raw_execute(self, statement, params)
-            except sqlite.OperationalError as e:
+            except OperationalError as e:
                 if str(e) != "database is locked":
                     raise
                 elif now() - started < self._database._timeout:
@@ -180,6 +178,8 @@ class SQLite(Database):
 
     connection_factory = SQLiteConnection
 
+    _exception_module = sqlite
+
     def __init__(self, uri):
         super(SQLite, self).__init__(uri)
         if sqlite is dummy:
@@ -190,10 +190,12 @@ class SQLite(Database):
         self._journal_mode = uri.options.get("journal_mode")
         self._foreign_keys = uri.options.get("foreign_keys")
 
-    def raw_connect(self):
+    def _raw_connect(self):
         # See the story at the end to understand why we set isolation_level.
-        raw_connection = sqlite.connect(self._filename, timeout=self._timeout,
-                                        isolation_level=None)
+        raw_connection = ConnectionWrapper(
+            sqlite.connect(
+                self._filename, timeout=self._timeout, isolation_level=None),
+            self)
         if self._synchronous is not None:
             raw_connection.execute("PRAGMA synchronous = %s" %
                                    (self._synchronous,))
@@ -207,6 +209,10 @@ class SQLite(Database):
                                    (self._foreign_keys,))
 
         return raw_connection
+
+    def raw_connect(self):
+        with wrap_exceptions(self):
+            return self._raw_connect()
 
 
 create_from_uri = SQLite

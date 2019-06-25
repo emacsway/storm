@@ -20,12 +20,14 @@
 #
 from __future__ import print_function
 
-from abc import ABCMeta
-import types
+from contextlib import contextmanager
+import sys
+
+import six
 
 
 class StormError(Exception):
-    __metaclass__ = ABCMeta
+    pass
 
 
 class CompileError(StormError):
@@ -140,14 +142,44 @@ class ConnectionBlockedError(StormError):
     """Raised when an attempt is made to use a blocked connection."""
 
 
-def install_exceptions(module):
-    for exception in (Error, Warning, DatabaseError, InternalError,
-                      OperationalError, ProgrammingError, IntegrityError,
-                      DataError, NotSupportedError, InterfaceError):
-        module_exception = getattr(module, exception.__name__, None)
-        if (module_exception is not None and
-            isinstance(module_exception, (type, types.ClassType))):
-            # XXX This may need to be revisited when porting to Python 3 if
-            # virtual subclasses are still ignored for exception handling
-            # (https://bugs.python.org/issue12029).
-            exception.register(module_exception)
+# More generic exceptions must come later.  For convenience, use the order
+# of definition above and then reverse it.
+_wrapped_exception_types = tuple(reversed((
+    Error,
+    Warning,
+    InterfaceError,
+    DatabaseError,
+    InternalError,
+    OperationalError,
+    ProgrammingError,
+    IntegrityError,
+    DataError,
+    NotSupportedError,
+    )))
+
+
+@contextmanager
+def wrap_exceptions(database):
+    """Context manager that re-raises DB exceptions as StormError instances."""
+    try:
+        yield
+    except Exception as e:
+        module = database._exception_module
+        if module is None:
+            # This connection does not support re-raising database exceptions.
+            raise
+        for wrapper_type in _wrapped_exception_types:
+            dbapi_type = getattr(module, wrapper_type.__name__, None)
+            if (dbapi_type is not None and
+                    isinstance(dbapi_type, six.class_types) and
+                    isinstance(e, dbapi_type)):
+                wrapped = database._wrap_exception(wrapper_type, e)
+                tb = sys.exc_info()[2]
+                # As close to "raise wrapped.with_traceback(tb) from e" as
+                # we can manage, but without causing syntax errors on
+                # various versions of Python.
+                if six.PY2:
+                    six.reraise(wrapped, None, tb)
+                else:
+                    six.raise_from(wrapped.with_traceback(tb), e)
+        raise
