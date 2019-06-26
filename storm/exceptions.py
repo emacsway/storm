@@ -166,7 +166,7 @@ def wrap_exceptions(database):
     except Exception as e:
         module = database._exception_module
         if module is None:
-            # This connection does not support re-raising database exceptions.
+            # This backend does not support re-raising database exceptions.
             raise
         for wrapper_type in _wrapped_exception_types:
             dbapi_type = getattr(module, wrapper_type.__name__, None)
