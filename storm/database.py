@@ -622,7 +622,7 @@ class Database(object):
         """
         if wrapper_type not in self._exception_types:
             self._exception_types[wrapper_type] = type(
-                wrapper_type.__name__, (wrapper_type, dbapi_type), {})
+                dbapi_type.__name__, (dbapi_type, wrapper_type), {})
         return self._exception_types[wrapper_type]
 
     def _wrap_exception(self, wrapper_type, exception):
