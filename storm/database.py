@@ -606,11 +606,11 @@ class Database(object):
         Storm historically defined its own exception types as ABCs and
         registered the DB-API exception types as virtual subclasses.
         However, this doesn't work properly in Python 3
-        (https://bugs.python.org/issue12029), and in any case is somewhat
-        ugly.  Instead, we create and cache subclass-specific exception
-        types that inherit from both StormError and the DB-API exception
-        type, allowing code that catches either StormError (or subclasses)
-        or the specific DB-API exceptions to keep working.
+        (https://bugs.python.org/issue12029).  Instead, we create and cache
+        subclass-specific exception types that inherit from both StormError
+        and the DB-API exception type, allowing code that catches either
+        StormError (or subclasses) or the specific DB-API exceptions to keep
+        working.
 
         @type wrapper_type: L{type}
         @param wrapper_type: The type of the wrapper exception to create; a
