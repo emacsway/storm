@@ -50,14 +50,13 @@ from storm.expr import (
 from storm.variables import (
     Variable, ListVariable, JSONVariable as BaseJSONVariable)
 from storm.properties import SimpleProperty
-from storm.database import Database, Connection, Result
+from storm.database import Database, Connection, ConnectionWrapper, Result
 from storm.exceptions import (
-    install_exceptions, DatabaseError, DatabaseModuleError, InterfaceError,
-    OperationalError, ProgrammingError, TimeoutError, Error)
+    DatabaseError, DatabaseModuleError, InterfaceError,
+    OperationalError, ProgrammingError, TimeoutError, Error, wrap_exceptions)
 from storm.tracer import TimeoutTracer
 
 
-install_exceptions(psycopg2)
 compile = compile.create_child()
 
 
@@ -366,6 +365,8 @@ class Postgres(Database):
 
     connection_factory = PostgresConnection
 
+    _exception_module = psycopg2
+
     # An integer representing the server version.  If the server does
     # not support the server_version_num variable, this will be set to
     # 0.  In practice, this means the variable will be 0 or greater
@@ -397,15 +398,31 @@ class Postgres(Database):
                 "'autocommit', 'serializable', 'read-committed'" %
                 (isolation,))
 
-    def raw_connect(self):
-        raw_connection = psycopg2.connect(self._dsn)
+    _psycopg_error_attributes = ("pgerror", "pgcode", "cursor", "diag")
+
+    def _make_combined_exception_type(self, wrapper_type, dbapi_type):
+        combined_type = super(Postgres, self)._make_combined_exception_type(
+            wrapper_type, dbapi_type)
+        for name in self._psycopg_error_attributes:
+            setattr(combined_type, name, lambda err: getattr(err, "_" + name))
+        return combined_type
+
+    def _wrap_exception(self, wrapper_type, exception):
+        wrapped = super(Postgres, self)._wrap_exception(
+            wrapper_type, exception)
+        for name in self._psycopg_error_attributes:
+            setattr(wrapped, "_" + name, getattr(exception, name))
+        return wrapped
+
+    def _raw_connect(self):
+        raw_connection = ConnectionWrapper(psycopg2.connect(self._dsn), self)
 
         if self._version is None:
             cursor = raw_connection.cursor()
 
             try:
                 cursor.execute("SHOW server_version_num")
-            except psycopg2.ProgrammingError:
+            except ProgrammingError:
                 self._version = 0
             else:
                 self._version = int(cursor.fetchone()[0])
@@ -414,6 +431,10 @@ class Postgres(Database):
         raw_connection.set_client_encoding("UTF8")
         raw_connection.set_isolation_level(self._isolation)
         return raw_connection
+
+    def raw_connect(self):
+        with wrap_exceptions(self):
+            return self._raw_connect()
 
 
 create_from_uri = Postgres

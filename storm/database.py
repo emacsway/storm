@@ -27,6 +27,12 @@ supported in modules in L{storm.databases}.
 
 from __future__ import print_function
 
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
+from functools import wraps
+
 from storm.expr import Expr, State, compile
 # Circular import: imported at the end of the module.
 # from storm.tracer import trace
@@ -34,7 +40,7 @@ from storm.variables import Variable
 from storm.xid import Xid
 from storm.exceptions import (
     ClosedError, ConnectionBlockedError, DatabaseError, DisconnectionError,
-    Error, ProgrammingError)
+    Error, ProgrammingError, wrap_exceptions)
 from storm.uri import URI
 import storm
 
@@ -161,6 +167,78 @@ class Result(object):
         backend subclass to convert them.
         """
         return row
+
+
+class CursorWrapper(object):
+    """A DB-API cursor, wrapping exceptions as StormError instances."""
+
+    def __init__(self, cursor, database):
+        super(CursorWrapper, self).__setattr__('_cursor', cursor)
+        super(CursorWrapper, self).__setattr__('_database', database)
+
+    def __getattr__(self, name):
+        attr = getattr(self._cursor, name)
+        if isinstance(attr, Callable):
+            @wraps(attr)
+            def wrapper(*args, **kwargs):
+                with wrap_exceptions(self._database):
+                    return attr(*args, **kwargs)
+
+            return wrapper
+        else:
+            return attr
+
+    def __setattr__(self, name, value):
+        return setattr(self._cursor, name, value)
+
+    def __iter__(self):
+        with wrap_exceptions(self._database):
+            for item in self._cursor:
+                yield item
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, tb):
+        with wrap_exceptions(self._database):
+            self.close()
+
+
+class ConnectionWrapper(object):
+    """A DB-API connection, wrapping exceptions as StormError instances."""
+
+    def __init__(self, connection, database):
+        self.__dict__['_connection'] = connection
+        self.__dict__['_database'] = database
+
+    def __getattr__(self, name):
+        attr = getattr(self._connection, name)
+        if isinstance(attr, Callable):
+            @wraps(attr)
+            def wrapper(*args, **kwargs):
+                with wrap_exceptions(self._database):
+                    return attr(*args, **kwargs)
+
+            return wrapper
+        else:
+            return attr
+
+    def __setattr__(self, name, value):
+        return setattr(self._connection, name, value)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, tb):
+        with wrap_exceptions(self._database):
+            if type_ is None and value is None and tb is None:
+                self.commit()
+            else:
+                self.rollback()
+
+    def cursor(self):
+        with wrap_exceptions(self._database):
+            return CursorWrapper(self._connection.cursor(), self._database)
 
 
 class Connection(object):
@@ -483,6 +561,7 @@ class Database(object):
 
     def __init__(self, uri=None):
         self._uri = uri
+        self._exception_types = {}
 
     def get_uri(self):
         """Return the URI object this database was created with."""
@@ -511,6 +590,58 @@ class Database(object):
         @return: A DB-API connection object.
         """
         raise NotImplementedError
+
+    @property
+    def _exception_module(self):
+        """The module where appropriate DB-API exception types are defined.
+
+        Subclasses should set this if they support re-raising DB-API
+        exceptions as StormError instances.
+        """
+        return None
+
+    def _make_combined_exception_type(self, wrapper_type, dbapi_type):
+        """Make a combined exception based on both DB-API and Storm.
+
+        Storm historically defined its own exception types as ABCs and
+        registered the DB-API exception types as virtual subclasses.
+        However, this doesn't work properly in Python 3
+        (https://bugs.python.org/issue12029).  Instead, we create and cache
+        subclass-specific exception types that inherit from both StormError
+        and the DB-API exception type, allowing code that catches either
+        StormError (or subclasses) or the specific DB-API exceptions to keep
+        working.
+
+        @type wrapper_type: L{type}
+        @param wrapper_type: The type of the wrapper exception to create; a
+            subclass of L{StormError}.
+        @type dbapi_type: L{type}
+        @param dbapi_type: The type of the DB-API exception.
+
+        @return: The combined exception type.
+        """
+        if wrapper_type not in self._exception_types:
+            self._exception_types[wrapper_type] = type(
+                dbapi_type.__name__, (dbapi_type, wrapper_type), {})
+        return self._exception_types[wrapper_type]
+
+    def _wrap_exception(self, wrapper_type, exception):
+        """Wrap a DB-API exception as a StormError instance.
+
+        This constructs a wrapper exception with the same C{args} as the
+        DB-API exception.  Subclasses may override this to set additional
+        attributes on the wrapper exception.
+
+        @type wrapper_type: L{type}
+        @param wrapper_type: The type of the wrapper exception to create; a
+            subclass of L{StormError}.
+        @type exception: L{Exception}
+        @param exception: The DB-API exception to wrap.
+
+        @return: The wrapped exception; an instance of L{StormError}.
+        """
+        return self._make_combined_exception_type(
+            wrapper_type, exception.__class__)(*exception.args)
 
 
 def convert_param_marks(statement, from_param_mark, to_param_mark):

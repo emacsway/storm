@@ -96,6 +96,9 @@ class RawCursor(object):
 
 class FakeConnection(object):
 
+    def __init__(self):
+        self._database = Database()
+
     def _check_disconnect(self, _function, *args, **kwargs):
         return _function(*args, **kwargs)
 
