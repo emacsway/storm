@@ -173,8 +173,8 @@ class CursorWrapper(object):
     """A DB-API cursor, wrapping exceptions as StormError instances."""
 
     def __init__(self, cursor, database):
-        self.__dict__['_cursor'] = cursor
-        self.__dict__['_database'] = database
+        super(CursorWrapper, self).__setattr__('_cursor', cursor)
+        super(CursorWrapper, self).__setattr__('_database', database)
 
     def __getattr__(self, name):
         attr = getattr(self._cursor, name)
