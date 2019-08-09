@@ -41,6 +41,8 @@ import os
 import re
 import types
 
+import six
+
 from storm.locals import StormError, Int
 
 
@@ -120,10 +122,11 @@ class PatchApplier(object):
         except:
             type, value, traceback = sys.exc_info()
             patch_repr = getattr(module, "__file__", version)
-            raise BadPatchError, \
-                  "Patch %s failed: %s: %s" % \
-                      (patch_repr, type.__name__, str(value)), \
-                      traceback
+            six.reraise(
+                BadPatchError,
+                "Patch %s failed: %s: %s" %
+                    (patch_repr, type.__name__, str(value)),
+                traceback)
         self._committer.commit()
 
     def apply_all(self):
