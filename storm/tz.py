@@ -76,8 +76,8 @@ class tzoffset(datetime.tzinfo):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "%s(%s, %s)" % (self.__class__.__name__,
-                               `self._name`,
+        return "%s(%r, %s)" % (self.__class__.__name__,
+                               self._name,
                                self._offset.days*86400+self._offset.seconds)
 
     __reduce__ = object.__reduce__
@@ -163,7 +163,7 @@ class _ttinfo(object):
         for attr in self.__slots__:
             value = getattr(self, attr)
             if value is not None:
-                l.append("%s=%s" % (attr, `value`))
+                l.append("%s=%r" % (attr, value))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(l))
 
     def __eq__(self, other):
@@ -202,7 +202,7 @@ class tzfile(datetime.tzinfo):
         elif hasattr(fileobj, "name"):
             self._filename = fileobj.name
         else:
-            self._filename = `fileobj`
+            self._filename = repr(fileobj)
 
         # From tzfile(5):
         #
@@ -467,7 +467,7 @@ class tzfile(datetime.tzinfo):
 
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, `self._filename`)
+        return "%s(%r)" % (self.__class__.__name__, self._filename)
 
     def __reduce__(self):
         if not os.path.isfile(self._filename):
@@ -617,7 +617,7 @@ class tzstr(tzrange):
         return relativedelta.relativedelta(**kwargs)
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, `self._s`)
+        return "%s(%r)" % (self.__class__.__name__, self._s)
 
 class _tzicalvtzcomp:
     def __init__(self, tzoffsetfrom, tzoffsetto, isdst,
@@ -687,7 +687,7 @@ class _tzicalvtz(datetime.tzinfo):
         return self._find_comp(dt).tzname
 
     def __repr__(self):
-        return "<tzicalvtz %s>" % `self._tzid`
+        return "<tzicalvtz %r>" % self._tzid
 
     __reduce__ = object.__reduce__
 
@@ -703,7 +703,7 @@ class tzical:
         elif hasattr(fileobj, "name"):
             self._s = fileobj.name
         else:
-            self._s = `fileobj`
+            self._s = repr(fileobj)
 
         self._vtz = {}
 
@@ -861,7 +861,7 @@ class tzical:
                 invtz = True
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, `self._s`)
+        return "%s(%r)" % (self.__class__.__name__, self._s)
 
 if sys.platform != "win32":
     TZFILES = ["/etc/localtime", "localtime"]
