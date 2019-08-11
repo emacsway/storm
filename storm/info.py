@@ -148,6 +148,8 @@ class ClassInfo(dict):
     def __ne__(self, other):
         return self is not other
 
+    __hash__ = object.__hash__
+
 
 class ObjectInfo(dict):
 

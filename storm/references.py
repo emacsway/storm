@@ -208,6 +208,8 @@ class Reference(object):
     def __ne__(self, other):
         return Not(self == other)
 
+    __hash__ = object.__hash__
+
 
 class ReferenceSet(object):
 
