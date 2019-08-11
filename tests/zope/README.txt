@@ -139,16 +139,19 @@ Let's make sure aborting transactions works, too.
 
 At this point a store.find should return the new object.
 
-  >>> sorted([person.name for person in store.find(Person)])
-  [u'Imposter!', u'John Doe']
+  >>> for name in sorted(person.name for person in store.find(Person)):
+  ...     print(name)
+  Imposter!
+  John Doe
 
 All this means is that the data has been flushed to the database; it's
 still not committed.  If we abort the transaction the new Person
 object should disappear.
 
   >>> transaction.abort()
-  >>> [person.name for person in store.find(Person)]
-  [u'John Doe']
+  >>> for person in store.find(Person):
+  ...     print(person.name)
+  John Doe
 
 Excellent!  As you can see, ZStorm makes working with SQL databases
 and Zope 3 very natural.

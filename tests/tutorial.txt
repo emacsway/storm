@@ -73,8 +73,10 @@ Let's create an object of the defined class.
 >>> joe = Person()
 >>> joe.name = u"Joe Johnes"
 
->>> print("%r, %r" % (joe.id, joe.name))
-None, u'Joe Johnes'
+>>> print(joe.id)
+None
+>>> print(joe.name)
+Joe Johnes
 
 }}}
 
@@ -85,8 +87,10 @@ store we've created above.
 >>> store.add(joe)
 <...Person object at 0x...>
 
->>> print("%r, %r" % (joe.id, joe.name))
-None, u'Joe Johnes'
+>>> print(joe.id)
+None
+>>> print(joe.name)
+Joe Johnes
 
 }}}
 
@@ -116,8 +120,10 @@ the person named ''Joe Johnes''?
 {{{#!python
 >>> person = store.find(Person, Person.name == u"Joe Johnes").one()
 
->>> print("%r, %r" % (person.id, person.name))
-1, u'Joe Johnes'
+>>> print(person.id)
+1
+>>> print(person.name)
+Joe Johnes
 
 >>>
 }}}
@@ -127,8 +133,8 @@ The person is there!  Yeah, ok, you were expecting it. :-)
 We can also retrieve the object using its primary key.
 
 {{{#!python
->>> store.get(Person, 1).name
-u'Joe Johnes'
+>>> print(store.get(Person, 1).name)
+Joe Johnes
 
 }}}
 
@@ -168,12 +174,16 @@ Flushes may also happen explicitly.
 >>> store.add(mary)
 <...Person object at 0x...>
 
->>> print("%r, %r" % (mary.id, mary.name))
-None, u'Mary Margaret'
+>>> print(mary.id)
+None
+>>> print(mary.name)
+Mary Margaret
 
 >>> store.flush()
->>> print("%r, %r" % (mary.id, mary.name))
-2, u'Mary Margaret'
+>>> print(mary.id)
+2
+>>> print(mary.name)
+Mary Margaret
 
 }}}
 
@@ -184,8 +194,8 @@ that objects are tied to a database to change them using expressions.
 
 {{{#!python
 >>> store.find(Person, Person.name == u"Mary Margaret").set(name=u"Mary Maggie")
->>> mary.name
-u'Mary Maggie'
+>>> print(mary.name)
+Mary Maggie
 
 }}}
 
@@ -240,8 +250,10 @@ Erm.. nothing happened?
 Actually, something happened.. with Joe.  He's back!
 
 {{{#!python
->>> print("%r, %r" % (joe.id, joe.name))
-1, u'Joe Johnes'
+>>> print(joe.id)
+1
+>>> print(joe.name)
+Joe Johnes
 
 }}}
 
@@ -279,8 +291,10 @@ Then, create a new company.
 {{{
 >>> circus = Company(u"Circus Inc.")
 
->>> print("%r, %r" % (circus.id, circus.name))
-None, u'Circus Inc.'
+>>> print(circus.id)
+None
+>>> print(circus.name)
+Circus Inc.
 
 }}}
 
@@ -327,8 +341,12 @@ Let's give life to Ben now.
 {{{#!python
 >>> ben = store.add(Employee(u"Ben Bill"))
 
->>> print("%r, %r, %r" % (ben.id, ben.name, ben.company_id))
-None, u'Ben Bill', None
+>>> print(ben.id)
+None
+>>> print(ben.name)
+Ben Bill
+>>> print(ben.company_id)
+None
 
 }}}
 
@@ -338,8 +356,10 @@ that Bill works on Circus.
 {{{#!python
 >>> ben.company = circus
 
->>> print("%r, %r" % (ben.company_id, ben.company.name))
-None, u'Circus Inc.'
+>>> print(ben.company_id)
+None
+>>> print(ben.company.name)
+Circus Inc.
 
 }}}
 
@@ -354,8 +374,10 @@ updated as well (before being flushed!).
 {{{#!python
 >>> store.flush()
 
->>> print("%r, %r" % (ben.company_id, ben.company.name))
-1, u'Circus Inc.'
+>>> print(ben.company_id)
+1
+>>> print(ben.company.name)
+Circus Inc.
 
 }}}
 
@@ -381,8 +403,8 @@ happen if we changed '''just the id''' for Ben's company?
 
 {{{#!python
 >>> ben.company_id = 2
->>> ben.company.name
-u'Sweets Inc.'
+>>> print(ben.company.name)
+Sweets Inc.
 >>> ben.company is sweets
 True
 
@@ -419,10 +441,12 @@ working for a given company.
 1
 
 >>> for employee in sweets.employees:
-...     print("%r, %r" % (employee.id, employee.name))
+...     print(employee.id)
+...     print(employee.name)
 ...     print(employee is ben)
 ...
-1, u'Ben Bill'
+1
+Ben Bill
 True
 
 }}}
@@ -555,11 +579,14 @@ we could easily define a reversed relationship:
 ...                                     CompanyAccountant.company_id,
 ...                                     Company.id)
 
->>> sorted([company.name for company in frank.companies])
-[u'Circus Inc.', u'Sweets Inc.']
+>>> for name in sorted(company.name for company in frank.companies):
+...     print(name)
+Circus Inc.
+Sweets Inc.
 
->>> [company.name for company in karl.companies]
-[u'Sweets Inc.']
+>>> for company in karl.companies:
+...     print(company.name)
+Sweets Inc.
 
 }}}
 
@@ -580,8 +607,9 @@ First, with an implicit join.
 ...                     Employee.name.like(u"Ben %"))
 ...
 
->>> [company.name for company in result]
-[u'Sweets Inc.']
+>>> for company in result:
+...     print(company.name)
+Sweets Inc.
 
 }}}
 
@@ -592,8 +620,9 @@ complex SQL joins to Storm queries.
 >>> origin = [Company, Join(Employee, Employee.company_id == Company.id)]
 >>> result = store.using(*origin).find(Company, Employee.name.like(u"Ben %"))
 
->>> [company.name for company in result]
-[u'Sweets Inc.']
+>>> for company in result:
+...     print(company.name)
+Sweets Inc.
 
 }}}
 
@@ -604,8 +633,9 @@ were named Ben, that'd have been easier.
 {{{#!python
 >>> result = sweets.employees.find(Employee.name.like(u"Ben %"))
 
->>> [employee.name for employee in result]
-[u'Ben Bill']
+>>> for employee in result:
+...     print(employee.name)
+Ben Bill
 
 }}}
 
@@ -642,14 +672,22 @@ that demonstrate how it works:
 
 >>> result = store.find(Employee)
 
->>> [employee.name for employee in result.order_by(Employee.name)]
-[u'Ben Bill', u'Garry Glare', u'Mike Mayer']
+>>> for employee in result.order_by(Employee.name):
+...     print(employee.name)
+Ben Bill
+Garry Glare
+Mike Mayer
 
->>> [employee.name for employee in result.order_by(Desc(Employee.name))]
-[u'Mike Mayer', u'Garry Glare', u'Ben Bill']
+>>> for employee in result.order_by(Desc(Employee.name)):
+...     print(employee.name)
+Mike Mayer
+Garry Glare
+Ben Bill
 
->>> [employee.name for employee in result.order_by(Employee.name)[:2]]
-[u'Ben Bill', u'Garry Glare']
+>>> for employee in result.order_by(Employee.name)[:2]:
+...     print(employee.name)
+Ben Bill
+Garry Glare
 
 }}}
 
@@ -666,8 +704,11 @@ employee.  This may be achieved with a query like follows:
 ...                     Employee.company_id == Company.id,
 ...                     Employee.name.like(u"Ben %"))
 
->>> [(company.name, employee.name) for company, employee in result]
-[(u'Sweets Inc.', u'Ben Bill')]
+>>> for company, employee in result:
+...     print(company.name)
+...     print(employee.name)
+Sweets Inc.
+Ben Bill
 
 }}}
 
@@ -722,8 +763,8 @@ Now, let's see if it works.
 >>> brazil.name = u"Brazil"
 >>> brazil.currency_id = 1
 
->>> brazil.currency.symbol
-u'BRL'
+>>> print(brazil.currency.symbol)
+BRL
 
 }}}
 
@@ -781,8 +822,9 @@ For instance:
 
 {{{#!python
 >>> result = store.execute(Select(Person.name, Person.id == 1))
->>> result.get_one()
-(u'Joe Johnes',)
+>>> (name,) = result.get_one()
+>>> print(name)
+Joe Johnes
 
 }}}
 
@@ -829,8 +871,8 @@ For instance:
 from storm.locals import SQL
 
 >>> ruy.name = SQL("(SELECT name || ? FROM person WHERE id=4)", (" Ritcher",))
->>> ruy.name
-u'Ruy Ritcher'
+>>> print(ruy.name)
+Ruy Ritcher
 
 }}}
 
@@ -865,8 +907,10 @@ Now we can easily make the query we want, in a straightforward way:
 ...                     Employee.id > AnotherEmployee.id)
 
 >>> for employee1, employee2 in result:
-...     print((employee1.name, employee2.name))
-(u'Mike Mayer', u'Ben Bill')
+...     print(employee1.name)
+...     print(employee2.name)
+Mike Mayer
+Ben Bill
 
 }}}
 
@@ -895,7 +939,7 @@ custom stream may also be used.
 ...                     Employee.company_id == AnotherEmployee.company_id,
 ...                     Employee.id > AnotherEmployee.id)
 >>> list(result)
-[...] EXECUTE: u'SELECT employee.company_id, employee.id, employee.name, "...".company_id, "...".id, "...".name FROM employee, employee AS "..." WHERE employee.company_id = "...".company_id AND employee.id > "...".id', ()
+[...] EXECUTE: ...'SELECT employee.company_id, employee.id, employee.name, "...".company_id, "...".id, "...".name FROM employee, employee AS "..." WHERE employee.company_id = "...".company_id AND employee.id > "...".id', ()
 [...] DONE
 [(<...Employee object at ...>, <...Employee object at ...>)]
 

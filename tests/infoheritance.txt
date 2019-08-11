@@ -224,12 +224,16 @@ easier.
 ...     return result
 
 >>> secret_agent = get_persons(store, info_classes=[SecretAgent]).one()
->>> secret_agent.name, secret_agent.info.passcode
-(u'Dick Tracy', u'secret!')
+>>> print(secret_agent.name)
+Dick Tracy
+>>> print(secret_agent.info.passcode)
+secret!
 
 >>> teacher = get_persons(store, info_classes=[Teacher]).one()
->>> teacher.name, teacher.info.school
-(u'Mrs. Cohen', u'Cameron Elementary School')
+>>> print(teacher.name)
+Mrs. Cohen
+>>> print(teacher.info.school)
+Cameron Elementary School
 
 >>>
 }}}
@@ -260,8 +264,10 @@ We create and load in-memory objects the same way we do stored ones.
 >>> store.rollback()
 
 >>> ghost = get_persons(store, info_classes=[Ghost]).one()
->>> ghost.name, ghost.info.friendly
-(u'Casper', True)
+>>> print(ghost.name)
+Casper
+>>> print(ghost.info.friendly)
+True
 
 >>>
 }}}
