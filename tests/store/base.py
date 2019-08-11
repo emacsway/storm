@@ -1170,7 +1170,7 @@ class StoreTest(object):
 
     def test_find_values_with_no_arguments(self):
         result = self.store.find(Foo).order_by(Foo.id)
-        self.assertRaises(FeatureError, result.values().next)
+        self.assertRaises(FeatureError, next, result.values())
 
     def test_find_slice_values(self):
         values = self.store.find(Foo).order_by(Foo.id)[1:2].values(Foo.id)

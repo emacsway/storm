@@ -195,12 +195,12 @@ class DatabaseTest(object):
                                           "ORDER BY id DESC")
         iter1 = iter(result1)
         iter2 = iter(result2)
-        self.assertEquals(iter1.next(), (10, "Title 10"))
-        self.assertEquals(iter2.next(), (20, "Title 20"))
-        self.assertEquals(iter1.next(), (20, "Title 20"))
-        self.assertEquals(iter2.next(), (10, "Title 10"))
-        self.assertRaises(StopIteration, iter1.next)
-        self.assertRaises(StopIteration, iter2.next)
+        self.assertEquals(next(iter1), (10, "Title 10"))
+        self.assertEquals(next(iter2), (20, "Title 20"))
+        self.assertEquals(next(iter1), (20, "Title 20"))
+        self.assertEquals(next(iter2), (10, "Title 10"))
+        self.assertRaises(StopIteration, next, iter1)
+        self.assertRaises(StopIteration, next, iter2)
 
     def test_get_insert_identity(self):
         result = self.connection.execute("INSERT INTO test (title) "
@@ -386,7 +386,7 @@ class DatabaseTest(object):
     def test_wb_result_iter_goes_through_from_database(self):
         result = self.connection.execute("SELECT one, two FROM number")
         result.from_database = self.from_database
-        self.assertEquals(iter(result).next(), (2, 3))
+        self.assertEquals(next(iter(result)), (2, 3))
 
     def test_rowcount_insert(self):
         # All supported backends support rowcount, so far.
