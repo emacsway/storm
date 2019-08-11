@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 
+import six
 from six.moves import builtins
 
 
@@ -1083,11 +1084,14 @@ class Mock(object):
             return 0
         return result
 
-    def __nonzero__(self):
+    def __bool__(self):
         try:
-            return self.__mocker_act__("nonzero")
+            return self.__mocker_act__("bool")
         except MatchError as e:
             return True
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def __iter__(self):
         # XXX On py3k, when next() becomes __next__(), we'll be able
@@ -1187,7 +1191,7 @@ class Action(object):
                 result = None
             elif kind == "len":
                 result = len(object)
-            elif kind == "nonzero":
+            elif kind == "bool":
                 result = bool(object)
             elif kind == "iter":
                 result = iter(object)
@@ -1280,7 +1284,7 @@ class Path(object):
                 result = "del %s[%r]" % (result, action.args[0])
             elif action.kind == "len":
                 result = "len(%s)" % result
-            elif action.kind == "nonzero":
+            elif action.kind == "bool":
                 result = "bool(%s)" % result
             elif action.kind == "iter":
                 result = "iter(%s)" % result

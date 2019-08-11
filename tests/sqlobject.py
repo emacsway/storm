@@ -23,6 +23,8 @@ from __future__ import print_function
 import datetime
 import operator
 
+import six
+
 from storm.database import create_database
 from storm.exceptions import NoneError
 from storm.sqlobject import *
@@ -813,16 +815,20 @@ class SQLObjectTest(TestHelper):
         result = self.Person.select()
         self.assertEquals(list(result.__iter__())[0].name, "John Joe")
 
-    def test_result_set__nonzero__(self):
+    def test_result_set__bool__(self):
         """
-        L{SQLObjectResultSet.__nonzero__} returns C{True} if the result set
+        L{SQLObjectResultSet.__bool__} returns C{True} if the result set
         contains results.  If it contains no results, C{False} is
         returned.
         """
         result = self.Person.select()
-        self.assertEquals(result.__nonzero__(), True)
+        self.assertEquals(result.__bool__(), True)
+        if six.PY2:
+            self.assertEquals(result.__nonzero__(), True)
         result = self.Person.select(self.Person.q.name == "No Person")
-        self.assertEquals(result.__nonzero__(), False)
+        self.assertEquals(result.__bool__(), False)
+        if six.PY2:
+            self.assertEquals(result.__nonzero__(), False)
 
     def test_result_set_is_empty(self):
         """

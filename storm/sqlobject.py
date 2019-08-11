@@ -28,6 +28,8 @@ from __future__ import print_function
 import re
 import warnings
 
+import six
+
 from storm.properties import (
     RawStr, Int, Bool, Float, DateTime, Date, TimeDelta)
 from storm.references import Reference, ReferenceSet
@@ -550,14 +552,17 @@ class SQLObjectResultSet(object):
         result_set = self._without_prejoins()._result_set
         return item in result_set
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Return C{True} if this result set contains any results.
 
         @note: This method is provided for compatibility with SQL Object.  For
             new code, prefer L{is_empty}.  It's compatible with L{ResultSet}
-            which doesn't have a C{__nonzero__} implementation.
+            which doesn't have a C{__bool__} implementation.
         """
         return not self.is_empty()
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def is_empty(self):
         """Return C{True} if this result set doesn't contain any results."""
