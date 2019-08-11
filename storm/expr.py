@@ -410,6 +410,7 @@ like_escape = {
 
 class Comparable(object):
     __slots__ = ()
+    __hash__ = object.__hash__
 
     def __eq__(self, other):
         if other is not None and not isinstance(other, (Expr, Variable)):
@@ -480,6 +481,9 @@ class Comparable(object):
         if not isinstance(other, (Expr, Variable)):
             other = getattr(self, "variable_factory", Variable)(value=other)
         return Div(self, other)
+
+    __floordiv__ = __div__
+    __truediv__ = __div__
 
     def __mod__(self, other):
         if not isinstance(other, (Expr, Variable)):
