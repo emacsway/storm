@@ -308,16 +308,13 @@ class PostgresConnection(Connection):
     def to_database(self, params):
         """
         Like L{Connection.to_database}, but this converts datetime
-        types to strings, unicode to UTF-8 encoded strings, and
-        strings to L{psycopg2.Binary} instances.
+        types to strings, and strings to L{psycopg2.Binary} instances.
         """
         for param in params:
             if isinstance(param, Variable):
                 param = param.get(to_db=True)
             if isinstance(param, (datetime, date, time, timedelta)):
                 yield str(param)
-            elif isinstance(param, unicode):
-                yield param.encode("UTF-8")
             elif isinstance(param, str):
                 yield psycopg2.Binary(param)
             else:
