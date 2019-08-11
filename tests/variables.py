@@ -145,8 +145,9 @@ class VariableTest(TestHelper):
         try:
             variable.set(None)
         except NoneError as e:
-            pass
-        self.assertTrue("column_name" in str(e))
+            self.assertTrue("column_name" in str(e))
+        else:
+            self.fail("NoneError not raised")
 
     def test_set_none_with_allow_none_and_column_with_table(self):
         column = Column("column_name", SQLToken("table_name"))
@@ -154,8 +155,9 @@ class VariableTest(TestHelper):
         try:
             variable.set(None)
         except NoneError as e:
-            pass
-        self.assertTrue("table_name.column_name" in str(e))
+            self.assertTrue("table_name.column_name" in str(e))
+        else:
+            self.fail("NoneError not raised")
 
     def test_set_with_validator(self):
         args = []

@@ -499,10 +499,9 @@ class CompileTest(TestHelper):
         self.assertEquals(statement, "child")
 
     def test_precedence(self):
-        for i in range(10):
-            exec("e%d = SQLRaw('%d')" % (i, i))
-        expr = And(e1, Or(e2, e3),
-                   Add(e4, Mul(e5, Sub(e6, Div(e7, Div(e8, e9))))))
+        e = [SQLRaw('%d' % i) for i in range(10)]
+        expr = And(e[1], Or(e[2], e[3]),
+                   Add(e[4], Mul(e[5], Sub(e[6], Div(e[7], Div(e[8], e[9]))))))
         statement = compile(expr)
         self.assertEquals(statement, "1 AND (2 OR 3) AND 4+5*(6-7/(8/9))")
 
@@ -2136,10 +2135,9 @@ class CompileTest(TestHelper):
 class CompilePythonTest(TestHelper):
 
     def test_precedence(self):
-        for i in range(10):
-            exec("e%d = SQLRaw('%d')" % (i, i))
-        expr = And(e1, Or(e2, e3),
-                   Add(e4, Mul(e5, Sub(e6, Div(e7, Div(e8, e9))))))
+        e = [SQLRaw('%d' % i) for i in range(10)]
+        expr = And(e[1], Or(e[2], e[3]),
+                   Add(e[4], Mul(e[5], Sub(e[6], Div(e[7], Div(e[8], e[9]))))))
         py_expr = compile_python(expr)
         self.assertEquals(py_expr, "1 and (2 or 3) and 4+5*(6-7/(8/9))")
 
