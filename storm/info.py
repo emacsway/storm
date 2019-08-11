@@ -22,6 +22,8 @@ from __future__ import print_function
 
 from weakref import ref
 
+import six
+
 from storm.exceptions import ClassInfoError
 from storm.expr import Column, Desc, TABLE
 from storm.expr import compile, Table
@@ -194,7 +196,7 @@ class ObjectInfo(dict):
         self.event.emit("object-deleted")
 
     def checkpoint(self):
-        for variable in self.variables.itervalues():
+        for variable in six.itervalues(self.variables):
             variable.checkpoint()
 
 

@@ -20,6 +20,7 @@
 #
 from __future__ import print_function
 
+import six
 from six.moves.urllib.parse import quote
 
 from storm.exceptions import URIError
@@ -104,7 +105,7 @@ class URI(object):
             append(escape(self.database, "/"))
         if self.options:
             options = ["%s=%s" % (escape(key), escape(value))
-                       for key, value in sorted(self.options.iteritems())]
+                       for key, value in sorted(six.iteritems(self.options))]
             append("?")
             append("&".join(options))
         return "".join(tokens)

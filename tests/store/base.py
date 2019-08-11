@@ -4946,7 +4946,7 @@ class StoreTest(object):
         foo = self.store.get(DictFoo, 20)
         foo["a"] = 1
 
-        self.assertEquals(foo.items(), [("a", 1)])
+        self.assertEquals(list(six.iteritems(foo)), [("a", 1)])
 
         new_obj = DictFoo()
         new_obj.id = 40

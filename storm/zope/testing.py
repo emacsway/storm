@@ -23,6 +23,7 @@ from __future__ import print_function
 import os
 import shutil
 
+import six
 import transaction
 
 from testresources import TestResourceManager
@@ -99,8 +100,9 @@ class ZStormResourceManager(TestResourceManager):
             # Adapt the old databases format to the new one, for backward
             # compatibility. This should be eventually dropped.
             if isinstance(databases, dict):
-                databases = [{"name": name, "uri": uri, "schema": schema}
-                             for name, (uri, schema) in databases.iteritems()]
+                databases = [
+                    {"name": name, "uri": uri, "schema": schema}
+                    for name, (uri, schema) in six.iteritems(databases)]
 
             # Provide the global IZStorm utility before applying patches, so
             # patch code can get the ztorm object if needed (e.g. looking up

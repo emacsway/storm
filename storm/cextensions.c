@@ -1931,7 +1931,7 @@ ObjectInfo_checkpoint(ObjectInfoObject *self, PyObject *args)
     PyObject *column, *variable, *tmp;
     Py_ssize_t i = 0;
 
-    /* for variable in self.variables.itervalues(): */
+    /* for variable in six.itervalues(self.variables): */
     while (PyDict_Next(self->variables, &i, &column, &variable)) {
         /* variable.checkpoint() */
         CATCH(NULL, tmp = PyObject_CallMethod(variable, "checkpoint", NULL));
