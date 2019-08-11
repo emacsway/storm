@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 
+import six
 from six.moves import builtins
 
 
@@ -556,7 +557,7 @@ class MockerBase(object):
                             explicitly requested via the L{passthrough()}
                             method.
         """
-        if isinstance(object, basestring):
+        if isinstance(object, six.string_types):
             if name is None:
                 name = object
             import_stack = object.split(".")

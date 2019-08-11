@@ -1053,7 +1053,7 @@ class StoreTest(object):
     def test_find_max_unicode(self):
         title = self.store.find(Foo).max(Foo.title)
         self.assertEquals(title, "Title 30")
-        self.assertTrue(isinstance(title, unicode))
+        self.assertTrue(isinstance(title, six.text_type))
 
     def test_find_max_with_empty_result_and_disallow_none(self):
         class Bar(object):
@@ -1074,7 +1074,7 @@ class StoreTest(object):
     def test_find_min_unicode(self):
         title = self.store.find(Foo).min(Foo.title)
         self.assertEquals(title, "Title 10")
-        self.assertTrue(isinstance(title, unicode))
+        self.assertTrue(isinstance(title, six.text_type))
 
     def test_find_min_with_empty_result_and_disallow_none(self):
         class Bar(object):
@@ -1158,7 +1158,7 @@ class StoreTest(object):
         values = list(values)
         self.assertEquals(values, ["Title 30", "Title 20", "Title 10"])
         self.assertEquals([type(value) for value in values],
-                          [unicode, unicode, unicode])
+                          [six.text_type, six.text_type, six.text_type])
 
     def test_find_multiple_values(self):
         result = self.store.find(Foo).order_by(Foo.id)
@@ -5935,7 +5935,7 @@ class StoreTest(object):
             try:
                 self.assertEquals(myfoo.title, title)
             except AssertionError as e:
-                raise AssertionError(unicode(e, 'replace') +
+                raise AssertionError(six.text_type(e, 'replace') +
                     " (ensure your database was created with CREATE DATABASE"
                     " ... CHARACTER SET utf8)")
 

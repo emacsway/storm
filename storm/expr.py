@@ -157,21 +157,24 @@ class Compile(object):
             created internally (and thus can't be accessed).
         @param join: The string token to use to put between
             subexpressions. Defaults to ", ".
-        @param raw: If true, any string or unicode expression or
-            subexpression will not be further compiled.
-        @param token: If true, any string or unicode expression will
-            be considered as a SQLToken, and quoted properly.
+        @param raw: If true, any string (str or unicode on Python 2, str on
+            Python 3) expression or subexpression will not be further
+            compiled.
+        @param token: If true, any string (str or unicode on Python 2, str
+            on Python 3) expression will be considered as a SQLToken, and
+            quoted properly.
         """
         # FASTPATH This method is part of the fast path.  Be careful when
         #          changing it (try to profile any changes).
 
         expr_type = type(expr)
+        string_types = (str,) if six.PY3 else (str, unicode)
 
         if (expr_type is SQLRaw or
-            raw and (expr_type is str or expr_type is unicode)):
+                raw and any(expr_type is t for t in string_types)):
             return expr
 
-        if token and (expr_type is str or expr_type is unicode):
+        if token and any(expr_type is t for t in string_types):
             expr = SQLToken(expr)
 
         if state is None:
@@ -182,15 +185,14 @@ class Compile(object):
             compiled = []
             for subexpr in expr:
                 subexpr_type = type(subexpr)
-                if subexpr_type is SQLRaw or raw and (subexpr_type is str or
-                                                      subexpr_type is unicode):
+                if (subexpr_type is SQLRaw or
+                        raw and any(subexpr_type is t for t in string_types)):
                     statement = subexpr
                 elif subexpr_type is tuple or subexpr_type is list:
                     state.precedence = outer_precedence
                     statement = self(subexpr, state, join, raw, token)
                 else:
-                    if token and (subexpr_type is unicode or
-                                  subexpr_type is str):
+                    if token and any(subexpr_type is t for t in string_types):
                         subexpr = SQLToken(subexpr)
                     statement = self._compile_single(subexpr, state,
                                                      outer_precedence)
@@ -307,13 +309,13 @@ SELECT = Context("SELECT")
 # --------------------------------------------------------------------
 # Builtin type support
 
-@compile.when(str)
-def compile_str(compile, expr, state):
+@compile.when(bytes)
+def compile_bytes(compile, expr, state):
     state.parameters.append(RawStrVariable(expr))
     return "?"
 
-@compile.when(unicode)
-def compile_unicode(compile, expr, state):
+@compile.when(six.text_type)
+def compile_text(compile, expr, state):
     state.parameters.append(UnicodeVariable(expr))
     return "?"
 
@@ -362,7 +364,8 @@ def compile_none(compile, expr, state):
     return "NULL"
 
 
-@compile_python.when(str, unicode, float, type(None), *six.integer_types)
+@compile_python.when(
+    bytes, six.text_type, float, type(None), *six.integer_types)
 def compile_python_builtin(compile, expr, state):
     return repr(expr)
 
@@ -512,20 +515,20 @@ class Comparable(object):
         return Upper(self)
 
     def startswith(self, prefix):
-        if not isinstance(prefix, unicode):
-            raise ExprError("Expected unicode argument, got %r" % type(prefix))
+        if not isinstance(prefix, six.text_type):
+            raise ExprError("Expected text argument, got %r" % type(prefix))
         pattern = prefix.translate(like_escape) + u"%"
         return Like(self, pattern, u"!")
 
     def endswith(self, suffix):
-        if not isinstance(suffix, unicode):
-            raise ExprError("Expected unicode argument, got %r" % type(suffix))
+        if not isinstance(suffix, six.text_type):
+            raise ExprError("Expected text argument, got %r" % type(suffix))
         pattern = u"%" + suffix.translate(like_escape)
         return Like(self, pattern, u"!")
 
     def contains_string(self, substring):
-        if not isinstance(substring, unicode):
-            raise ExprError("Expected unicode argument, got %r" % type(substring))
+        if not isinstance(substring, six.text_type):
+            raise ExprError("Expected text argument, got %r" % type(substring))
         pattern = u"%" + substring.translate(like_escape) + u"%"
         return Like(self, pattern, u"!")
 
@@ -1418,7 +1421,7 @@ class Desc(SuffixExpr):
 # --------------------------------------------------------------------
 # Plain SQL expressions.
 
-class SQLRaw(str):
+class SQLRaw(six.text_type):
     """Subtype to mark a string as something that shouldn't be compiled.
 
     This is handled internally by the compiler.
@@ -1426,7 +1429,7 @@ class SQLRaw(str):
     __slots__ = ()
 
 
-class SQLToken(str):
+class SQLToken(six.text_type):
     """Marker for strings that should be considered as a single SQL token.
 
     These strings will be quoted, when needed.

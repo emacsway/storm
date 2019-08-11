@@ -28,6 +28,8 @@ from __future__ import print_function
 import re
 import warnings
 
+import six
+
 from storm.properties import (
     RawStr, Int, Bool, Float, DateTime, Date, TimeDelta)
 from storm.references import Reference, ReferenceSet
@@ -207,7 +209,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
 
 
         id_type = dict.setdefault("_idType", int)
-        id_cls = {int: Int, str: RawStr, unicode: AutoUnicode}[id_type]
+        id_cls = {int: Int, bytes: RawStr, six.text_type: AutoUnicode}[id_type]
         dict["id"] = id_cls(id_name, primary=True, default=AutoReload)
         attr_to_prop[id_name] = "id"
 
@@ -331,7 +333,7 @@ class SQLObjectBase(Storm):
         if not isinstance(orderBy, (tuple, list)):
             orderBy = (orderBy,)
         for item in orderBy:
-            if isinstance(item, basestring):
+            if isinstance(item, six.string_types):
                 desc = item.startswith("-")
                 if desc:
                     item = item[1:]
@@ -605,7 +607,7 @@ class SQLObjectResultSet(object):
         return self._copy(prejoinClauseTables=prejoinClauseTables)
 
     def sum(self, attribute):
-        if isinstance(attribute, basestring):
+        if isinstance(attribute, six.string_types):
             attribute = SQL(attribute)
         result_set = self._without_prejoins()._result_set
         return result_set.sum(attribute)
@@ -677,13 +679,21 @@ class PropertyAdapter(object):
 
 
 class AutoUnicodeVariable(Variable):
-    """Unlike UnicodeVariable, this will try to convert str to unicode."""
+    """A more relaxed version of UnicodeVariable that accepts native strings.
+
+    On Python 2, this will try to convert bytes to text, to make it easier
+    to port code from SQLObject that expects to be able to set this variable
+    to a native string.
+
+    On Python 3, this behaves the same way as UnicodeVariable and only
+    accepts text, since native strings are already Unicode.
+    """
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, basestring):
-            raise TypeError("Expected basestring, found %s" % repr(type(value)))
-        return unicode(value)
+        if not isinstance(value, six.string_types):
+            raise TypeError("Expected a string type, found %r" % type(value))
+        return six.text_type(value)
 
 class AutoUnicode(SimpleProperty):
     variable_class = AutoUnicodeVariable

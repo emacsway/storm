@@ -33,6 +33,8 @@ except ImportError:
     from collections import Callable
 from functools import wraps
 
+import six
+
 from storm.expr import Expr, State, compile
 # Circular import: imported at the end of the module.
 # from storm.tracer import trace
@@ -677,7 +679,7 @@ def create_database(uri):
         - "anything:..." Where 'anything' has previously been registered
           with L{register_scheme}.
     """
-    if isinstance(uri, basestring):
+    if isinstance(uri, six.string_types):
         uri = URI(uri)
     if uri.scheme in _database_schemes:
         factory = _database_schemes[uri.scheme]

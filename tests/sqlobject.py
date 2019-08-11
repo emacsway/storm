@@ -23,6 +23,8 @@ from __future__ import print_function
 import datetime
 import operator
 
+import six
+
 from storm.database import create_database
 from storm.exceptions import NoneError
 from storm.sqlobject import *
@@ -123,7 +125,7 @@ class SQLObjectTest(TestHelper):
             _defaultOrder = "-Person.name"
             _table = "person"
             _idName = "name"
-            _idType = unicode
+            _idType = six.text_type
             age = IntCol()
             ts = UtcDateTimeCol()
 
@@ -1185,7 +1187,7 @@ class SQLObjectTest(TestHelper):
         # properties:
         class Person(self.SQLObject):
             _idName = "name"
-            _idType = unicode
+            _idType = six.text_type
             address = ForeignKey(foreignKey="Phone", dbName="address_id",
                                  notNull=True)
 

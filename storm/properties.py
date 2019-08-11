@@ -147,6 +147,7 @@ class Float(SimpleProperty):
 class Decimal(SimpleProperty):
     variable_class = DecimalVariable
 
+# Bytes might be a clearer name nowadays, but we keep this for compatibility.
 class RawStr(SimpleProperty):
     variable_class = RawStrVariable
 

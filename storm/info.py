@@ -22,6 +22,8 @@ from __future__ import print_function
 
 from weakref import ref
 
+import six
+
 from storm.exceptions import ClassInfoError
 from storm.expr import Column, Desc, TABLE
 from storm.expr import compile, Table
@@ -75,7 +77,7 @@ class ClassInfo(dict):
 
         self.cls = cls
 
-        if isinstance(self.table, basestring):
+        if isinstance(self.table, six.string_types):
             self.table = Table(self.table)
 
         pairs = []
@@ -133,7 +135,7 @@ class ClassInfo(dict):
                 __order__ = (__order__,)
             self.default_order = []
             for item in __order__:
-                if isinstance(item, basestring):
+                if isinstance(item, six.string_types):
                     if item.startswith("-"):
                         prop = Desc(getattr(cls, item[1:]))
                     else:

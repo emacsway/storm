@@ -1560,10 +1560,14 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
 
     /*
       expr_type = type(expr)
+      string_types = (str,) if six.PY3 else (str, unicode)
       if (expr_type is SQLRaw or
-          raw and (expr_type is str or expr_type is unicode)):
+              raw and any(expr_type is t for t in string_types)):
           return expr
     */
+    /* Note that PyString_CheckExact(o) is defined at the top of this file
+       to 0 on Python 3, so we can safely translate the string_types checks
+       here to PyString_CheckExact || PyUnicode_CheckExact. */
     if ((PyObject *)expr->ob_type == SQLRaw ||
         (raw && (PyString_CheckExact(expr) || PyUnicode_CheckExact(expr)))) {
         /* Pass our reference on. */
@@ -1571,7 +1575,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
     }
 
     /*
-       if token and (expr_type is str or expr_type is unicode):
+       if token and any(expr_type is t for t in string_types):
            expr = SQLToken(expr)
     */
     if (token && (PyString_CheckExact(expr) || PyUnicode_CheckExact(expr))) {
@@ -1601,8 +1605,8 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             PyObject *subexpr = PySequence_Fast_GET_ITEM(sequence, i);
             /*
                subexpr_type = type(subexpr)
-               if subexpr_type is SQLRaw or raw and (subexpr_type is str or
-                                                     subexpr_type is unicode):
+               if (subexpr_type is SQLRaw or
+                       raw and any(subexpr_type is t for t in string_types)):
             */
             if ((PyObject *)subexpr->ob_type == (PyObject *)SQLRaw ||
                 (raw && (PyString_CheckExact(subexpr) ||
@@ -1623,8 +1627,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             /* else: */
             } else {
                 /*
-                   if token and (subexpr_type is unicode or
-                                 subexpr_type is str):
+                   if token and any(subexpr_type is t for t in string_types):
                 */
                 if (token && (PyUnicode_CheckExact(subexpr) ||
                               PyString_CheckExact(subexpr))) {
