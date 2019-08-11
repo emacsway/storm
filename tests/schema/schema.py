@@ -67,9 +67,7 @@ class SchemaTest(MockerTestCase):
         for name in list(sys.modules):
             if name in self._package_names:
                 del sys.modules[name]
-            elif filter(
-                None,
-                [name.startswith("%s." % x) for x in self._package_names]):
+            elif any(name.startswith("%s." % x) for x in self._package_names):
                 del sys.modules[name]
 
         super(SchemaTest, self).tearDown()
