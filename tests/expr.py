@@ -192,7 +192,7 @@ class ExprTest(TestHelper):
 
     def test_startswith(self):
         expr = Func1()
-        self.assertRaises(ExprError, expr.startswith, "not a unicode string")
+        self.assertRaises(ExprError, expr.startswith, b"not a unicode string")
 
         like_expr = expr.startswith(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
@@ -202,7 +202,7 @@ class ExprTest(TestHelper):
 
     def test_endswith(self):
         expr = Func1()
-        self.assertRaises(ExprError, expr.startswith, "not a unicode string")
+        self.assertRaises(ExprError, expr.startswith, b"not a unicode string")
 
         like_expr = expr.endswith(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
@@ -213,7 +213,7 @@ class ExprTest(TestHelper):
     def test_contains_string(self):
         expr = Func1()
         self.assertRaises(
-            ExprError, expr.contains_string, "not a unicode string")
+            ExprError, expr.contains_string, b"not a unicode string")
 
         like_expr = expr.contains_string(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
@@ -571,11 +571,11 @@ class CompileTest(TestHelper):
         self.assertRaises(CompileError, compile, object())
         self.assertRaises(CompileError, compile, [object()])
 
-    def test_str(self):
+    def test_bytes(self):
         state = State()
-        statement = compile("str", state)
+        statement = compile(b"str", state)
         self.assertEquals(statement, "?")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable("str")])
+        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"str")])
 
     def test_unicode(self):
         state = State()
@@ -1221,11 +1221,11 @@ class CompileTest(TestHelper):
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_like(self):
-        expr = Like(Func1(), "value")
+        expr = Like(Func1(), b"value")
         state = State()
         statement = compile(expr, state)
         self.assertEquals(statement, "func1() LIKE ?")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable("value")])
+        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"value")])
 
         expr = Func1().like("Hello")
         state = State()
@@ -1234,19 +1234,19 @@ class CompileTest(TestHelper):
         self.assertVariablesEqual(state.parameters, [Variable("Hello")])
 
     def test_like_escape(self):
-        expr = Like(Func1(), "value", "!")
+        expr = Like(Func1(), b"value", b"!")
         state = State()
         statement = compile(expr, state)
         self.assertEquals(statement, "func1() LIKE ? ESCAPE ?")
         self.assertVariablesEqual(state.parameters,
-                          [RawStrVariable("value"), RawStrVariable("!")])
+                          [RawStrVariable(b"value"), RawStrVariable(b"!")])
 
-        expr = Func1().like("Hello", "!")
+        expr = Func1().like("Hello", b"!")
         state = State()
         statement = compile(expr, state)
         self.assertEquals(statement, "func1() LIKE ? ESCAPE ?")
         self.assertVariablesEqual(state.parameters,
-                          [Variable("Hello"), RawStrVariable("!")])
+                          [Variable("Hello"), RawStrVariable(b"!")])
 
     def test_like_compareable_case(self):
         expr = Func1().like("Hello")
@@ -1257,11 +1257,11 @@ class CompileTest(TestHelper):
         self.assertEquals(expr.case_sensitive, False)
 
     def test_in(self):
-        expr = In(Func1(), "value")
+        expr = In(Func1(), b"value")
         state = State()
         statement = compile(expr, state)
         self.assertEquals(statement, "func1() IN (?)")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable("value")])
+        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"value")])
 
         expr = In(Func1(), elem1)
         state = State()
@@ -2166,8 +2166,8 @@ class CompilePythonTest(TestHelper):
         self.assertRaises(CompileError, compile_python, Expr())
         self.assertRaises(CompileError, compile_python, Func1())
 
-    def test_str(self):
-        py_expr = compile_python("str")
+    def test_bytes(self):
+        py_expr = compile_python(b"str")
         self.assertEquals(py_expr, "'str'")
 
     def test_unicode(self):

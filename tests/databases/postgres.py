@@ -147,11 +147,12 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEquals(encoding.upper(), "UTF8")
 
     def test_unicode(self):
-        raw_str = "\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
+        raw_str = b"\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
         uni_str = raw_str.decode("UTF-8")
 
         connection = self.database.connect()
-        connection.execute("INSERT INTO test VALUES (1, '%s')" % raw_str)
+        connection.execute(
+            (b"INSERT INTO test VALUES (1, '%s')" % raw_str).decode("UTF-8"))
 
         result = connection.execute("SELECT title FROM test WHERE id=1")
         title = result.get_one()[0]
@@ -160,11 +161,12 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEquals(title, uni_str)
 
     def test_unicode_array(self):
-        raw_str = "\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
+        raw_str = b"\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
         uni_str = raw_str.decode("UTF-8")
 
         connection = self.database.connect()
-        result = connection.execute("""SELECT '{"%s"}'::TEXT[]""" % raw_str)
+        result = connection.execute(
+            (b"""SELECT '{"%s"}'::TEXT[]""" % raw_str).decode("UTF-8"))
         self.assertEquals(result.get_one()[0], [uni_str])
         result = connection.execute("""SELECT ?::TEXT[]""", ([uni_str],))
         self.assertEquals(result.get_one()[0], [uni_str])
