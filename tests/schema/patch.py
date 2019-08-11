@@ -20,9 +20,10 @@
 #
 from __future__ import print_function
 
-import traceback
-import sys
 import os
+import shutil
+import sys
+import traceback
 
 from storm.locals import StormError, Store, create_database
 from storm.schema.patch import (
@@ -174,7 +175,11 @@ class PatchApplierTest(MockerTestCase):
 
     def remove_all_modules(self):
         for filename in os.listdir(self.pkgdir):
-            os.unlink(os.path.join(self.pkgdir, filename))
+            path = os.path.join(self.pkgdir, filename)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
     def prepare_for_transaction_check(self):
         self.another_store.execute("DELETE FROM test")
