@@ -20,11 +20,12 @@
 #
 from __future__ import print_function
 
-from cStringIO import StringIO
 import tempfile
 import logging
 import shutil
 import sys
+
+from six.moves import cStringIO as StringIO
 
 from tests import mocker
 
