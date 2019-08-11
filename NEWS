@@ -19,6 +19,8 @@ Bug fixes
 - Fixed SQLObject tests to work with SQLObject 2.x by using Unicode strings for
   LIKE operations.
 - Cope with ThreadTransactionManager changes in transaction 2.4.0.
+- Move tests to a new storm.tests package to avoid package manager conflicts
+  (bug #1199578).
 
 API changes
 -----------

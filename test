@@ -48,7 +48,7 @@ def test_with_runner(runner):
         runner.verbosity = 2
 
     # Import late, after any and all sys.path jiggery pokery.
-    from tests import find_tests
+    from storm.tests import find_tests
 
     suite = find_tests(args)
     result = runner.run(suite)

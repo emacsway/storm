@@ -69,7 +69,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=["six"],
-    test_suite="tests.find_tests",
+    test_suite="storm.tests.find_tests",
     tests_require=tests_require,
     extras_require={"test": tests_require},
     )
