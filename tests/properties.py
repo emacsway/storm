@@ -25,6 +25,8 @@ from decimal import Decimal as decimal
 import gc
 import uuid
 
+import six
+
 from storm.compat import json
 from storm.exceptions import NoneError, PropertyPathError
 from storm.properties import PropertyPublisherMeta
@@ -986,8 +988,8 @@ class PropertyPublisherMetaTest(TestHelper):
     def setUp(self):
         TestHelper.setUp(self)
 
-        class Base(object):
-            __metaclass__ = PropertyPublisherMeta
+        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+            pass
 
         class Class(Base):
             __storm_table__ = "mytable"

@@ -23,6 +23,8 @@ from __future__ import print_function
 from weakref import ref
 import gc
 
+import six
+
 from storm.exceptions import ClassInfoError
 from storm.properties import Property
 from storm.variables import Variable
@@ -571,8 +573,7 @@ class ClassAliasTest(TestHelper):
                 cls = type.__new__(meta_cls, name, bases, dict)
                 cls.__storm_table__ = "HAH! GOTCH YA!"
                 return cls
-        class Class(object):
-            __metaclass__ = MetaClass
+        class Class(six.with_metaclass(MetaClass, object)):
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
         Alias = ClassAlias(Class, "USE_THIS")

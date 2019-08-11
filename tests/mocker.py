@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 
+import six
 from six.moves import builtins
 
 
@@ -324,7 +325,14 @@ class classinstancemethod(object):
         return bound_method
 
 
-class MockerBase(object):
+class MockerMeta(type):
+
+    def __init__(self, name, bases, dict):
+        # Make independent lists on each subclass, inheriting from parent.
+        self._recorders = list(getattr(self, "_recorders", ()))
+
+
+class MockerBase(six.with_metaclass(MockerMeta, object)):
     """Controller of mock objects.
 
     A mocker instance is used to command recording and replay of
@@ -379,11 +387,6 @@ class MockerBase(object):
 
     # For convenience only.
     on = expect
-
-    class __metaclass__(type):
-        def __init__(self, name, bases, dict):
-            # Make independent lists on each subclass, inheriting from parent.
-            self._recorders = list(getattr(self, "_recorders", ()))
 
     def __init__(self):
         self._recorders = self._recorders[:]
