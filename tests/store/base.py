@@ -427,7 +427,7 @@ class StoreTest(object):
         self.get_cache(self.store).set_size(0)
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
         del blob
         gc.collect()
@@ -459,7 +459,7 @@ class StoreTest(object):
         self.get_cache(self.store).set_size(0)
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
         del blob
         gc.collect()
@@ -502,7 +502,7 @@ class StoreTest(object):
             bin = Pickle()
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
         del blob
 
@@ -4704,7 +4704,7 @@ class StoreTest(object):
             bin = Pickle()
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
@@ -4726,7 +4726,7 @@ class StoreTest(object):
             bin = Pickle()
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
@@ -4763,7 +4763,7 @@ class StoreTest(object):
             bin = CustomPickle()
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
@@ -4798,7 +4798,7 @@ class StoreTest(object):
             blobs = ReferenceSet(Foo.id, PickleBlob.foo_id)
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
@@ -4828,7 +4828,7 @@ class StoreTest(object):
         class FooBlobRefSet(Foo):
             blobs = ReferenceSet(Foo.id, PickleBlob.foo_id)
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
@@ -4907,7 +4907,7 @@ class StoreTest(object):
         from the database and is used whenever possible.
         """
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         class PickleBlob(object):
             __storm_table__ = "bin"
             id = Int(primary=True)
@@ -4923,7 +4923,7 @@ class StoreTest(object):
             bin = Pickle()
 
         blob = self.store.get(Blob, 20)
-        blob.bin = "\x80\x02}q\x01U\x01aK\x01s."
+        blob.bin = b"\x80\x02}q\x01U\x01aK\x01s."
         self.store.flush()
 
         pickle_blob = self.store.get(PickleBlob, 20)
