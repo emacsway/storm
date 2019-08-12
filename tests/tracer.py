@@ -130,7 +130,7 @@ class DebugTracerTest(TestHelper):
 
     def setUp(self):
         super(DebugTracerTest, self).setUp()
-        self.stream = self.mocker.mock(file)
+        self.stream = self.mocker.mock(type(sys.stderr))
         self.tracer = DebugTracer(self.stream)
 
         datetime_mock = self.mocker.replace("datetime.datetime")

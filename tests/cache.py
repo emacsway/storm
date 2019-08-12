@@ -136,7 +136,7 @@ class BaseCacheTest(TestHelper):
         """
         size = 10
         cache = self.Cache(size)
-        for value in xrange(size):
+        for value in range(size):
             cache.add(StubObjectInfo(value))
         self.assertEqual(len(cache.get_cached()), size)
 
@@ -257,7 +257,7 @@ class TestGenerationalCache(BaseCacheTest):
         """
         size = 10
         cache = GenerationalCache(size)
-        for value in xrange(5 * size):
+        for value in range(5 * size):
             cache.add(StubObjectInfo(value))
         self.assertEquals(len(cache.get_cached()), size * 2)
 
@@ -300,7 +300,7 @@ class TestGenerationalCache(BaseCacheTest):
         size = 10
         cache = GenerationalCache(size * 100)
         cache.set_size(size)
-        for value in xrange(size * 10):
+        for value in range(size * 10):
             cache.add(StubObjectInfo(value))
         self.assertEquals(len(cache.get_cached()), size * 2)
 

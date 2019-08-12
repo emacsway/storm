@@ -22,7 +22,6 @@
 
 from __future__ import print_function
 
-from cStringIO import StringIO
 import decimal
 import gc
 import operator
@@ -30,7 +29,7 @@ from uuid import uuid4
 import weakref
 
 import six
-from six.moves import cPickle as pickle
+from six.moves import cPickle as pickle, cStringIO as StringIO
 
 from storm.references import Reference, ReferenceSet, Proxy
 from storm.database import Result, STATE_DISCONNECTED
