@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 
+import six
 from six.moves import builtins
 
 
@@ -1109,13 +1110,13 @@ def find_object_name(obj, depth=0):
         frame = sys._getframe(depth+1)
     except:
         return None
-    for name, frame_obj in frame.f_locals.iteritems():
+    for name, frame_obj in six.iteritems(frame.f_locals):
         if frame_obj is obj:
             return name
     self = frame.f_locals.get("self")
     if self is not None:
         try:
-            items = list(self.__dict__.iteritems())
+            items = list(six.iteritems(self.__dict__))
         except:
             pass
         else:
@@ -1264,7 +1265,7 @@ class Path(object):
                 result = "del %s.%s" % (result, action.args[0])
             elif action.kind == "call":
                 args = [repr(x) for x in action.args]
-                items = list(action.kwargs.iteritems())
+                items = list(six.iteritems(action.kwargs))
                 items.sort()
                 for pair in items:
                     args.append("%s=%r" % pair)
@@ -1384,7 +1385,7 @@ def match_params(args1, kwargs1, args2, kwargs2):
 
     # Either we have the same number of kwargs, or unknown keywords are
     # accepted (KWARGS was used), so check just the ones in kwargs1.
-    for key, arg1 in kwargs1.iteritems():
+    for key, arg1 in six.iteritems(kwargs1):
         if key not in kwargs2:
             return False
         arg2 = kwargs2[key]
@@ -1914,7 +1915,7 @@ def global_replace(remove, install):
     for referrer in gc.get_referrers(remove):
         if (type(referrer) is dict and
             referrer.get("__mocker_replace__", True)):
-            for key, value in referrer.items():
+            for key, value in list(six.iteritems(referrer)):
                 if value is remove:
                     referrer[key] = install
 
@@ -1986,7 +1987,7 @@ class Patcher(Task):
         for kind in self._monitored:
             attr = self._get_kind_attr(kind)
             seen = set()
-            for obj in self._monitored[kind].itervalues():
+            for obj in six.itervalues(self._monitored[kind]):
                 cls = type(obj)
                 if issubclass(cls, type):
                     cls = obj
@@ -2000,7 +2001,7 @@ class Patcher(Task):
                                     self.execute)
 
     def restore(self):
-        for obj, attr, original in self._patched.itervalues():
+        for obj, attr, original in six.itervalues(self._patched):
             if original is Undefined:
                 delattr(obj, attr)
             else:

@@ -28,6 +28,8 @@ from __future__ import print_function
 import re
 import warnings
 
+import six
+
 from storm.properties import (
     RawStr, Int, Bool, Float, DateTime, Date, TimeDelta)
 from storm.references import Reference, ReferenceSet
@@ -164,7 +166,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
         dict["__storm_table__"] = table_name
 
         attr_to_prop = {}
-        for attr, prop in dict.items():
+        for attr, prop in list(six.iteritems(dict)):
             attr_to_prop[attr] = attr
             if isinstance(prop, ForeignKey):
                 db_name = prop.kwargs.get("dbName", attr)
@@ -224,7 +226,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
         property_registry.add_property(obj, getattr(obj, "id"),
                                        "<table %s>" % table_name)
 
-        for fake_name, real_name in attr_to_prop.items():
+        for fake_name, real_name in list(six.iteritems(attr_to_prop)):
             prop = getattr(obj, real_name)
             if fake_name != real_name:
                 property_registry.add_property(obj, prop, fake_name)
@@ -298,7 +300,7 @@ class SQLObjectBase(Storm):
         self._init(None)
 
     def set(self, **kwargs):
-        for attr, value in kwargs.iteritems():
+        for attr, value in six.iteritems(kwargs):
             setattr(self, attr, value)
 
     def destroySelf(self):
@@ -406,7 +408,7 @@ class SQLObjectResultSet(object):
 
     def _copy(self, **kwargs):
         copy = self.__class__(self._cls, **kwargs)
-        for name, value in self.__dict__.iteritems():
+        for name, value in six.iteritems(self.__dict__):
             if name[1:] not in kwargs and name != "_finished_result_set":
                 setattr(copy, name, value)
         return copy

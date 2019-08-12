@@ -15,6 +15,8 @@ import time
 import sys
 import os
 
+import six
+
 relativedelta = None
 parser = None
 rrule = None
@@ -714,7 +716,7 @@ class tzical:
 
     def get(self, tzid=None):
         if tzid is None:
-            keys = self._vtz.keys()
+            keys = list(six.iterkeys(self._vtz))
             if len(keys) == 0:
                 raise Exception("no timezones defined")
             elif len(keys) > 1:

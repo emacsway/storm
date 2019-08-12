@@ -744,7 +744,7 @@ def compile_insert(compile, insert, state):
     state.context = EXPR
     values = insert.values
     if values is Undef:
-        values = [tuple(insert.map.itervalues())]
+        values = [tuple(six.itervalues(insert.map))]
     if isinstance(values, Expr):
         compiled_values = compile(values, state)
     else:

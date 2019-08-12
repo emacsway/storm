@@ -474,7 +474,7 @@ class Store(object):
         self._dirty = flushing
 
         predecessors = {}
-        for (before_info, after_info), n in self._order.iteritems():
+        for (before_info, after_info), n in six.iteritems(self._order):
             if n > 0:
                 before_set = predecessors.get(after_info)
                 if before_set is None:
@@ -853,7 +853,7 @@ class Store(object):
             del obj_info["primary_vars"]
 
     def _iter_alive(self):
-        return self._alive.values()
+        return list(six.itervalues(self._alive))
 
     def _enable_change_notification(self, obj_info):
         obj_info.event.emit("start-tracking-changes", self._event)
@@ -1406,7 +1406,7 @@ class ResultSet(object):
                     for column in changes:
                         obj_info.variables[column].set(AutoReload)
         else:
-            changes = changes.items()
+            changes = list(six.iteritems(changes))
             for obj in cached:
                 for column, value in changes:
                     variables = get_obj_info(obj).variables

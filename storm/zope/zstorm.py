@@ -31,6 +31,7 @@ import weakref
 
 from uuid import uuid4
 
+import six
 from zope.interface import implementer
 
 import transaction
@@ -206,11 +207,11 @@ class ZStorm(object):
 
     def iterstores(self):
         """Iterate C{name, store} 2-tuples."""
-        # items is explicitly used here, instead of iteritems, to
-        # avoid the problem where a store is deallocated during
+        # We explicitly copy the list of items before iterating over
+        # it to avoid the problem where a store is deallocated during
         # iteration causing RuntimeError: dictionary changed size
         # during iteration.
-        for store, name in self._name_index.items():
+        for store, name in list(six.iteritems(self._name_index)):
             yield name, store
 
     def get_name(self, store):

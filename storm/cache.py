@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import itertools
 
+import six
+
 
 class Cache(object):
     """Prevents recently used objects from being deallocated.
@@ -142,9 +144,10 @@ class GenerationalCache(object):
         objects, but no more than twice that number.
         """
         self._size = size
-        cache = itertools.islice(itertools.chain(self._new_cache.iteritems(),
-                                                 self._old_cache.iteritems()),
-                                 0, size)
+        cache = itertools.islice(
+            itertools.chain(six.iteritems(self._new_cache),
+                            six.iteritems(self._old_cache)),
+            0, size)
         self._new_cache = dict(cache)
         self._old_cache.clear()
 

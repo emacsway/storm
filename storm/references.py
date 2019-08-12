@@ -22,6 +22,8 @@ from __future__ import print_function
 
 import weakref
 
+import six
+
 from storm.exceptions import (
     ClassInfoError, FeatureError, NoStoreError, WrongStoreError)
 from storm.store import Store, get_where_for_args, LostObjectError
@@ -942,14 +944,14 @@ class PropertyResolver(object):
 
 def _find_descriptor_class(used_cls, descr):
     for cls in used_cls.__mro__:
-        for attr, _descr in cls.__dict__.iteritems():
+        for attr, _descr in six.iteritems(cls.__dict__):
             if _descr is descr:
                 return cls
     raise RuntimeError("Reference used in an unknown class")
 
 def _find_descriptor_obj(used_cls, descr):
     for cls in used_cls.__mro__:
-        for attr, _descr in cls.__dict__.iteritems():
+        for attr, _descr in six.iteritems(cls.__dict__):
             if _descr is descr:
                 return getattr(cls, attr)
     raise RuntimeError("Reference used in an unknown class")

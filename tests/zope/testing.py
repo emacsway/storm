@@ -23,6 +23,8 @@ from __future__ import print_function
 import os
 import sys
 
+import six
+
 from tests.helper import TestHelper
 from tests.zope import has_transaction, has_zope_component, has_testresources
 
@@ -239,7 +241,7 @@ class ZStormResourceManagerTest(TestHelper):
         real_invalidate = store.invalidate
 
         def invalidate_proxy():
-            self.assertEqual(0, len(store._alive.values()))
+            self.assertEqual(0, len(list(six.itervalues(store._alive))))
             real_invalidate()
         store.invalidate = invalidate_proxy
 
