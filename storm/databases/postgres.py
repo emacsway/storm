@@ -398,7 +398,11 @@ class Postgres(Database):
                 "'autocommit', 'serializable', 'read-committed'" %
                 (isolation,))
 
-    _psycopg_error_attributes = ("pgerror", "pgcode", "cursor", "diag")
+    _psycopg_error_attributes = ["pgerror", "pgcode", "cursor"]
+    # Added in psycopg2 2.5.
+    if hasattr(psycopg2.Error, "diag"):
+        _psycopg_error_attributes.append("diag")
+    _psycopg_error_attributes = tuple(_psycopg_error_attributes)
 
     def _make_combined_exception_type(self, wrapper_type, dbapi_type):
         combined_type = super(Postgres, self)._make_combined_exception_type(
