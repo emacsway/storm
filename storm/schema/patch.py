@@ -124,8 +124,9 @@ class PatchApplier(object):
             patch_repr = getattr(module, "__file__", version)
             six.reraise(
                 BadPatchError,
-                "Patch %s failed: %s: %s" %
-                    (patch_repr, type.__name__, str(value)),
+                BadPatchError(
+                    "Patch %s failed: %s: %s" %
+                    (patch_repr, type.__name__, str(value))),
                 traceback)
         self._committer.commit()
 
