@@ -20,6 +20,7 @@
 #
 from __future__ import print_function
 
+import six
 from zope.interface import Interface
 
 from storm.expr import Undef
@@ -165,13 +166,16 @@ class ISQLObjectResultSet(Interface):
     def count():
        """Return the number of items in the result set."""
 
-    def __nonzero__():
+    def __bool__():
         """Return C{True} if this result set contains any results.
 
         @note: This method is provided for compatibility with SQL Object.  For
             new code, prefer L{is_empty}.  It's compatible with L{ResultSet}
-            which doesn't have a C{__nonzero__} implementation.
+            which doesn't have a C{__bool__} implementation.
         """
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def __contains__(item):
        """Support C{if FooObject in Foo.select(query)}."""

@@ -21,6 +21,8 @@
 
 from __future__ import print_function
 
+import six
+
 
 class Dummy(object):
     """Magic "infectious" class.
@@ -38,7 +40,10 @@ class Dummy(object):
     def __add__(self, other):
         return self
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
 dummy = Dummy()
