@@ -1219,7 +1219,7 @@ class SQLObjectTest(TestHelper):
         self.assertEquals([person.name for person in result],
                           [u"John Doe"])
 
-        person.name = u"Funny !%_ Name"
+        result[0].name = u"Funny !%_ Name"
 
         expr = NOT(CONTAINSSTRING(self.Person.q.name, u"!%_"))
         result = self.Person.select(expr)
