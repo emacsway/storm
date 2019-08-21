@@ -1830,22 +1830,43 @@ class SpecChecker(Task):
 
         if method:
             try:
-                self._args, self._varargs, self._varkwargs, self._defaults = \
-                    inspect.getargspec(method)
+                if six.PY3:
+                    # On Python 3, inspect.getargspec includes the bound
+                    # first argument (self or similar) for bound methods,
+                    # which confuses matters.  The modern signature API
+                    # doesn't have this problem.
+                    self._signature = inspect.signature(method)
+                    # Method descriptors don't have the first argument
+                    # already bound, but we want to skip it anyway.
+                    if getattr(method, "__objclass__", None) is not None:
+                        parameters = list(self._signature.parameters.values())
+                        # This is positional-only for unbound methods that
+                        # are implemented in C.
+                        if (parameters[0].kind ==
+                                inspect.Parameter.POSITIONAL_ONLY):
+                            self._signature = self._signature.replace(
+                                parameters=parameters[1:])
+                else:
+                    (self._args, self._varargs, self._varkwargs,
+                     self._defaults) = inspect.getargspec(method)
             except TypeError:
                 self._unsupported = True
             else:
-                if self._defaults is None:
-                    self._defaults = ()
-                if type(method) is type(self.run):
-                    self._args = self._args[1:]
+                if not six.PY3:
+                    if self._defaults is None:
+                        self._defaults = ()
+                    if type(method) is type(self.run):
+                        self._args = self._args[1:]
 
     def get_method(self):
         return self._method
 
     def _raise(self, message):
-        spec = inspect.formatargspec(self._args, self._varargs,
-                                     self._varkwargs, self._defaults)
+        if six.PY3:
+            spec = str(self._signature)
+        else:
+            spec = inspect.formatargspec(self._args, self._varargs,
+                                         self._varkwargs, self._defaults)
         raise AssertionError("Specification is %s%s: %s" %
                              (self._method.__name__, spec, message))
 
@@ -1866,20 +1887,26 @@ class SpecChecker(Task):
         if self._unsupported:
             return # Can't check it. Happens with builtin functions. :-(
         action = path.actions[-1]
-        obtained_len = len(action.args)
-        obtained_kwargs = action.kwargs.copy()
-        nodefaults_len = len(self._args) - len(self._defaults)
-        for i, name in enumerate(self._args):
-            if i < obtained_len and name in action.kwargs:
-                self._raise("%r provided twice" % name)
-            if (i >= obtained_len and i < nodefaults_len and
-                name not in action.kwargs):
-                self._raise("%r not provided" % name)
-            obtained_kwargs.pop(name, None)
-        if obtained_len > len(self._args) and not self._varargs:
-            self._raise("too many args provided")
-        if obtained_kwargs and not self._varkwargs:
-            self._raise("unknown kwargs: %s" % ", ".join(obtained_kwargs))
+        if six.PY3:
+            try:
+                self._signature.bind(*action.args, **action.kwargs)
+            except TypeError as e:
+                self._raise(str(e))
+        else:
+            obtained_len = len(action.args)
+            obtained_kwargs = action.kwargs.copy()
+            nodefaults_len = len(self._args) - len(self._defaults)
+            for i, name in enumerate(self._args):
+                if i < obtained_len and name in action.kwargs:
+                    self._raise("%r provided twice" % name)
+                if (i >= obtained_len and i < nodefaults_len and
+                    name not in action.kwargs):
+                    self._raise("%r not provided" % name)
+                obtained_kwargs.pop(name, None)
+            if obtained_len > len(self._args) and not self._varargs:
+                self._raise("too many args provided")
+            if obtained_kwargs and not self._varkwargs:
+                self._raise("unknown kwargs: %s" % ", ".join(obtained_kwargs))
 
 def spec_checker_recorder(mocker, event):
     spec = event.path.root_mock.__mocker_spec__
