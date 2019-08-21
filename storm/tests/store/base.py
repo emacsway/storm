@@ -4452,8 +4452,8 @@ class StoreTest(object):
         self.assertRaises(NoStoreError, foo2.bars.remove, object())
 
     def test_string_reference(self):
-        class Base(object):
-            __metaclass__ = PropertyPublisherMeta
+        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+            pass
 
         class MyBar(Base):
             __storm_table__ = "bar"
@@ -4479,8 +4479,8 @@ class StoreTest(object):
         metaclass.  This makes it possible to work around problems with
         circular dependencies by delaying property resolution.
         """
-        class Base(object):
-            __metaclass__ = PropertyPublisherMeta
+        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+            pass
 
         class MyFoo(Base):
             __storm_table__ = "foo"
@@ -4519,8 +4519,8 @@ class StoreTest(object):
         metaclass.  This makes it possible to work around problems with
         circular dependencies by delaying resolution of the order by column.
         """
-        class Base(object):
-            __metaclass__ = PropertyPublisherMeta
+        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+            pass
 
         class MyFoo(Base):
             __storm_table__ = "foo"
@@ -5764,8 +5764,8 @@ class StoreTest(object):
         self.assertEquals(foo.title, "New Title")
 
     def get_bar_proxy_with_string(self):
-        class Base(object):
-            __metaclass__ = PropertyPublisherMeta
+        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+            pass
 
         class MyBarProxy(Base):
             __storm_table__ = "bar"

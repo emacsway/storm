@@ -263,7 +263,7 @@ class BoundDotQ(object):
             return getattr(self._cls, attr)
 
 
-class SQLObjectBase(Storm):
+class SQLObjectBase(six.with_metaclass(SQLObjectMeta, Storm)):
     """The root class of all SQLObject-emulating classes in your application.
 
     The general strategy for using Storm's SQLObject emulation layer
@@ -273,7 +273,6 @@ class SQLObjectBase(Storm):
     even be implemented as returning a global L{Store} instance. Then
     all database classes should subclass that class.
     """
-    __metaclass__ = SQLObjectMeta
 
     q = DotQ()
     _SO_creating = False

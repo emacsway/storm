@@ -20,18 +20,19 @@
 #
 from __future__ import print_function
 
+import six
+
 from storm.properties import PropertyPublisherMeta
 
 
 __all__ = ["Storm"]
 
 
-class Storm(object):
+class Storm(six.with_metaclass(PropertyPublisherMeta, object)):
     """An optional base class for objects stored in a Storm Store.
 
     It causes your subclasses to be associated with a Storm
     PropertyRegistry. It is necessary to use this if you want to
     specify References with strings.
     """
-    __metaclass__ = PropertyPublisherMeta
 
