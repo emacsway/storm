@@ -20,9 +20,10 @@
 #
 from __future__ import print_function
 
-import traceback
-import sys
 import os
+import shutil
+import sys
+import traceback
 
 from storm.locals import StormError, Store, create_database
 from storm.schema.patch import (
@@ -174,7 +175,11 @@ class PatchApplierTest(MockerTestCase):
 
     def remove_all_modules(self):
         for filename in os.listdir(self.pkgdir):
-            os.unlink(os.path.join(self.pkgdir, filename))
+            path = os.path.join(self.pkgdir, filename)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
     def prepare_for_transaction_check(self):
         self.another_store.execute("DELETE FROM test")
@@ -349,7 +354,10 @@ class PatchApplierTest(MockerTestCase):
             self.patch_applier.apply_all()
         except BadPatchError as e:
             self.assertTrue("mypackage/patch_999.py" in str(e))
-            self.assertTrue("takes no arguments" in str(e))
+            if sys.version_info >= (3, 3):
+                self.assertTrue("takes 0 positional arguments" in str(e))
+            else:
+                self.assertTrue("takes no arguments" in str(e))
             self.assertTrue("TypeError" in str(e))
         else:
             self.fail("BadPatchError not raised")
