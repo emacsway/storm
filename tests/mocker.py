@@ -1835,6 +1835,8 @@ class SpecChecker(Task):
                     # already bound, but we want to skip it anyway.
                     if getattr(method, "__objclass__", None) is not None:
                         parameters = list(self._signature.parameters.values())
+                        # This is positional-only for unbound methods that
+                        # are implemented in C.
                         if (parameters[0].kind ==
                                 inspect.Parameter.POSITIONAL_ONLY):
                             self._signature = self._signature.replace(
