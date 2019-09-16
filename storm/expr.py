@@ -170,11 +170,10 @@ class Compile(object):
         expr_type = type(expr)
         string_types = (str,) if six.PY3 else (str, unicode)
 
-        if (expr_type is SQLRaw or
-                raw and any(expr_type is t for t in string_types)):
+        if expr_type is SQLRaw or (raw and expr_type in string_types):
             return expr
 
-        if token and any(expr_type is t for t in string_types):
+        if token and expr_type in string_types:
             expr = SQLToken(expr)
 
         if state is None:
@@ -186,13 +185,13 @@ class Compile(object):
             for subexpr in expr:
                 subexpr_type = type(subexpr)
                 if (subexpr_type is SQLRaw or
-                        raw and any(subexpr_type is t for t in string_types)):
+                        (raw and subexpr_type in string_types)):
                     statement = subexpr
                 elif subexpr_type is tuple or subexpr_type is list:
                     state.precedence = outer_precedence
                     statement = self(subexpr, state, join, raw, token)
                 else:
-                    if token and any(subexpr_type is t for t in string_types):
+                    if token and subexpr_type in string_types:
                         subexpr = SQLToken(subexpr)
                     statement = self._compile_single(subexpr, state,
                                                      outer_precedence)

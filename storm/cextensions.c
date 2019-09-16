@@ -1561,8 +1561,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
     /*
       expr_type = type(expr)
       string_types = (str,) if six.PY3 else (str, unicode)
-      if (expr_type is SQLRaw or
-              raw and any(expr_type is t for t in string_types)):
+      if expr_type is SQLRaw or (raw and expr_type in string_types):
           return expr
     */
     /* Note that PyString_CheckExact(o) is defined at the top of this file
@@ -1575,7 +1574,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
     }
 
     /*
-       if token and any(expr_type is t for t in string_types):
+       if token and expr_type in string_types:
            expr = SQLToken(expr)
     */
     if (token && (PyString_CheckExact(expr) || PyUnicode_CheckExact(expr))) {
@@ -1606,7 +1605,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             /*
                subexpr_type = type(subexpr)
                if (subexpr_type is SQLRaw or
-                       raw and any(subexpr_type is t for t in string_types)):
+                       (raw and subexpr_type in string_types)):
             */
             if ((PyObject *)subexpr->ob_type == (PyObject *)SQLRaw ||
                 (raw && (PyString_CheckExact(subexpr) ||
@@ -1627,7 +1626,7 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             /* else: */
             } else {
                 /*
-                   if token and any(subexpr_type is t for t in string_types):
+                   if token and subexpr_type in string_types:
                 */
                 if (token && (PyUnicode_CheckExact(subexpr) ||
                               PyString_CheckExact(subexpr))) {
