@@ -57,6 +57,12 @@ __all__ = [
 ]
 
 
+if six.PY3:
+    _buffer_type = memoryview
+else:
+    _buffer_type = buffer
+
+
 class LazyValue(object):
     """Marker to be used as a base class on lazily evaluated values."""
     __slots__ = ()
@@ -348,7 +354,7 @@ class DecimalVariable(Variable):
 
     @staticmethod
     def parse_set(value, from_db):
-        if (from_db and isinstance(value, basestring) or
+        if (from_db and isinstance(value, six.string_types) or
             isinstance(value, six.integer_types)):
             value = Decimal(value)
         elif not isinstance(value, Decimal):
@@ -359,7 +365,7 @@ class DecimalVariable(Variable):
     @staticmethod
     def parse_get(value, to_db):
         if to_db:
-            return unicode(value)
+            return six.text_type(value)
         return value
 
 
@@ -367,10 +373,10 @@ class RawStrVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if isinstance(value, buffer):
-            value = str(value)
-        elif not isinstance(value, str):
-            raise TypeError("Expected str, found %r: %r"
+        if isinstance(value, _buffer_type):
+            value = bytes(value)
+        elif not isinstance(value, bytes):
+            raise TypeError("Expected bytes, found %r: %r"
                             % (type(value), value))
         return value
 
@@ -379,8 +385,8 @@ class UnicodeVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, unicode):
-            raise TypeError("Expected unicode, found %r: %r"
+        if not isinstance(value, six.text_type):
+            raise TypeError("Expected text, found %r: %r"
                             % (type(value), value))
         return value
 
@@ -396,7 +402,7 @@ class DateTimeVariable(Variable):
         if from_db:
             if isinstance(value, datetime):
                 pass
-            elif isinstance(value, (str, unicode)):
+            elif isinstance(value, six.string_types):
                 if " " not in value:
                     raise ValueError("Unknown date/time format: %r" % value)
                 date_str, time_str = value.split(" ")
@@ -430,7 +436,7 @@ class DateVariable(Variable):
                 return value.date()
             if isinstance(value, date):
                 return value
-            if not isinstance(value, (str, unicode)):
+            if not isinstance(value, six.string_types):
                 raise TypeError("Expected date, found %s" % repr(value))
             if " " in value:
                 value, time_str = value.split(" ")
@@ -453,7 +459,7 @@ class TimeVariable(Variable):
                 return None
             if isinstance(value, time):
                 return value
-            if not isinstance(value, (str, unicode)):
+            if not isinstance(value, six.string_types):
                 raise TypeError("Expected time, found %s" % repr(value))
             if " " in value:
                 date_str, value = value.split(" ")
@@ -476,7 +482,7 @@ class TimeDeltaVariable(Variable):
                 return None
             if isinstance(value, timedelta):
                 return value
-            if not isinstance(value, (str, unicode)):
+            if not isinstance(value, six.string_types):
                 raise TypeError("Expected timedelta, found %s" % repr(value))
             return _parse_interval(value)
         else:
@@ -489,7 +495,7 @@ class UUIDVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if from_db and isinstance(value, basestring):
+        if from_db and isinstance(value, six.string_types):
             value = uuid.UUID(value)
         elif not isinstance(value, uuid.UUID):
             raise TypeError("Expected UUID, found %r: %r"
@@ -498,7 +504,7 @@ class UUIDVariable(Variable):
 
     def parse_get(self, value, to_db):
         if to_db:
-            return unicode(value)
+            return six.text_type(value)
         return value
 
 
@@ -581,8 +587,8 @@ class EncodedValueVariable(MutableValueVariable):
 
     def parse_set(self, value, from_db):
         if from_db:
-            if isinstance(value, buffer):
-                value = str(value)
+            if isinstance(value, _buffer_type):
+                value = bytes(value)
             return self._loads(value)
         else:
             return value
@@ -615,7 +621,7 @@ class JSONVariable(EncodedValueVariable):
     __slots__ = ()
 
     def _loads(self, value):
-        if not isinstance(value, unicode):
+        if not isinstance(value, six.text_type):
             raise TypeError(
                 "Cannot safely assume encoding of byte string %r." % value)
         return json.loads(value)
@@ -623,9 +629,9 @@ class JSONVariable(EncodedValueVariable):
     def _dumps(self, value):
         # http://www.ietf.org/rfc/rfc4627.txt states that JSON is text-based
         # and so we treat it as such here. In other words, this method returns
-        # unicode and never str.
+        # Unicode text and never bytes.
         dump = json.dumps(value, ensure_ascii=False)
-        if not isinstance(dump, unicode):
+        if not isinstance(dump, six.text_type):
             # json.dumps() does not always return unicode. See
             # http://code.google.com/p/simplejson/issues/detail?id=40 for one
             # of many discussions of str/unicode handling in simplejson.

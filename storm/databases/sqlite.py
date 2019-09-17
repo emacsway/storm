@@ -24,6 +24,8 @@ from datetime import datetime, date, time, timedelta
 from time import sleep, time as now
 import sys
 
+import six
+
 from storm.databases import dummy
 
 try:
@@ -83,21 +85,23 @@ class SQLiteResult(Result):
 
     @staticmethod
     def set_variable(variable, value):
-        if isinstance(variable, RawStrVariable):
+        if (isinstance(variable, RawStrVariable) and
+                isinstance(value, six.text_type)):
             # pysqlite2 may return unicode.
-            value = str(value)
+            value = value.encode("UTF-8")
         variable.set(value, from_db=True)
 
     @staticmethod
     def from_database(row):
-        """Convert MySQL-specific datatypes to "normal" Python types.
+        """Convert SQLite-specific datatypes to "normal" Python types.
 
-        If there are anny C{buffer} instances in the row, convert them
-        to strings.
+        On Python 2, if there are any C{buffer} instances in the row,
+        convert them to bytes.  On Python 3, BLOB types are converted to
+        bytes, which is already what we want.
         """
         for value in row:
-            if isinstance(value, buffer):
-                yield str(value)
+            if six.PY2 and isinstance(value, buffer):
+                yield bytes(value)
             else:
                 yield value
 
@@ -112,7 +116,7 @@ class SQLiteConnection(Connection):
     def to_database(params):
         """
         Like L{Connection.to_database}, but this also converts
-        instances of L{datetime} types to strings, and strings
+        instances of L{datetime} types to strings, and (on Python 2) bytes
         instances to C{buffer} instances.
         """
         for param in params:
@@ -120,7 +124,7 @@ class SQLiteConnection(Connection):
                 param = param.get(to_db=True)
             if isinstance(param, (datetime, date, time, timedelta)):
                 yield str(param)
-            elif isinstance(param, str):
+            elif six.PY2 and isinstance(param, bytes):
                 yield buffer(param)
             else:
                 yield param

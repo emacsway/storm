@@ -916,7 +916,7 @@ class PropertyResolver(object):
     def resolve_one(self, property):
         if type(property) is tuple:
             return self.resolve(property)
-        elif isinstance(property, basestring):
+        elif isinstance(property, six.string_types):
             return self._resolve_string(property)
         elif isinstance(property, SuffixExpr):
             # XXX This covers cases like order_by=Desc("Bar.id"), see #620369.

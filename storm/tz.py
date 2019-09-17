@@ -198,7 +198,7 @@ class tzfile(datetime.tzinfo):
     # ftp://elsie.nci.nih.gov/pub/tz*.tar.gz
 
     def __init__(self, fileobj):
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, six.string_types):
             self._filename = fileobj
             fileobj = open(fileobj)
         elif hasattr(fileobj, "name"):
@@ -699,7 +699,7 @@ class tzical:
         if not rrule:
             from dateutil import rrule
 
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, six.string_types):
             self._s = fileobj
             fileobj = open(fileobj)
         elif hasattr(fileobj, "name"):

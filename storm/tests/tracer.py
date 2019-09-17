@@ -534,7 +534,8 @@ class BaseStatementTracerTest(TestCase):
             [var1])
         self.assertEqual(
             [(conn, 'cursor',
-              "Unformattable query: '%s %s' with params [u'substring'].")],
+              "Unformattable query: '%%s %%s' with params [%r]." %
+              u'substring')],
             tracer.calls)
 
 

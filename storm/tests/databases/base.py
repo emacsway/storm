@@ -27,6 +27,7 @@ import shutil
 import sys
 import os
 
+import six
 from six.moves import cPickle as pickle
 
 from storm.uri import URI
@@ -151,7 +152,7 @@ class DatabaseTest(object):
         self.assertTrue(isinstance(result, Result))
         row = result.get_one()
         self.assertEquals(row, ("Title 10",))
-        self.assertTrue(isinstance(row[0], unicode))
+        self.assertTrue(isinstance(row[0], six.text_type))
 
     def test_execute_params(self):
         result = self.connection.execute("SELECT one FROM number "

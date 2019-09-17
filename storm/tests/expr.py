@@ -2165,11 +2165,11 @@ class CompilePythonTest(TestHelper):
 
     def test_bytes(self):
         py_expr = compile_python(b"str")
-        self.assertEquals(py_expr, "'str'")
+        self.assertEquals(py_expr, "b'str'" if six.PY3 else "'str'")
 
     def test_unicode(self):
         py_expr = compile_python(u"str")
-        self.assertEquals(py_expr, "u'str'")
+        self.assertEquals(py_expr, "'str'" if six.PY3 else "u'str'")
 
     def test_int(self):
         py_expr = compile_python(1)

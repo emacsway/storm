@@ -559,7 +559,7 @@ class MockerBase(six.with_metaclass(MockerMeta, object)):
                             explicitly requested via the L{passthrough()}
                             method.
         """
-        if isinstance(object, basestring):
+        if isinstance(object, six.string_types):
             if name is None:
                 name = object
             import_stack = object.split(".")

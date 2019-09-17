@@ -5,6 +5,8 @@ import re
 import sys
 import threading
 
+import six
+
 # Circular import: imported at the end of the module.
 # from storm.database import convert_param_marks
 from storm.exceptions import TimeoutError
@@ -171,8 +173,11 @@ class BaseStatementTracer(object):
             # string parameters which represent encoded binary data.
             render_params = []
             for param in query_params:
-                if isinstance(param, unicode):
-                    render_params.append(repr(param.encode('utf8')))
+                if isinstance(param, six.text_type):
+                    if six.PY3:
+                        render_params.append(ascii(param))
+                    else:
+                        render_params.append(repr(param.encode('utf8')))
                 else:
                     render_params.append(repr(param))
             try:
