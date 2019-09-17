@@ -12,6 +12,21 @@ Improvements
   both StormError and the appropriate DB-API exception type, rather than
   injecting virtual base classes. This preserves existing exception handling
   in applications while also being a viable approach in Python 3.
+- Port to Python 3 (bug #1530734, based partly on contributions from Thiago
+  Bellini).  Existing Python 2 users should be unaffected.  For people
+  porting to Python 3, note the following API changes relative to Python 2:
+  - On Python 3, raw=True and token=True in storm.expr.Compile.__call__ only
+    treat str specially, not bytes and str, because ultimately the compiler
+    is assembling a text string to send to the database.
+  - On Python 3, storm.tracer.BaseStatementTracer.connection_raw_execute
+    renders text parameters using ascii() rather than by encoding to bytes
+    and then calling repr().  While this does result in slightly different
+    output from Python 2, it's normally more useful since the encoding is in
+    terms of Unicode codepoints rather than UTF-8.
+  - storm.sqlobject.AutoUnicodeVariable (and hence StringCol) explicitly
+    documents that it only accepts text on Python 3, since native strings
+    are already Unicode there so there's much less need for the porting
+    affordance.
 
 Bug fixes
 ---------
