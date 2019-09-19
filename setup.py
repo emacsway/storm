@@ -58,6 +58,8 @@ setup(
         ("License :: OSI Approved :: GNU Library or "
          "Lesser General Public License (LGPL)"),
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         "Topic :: Database",
         "Topic :: Database :: Front-Ends",
         "Topic :: Software Development :: Libraries :: Python Modules",
