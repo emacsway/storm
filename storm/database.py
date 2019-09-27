@@ -622,10 +622,10 @@ class Database(object):
 
         @return: The combined exception type.
         """
-        if wrapper_type not in self._exception_types:
-            self._exception_types[wrapper_type] = type(
+        if dbapi_type.__name__ not in self._exception_types:
+            self._exception_types[dbapi_type.__name__] = type(
                 dbapi_type.__name__, (dbapi_type, wrapper_type), {})
-        return self._exception_types[wrapper_type]
+        return self._exception_types[dbapi_type.__name__]
 
     def _wrap_exception(self, wrapper_type, exception):
         """Wrap a DB-API exception as a StormError instance.

@@ -1,3 +1,11 @@
+0.21.1 (XXXX-XX-XX)
+===================
+
+Bug fixes
+---------
+
+- Fix incorrect caching of wrapped DB-API exceptions (bug 1845702).
+
 0.21 (2019-09-20)
 =================
 

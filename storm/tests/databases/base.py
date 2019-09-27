@@ -445,6 +445,21 @@ class DatabaseTest(object):
         self.connection.unblock_access()
         self.connection.execute("SELECT 1")
 
+    def test_wrap_exception_subclasses(self):
+        """Subclasses of the generic DB-API exception types are wrapped."""
+        db_api_operational_error = getattr(
+            self.database._exception_module, 'OperationalError')
+        operational_error_types = [
+            type(name, (db_api_operational_error,), {})
+            for name in ('A', 'B')]
+        for error_type in operational_error_types:
+            error = error_type('error message')
+            wrapped = self.database._wrap_exception(OperationalError, error)
+            self.assertTrue(isinstance(wrapped, error_type))
+            self.assertTrue(isinstance(wrapped, OperationalError))
+            self.assertEqual(error_type.__name__, wrapped.__class__.__name__)
+            self.assertEqual(('error message',), wrapped.args)
+
 
 class TwoPhaseCommitTest(object):
 
