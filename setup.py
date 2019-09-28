@@ -15,8 +15,8 @@ if os.path.isfile("MANIFEST"):
 BUILD_CEXTENSIONS = True
 
 
-VERSION = re.search('version = "([^"]+)"',
-                    open("storm/__init__.py").read()).group(1)
+with open("storm/__init__.py") as init_py:
+    VERSION = re.search('version = "([^"]+)"', init_py.read()).group(1)
 
 
 tests_require = [
