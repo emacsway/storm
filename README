@@ -90,7 +90,6 @@ is below.
 
  $ dev/ubuntu-deps
  $ make develop
- $ dev/db-setup
  $ make check
 
 LONG VERSION:

@@ -24,6 +24,7 @@ tests_require = [
     "fixtures >= 0.3.5",
     # pgbouncer (the Python module) is not yet packaged in Ubuntu.
     "pgbouncer >= 0.0.7",
+    "postgresfixture",
     "psycopg2 >= 2.3.0",
     "testresources >= 0.2.4",
     "testtools >= 0.9.8",

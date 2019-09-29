@@ -25,6 +25,7 @@ import os
 import json
 
 import six
+from six.moves.urllib.parse import urlunsplit
 
 from storm.databases.postgres import (
     Postgres, compile, currval, Returning, Case, PostgresTimeoutTracer,
@@ -50,6 +51,7 @@ from storm.tests import has_fixtures, has_subunit
 from storm.tests.databases.base import (
     DatabaseTest, DatabaseDisconnectionTest, UnsupportedDatabaseTest,
     TwoPhaseCommitTest, TwoPhaseCommitDisconnectionTest)
+from storm.tests.databases.proxy import ProxyTCPServer
 from storm.tests.expr import column1, column2, column3, elem1, table1, TrackContext
 from storm.tests.tracer import TimeoutTracerTestBase
 from storm.tests.helper import TestHelper
@@ -60,6 +62,16 @@ except ImportError:
     has_pgbouncer = False
 else:
     has_pgbouncer = True
+
+
+def create_proxy_and_uri(uri):
+    """Create a TCP proxy to a Unix-domain database identified by `uri`."""
+    proxy = ProxyTCPServer(os.path.join(uri.host, ".s.PGSQL.5432"))
+    proxy_host, proxy_port = proxy.server_address
+    proxy_uri = URI(urlunsplit(
+        ("postgres", "%s:%s" % (proxy_host, proxy_port), "/storm_test",
+         "", "")))
+    return proxy, proxy_uri
 
 
 def terminate_other_backends(connection):
@@ -737,6 +749,13 @@ class PostgresDisconnectionTest(DatabaseDisconnectionTest, TwoPhaseCommitDisconn
     host_environment_variable = "STORM_POSTGRES_HOST_URI"
     default_port = 5432
 
+    def create_proxy(self, uri):
+        """See `DatabaseDisconnectionMixin.create_proxy`."""
+        if uri.host.startswith("/"):
+            return create_proxy_and_uri(uri)[0]
+        else:
+            return super(PostgresDisconnectionTest, self).create_proxy(uri)
+
     def test_rollback_swallows_InterfaceError(self):
         """Test that InterfaceErrors get caught on rollback().
 
@@ -803,6 +822,13 @@ class PostgresDisconnectionTestWithoutProxyTCPSockets(
 
     database_uri = os.environ.get("STORM_POSTGRES_HOST_URI")
 
+    def setUp(self):
+        super(PostgresDisconnectionTestWithoutProxyTCPSockets, self).setUp()
+        if self.database.get_uri().host.startswith("/"):
+            proxy, proxy_uri = create_proxy_and_uri(self.database.get_uri())
+            self.addCleanup(proxy.close)
+            self.database = create_database(proxy_uri)
+
 
 class PostgresDisconnectionTestWithPGBouncerBase(object):
     # Connecting via pgbouncer <http://pgfoundry.org/projects/pgbouncer>
@@ -816,6 +842,9 @@ class PostgresDisconnectionTestWithPGBouncerBase(object):
     def setUp(self):
         super(PostgresDisconnectionTestWithPGBouncerBase, self).setUp()
         database_uri = URI(os.environ["STORM_POSTGRES_HOST_URI"])
+        if database_uri.host.startswith("/"):
+            proxy, database_uri = create_proxy_and_uri(database_uri)
+            self.addCleanup(proxy.close)
         database_user = database_uri.username or os.environ['USER']
         database_dsn = make_dsn(database_uri)
         # Create a pgbouncer fixture.
@@ -873,6 +902,10 @@ class PostgresTimeoutTracerTest(TimeoutTracerTestBase):
         install_tracer(self.tracer)
         self.tracer.get_remaining_time = lambda: self.remaining_time
         self.remaining_time = 10.5
+
+    def tearDown(self):
+        self.connection.close()
+        super(PostgresTimeoutTracerTest, self).tearDown()
 
     def test_set_statement_timeout(self):
         result = self.connection.execute("SHOW statement_timeout")

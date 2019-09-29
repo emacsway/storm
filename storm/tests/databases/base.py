@@ -700,6 +700,7 @@ class DatabaseDisconnectionMixin(object):
         self.create_connection()
 
     def tearDown(self):
+        self.drop_connection()
         self.drop_database()
         self.proxy.close()
         super(DatabaseDisconnectionMixin, self).tearDown()
@@ -708,18 +709,21 @@ class DatabaseDisconnectionMixin(object):
         return bool(self.get_uri())
 
     def get_uri(self):
-        """Return URI instance with a defined host and port."""
-        if not self.environment_variable or not self.default_port:
-            raise RuntimeError("Define at least %s.environment_variable and "
-                               "%s.default_port" % (type(self).__name__,
-                                                    type(self).__name__))
+        """Return URI instance with a defined host (and port, for TCP)."""
+        if not self.environment_variable:
+            raise RuntimeError(
+                "Define at least %s.environment_variable" %
+                type(self).__name__)
         uri_str = os.environ.get(self.host_environment_variable)
         if uri_str:
             uri = URI(uri_str)
             if not uri.host:
                 raise RuntimeError("The URI in %s must include a host." %
                                    self.host_environment_variable)
-            if not uri.port:
+            if not uri.host.startswith("/") and not uri.port:
+                if not self.default_port:
+                    raise RuntimeError(
+                        "Define at least %s.default_port" % type(self).__name)
                 uri.port = self.default_port
             return uri
         else:
@@ -727,10 +731,18 @@ class DatabaseDisconnectionMixin(object):
             if uri_str:
                 uri = URI(uri_str)
                 if uri.host:
-                    if not uri.port:
+                    if not uri.host.startswith("/") and not uri.port:
+                        if not self.default_port:
+                            raise RuntimeError(
+                                "Define at least %s.default_port" %
+                                type(self).__name)
                         uri.port = self.default_port
                     return uri
         return None
+
+    def create_proxy(self, uri):
+        """Create a TCP proxy forwarding requests to `uri`."""
+        return ProxyTCPServer((uri.host, uri.port))
 
     def create_database_and_proxy(self):
         """Set up the TCP proxy and database object.
@@ -739,13 +751,16 @@ class DatabaseDisconnectionMixin(object):
         database object should point at the TCP proxy.
         """
         uri = self.get_uri()
-        self.proxy = ProxyTCPServer((uri.host, uri.port))
+        self.proxy = self.create_proxy(uri)
         uri.host, uri.port = self.proxy.server_address
         self.proxy_uri = uri
         self.database = create_database(uri)
 
     def create_connection(self):
         self.connection = self.database.connect()
+
+    def drop_connection(self):
+        self.connection.close()
 
     def drop_database(self):
         pass

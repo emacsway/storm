@@ -1,6 +1,12 @@
 0.21.1 (XXXX-XX-XX)
 ===================
 
+Improvements
+------------
+
+- Use the postgresfixture package to set up a temporary cluster for
+  PostgreSQL tests, simplifying developer setup.
+
 Bug fixes
 ---------
 

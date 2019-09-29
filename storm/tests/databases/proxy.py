@@ -22,11 +22,13 @@
 
 from __future__ import print_function
 
+import errno
 import os
 import select
 import socket
 import threading
 
+import six
 from six.moves import socketserver
 
 
@@ -42,7 +44,10 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
             self, request, client_address, server)
 
     def handle(self):
-        dst = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if isinstance(self.server.proxy_dest, (bytes, six.text_type)):
+            dst = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        else:
+            dst = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         dst.connect(self.server.proxy_dest)
 
         readers = [self.request, dst]
@@ -56,13 +61,23 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
 
             if self.request in rlist:
                 chunk = os.read(self.request.fileno(), 1024)
-                dst.send(chunk)
+                try:
+                    dst.send(chunk)
+                except socket.error as e:
+                    if e.errno == errno.EPIPE:
+                        return
+                    raise
                 if chunk == "":
                     readers.remove(self.request)
                     dst.shutdown(socket.SHUT_WR)
 
             if dst in rlist:
-                chunk = os.read(dst.fileno(), 1024)
+                try:
+                    chunk = os.read(dst.fileno(), 1024)
+                except OSError as e:
+                    if e.errno == errno.ECONNRESET:
+                        return
+                    raise
                 self.request.send(chunk)
                 if chunk == "":
                     readers.remove(dst)
