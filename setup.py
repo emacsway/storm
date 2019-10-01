@@ -19,6 +19,10 @@ with open("storm/__init__.py") as init_py:
     VERSION = re.search('version = "([^"]+)"', init_py.read()).group(1)
 
 
+with open("README") as readme:
+    long_description = readme.read()
+
+
 tests_require = [
     # Versions based on Lucid, where packaged.
     "fixtures >= 0.3.5",
@@ -43,6 +47,8 @@ setup(
     description=(
         "Storm is an object-relational mapper (ORM) for Python "
         "developed at Canonical."),
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
     author="Gustavo Niemeyer",
     author_email="gustavo@niemeyer.net",
     maintainer="Storm Developers",
