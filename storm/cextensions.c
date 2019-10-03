@@ -27,6 +27,7 @@
 #if PY_VERSION_HEX >= 0x03000000
 #define PyInt_FromLong PyLong_FromLong
 #define PyText_AsString _PyUnicode_AsString
+#define PyString_Check(o) 0
 #define PyString_CheckExact(o) 0
 #else
 /* 2.x */
@@ -1699,8 +1700,14 @@ Compile__call__(CompileObject *self, PyObject *args, PyObject *kwargs)
 
     join = default_compile_join;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OSbb", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OObb", kwlist,
                                      &expr, &state, &join, &raw, &token)) {
+        return NULL;
+    }
+    if (join && (!PyString_Check(join) && !PyUnicode_Check(join))) {
+        PyErr_Format(PyExc_TypeError,
+                     "'join' argument must be a string, not %.80s",
+                     Py_TYPE(join)->tp_name);
         return NULL;
     }
 
