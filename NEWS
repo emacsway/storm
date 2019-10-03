@@ -5,6 +5,7 @@ Bug fixes
 ---------
 
 - Fix incorrect caching of wrapped DB-API exceptions (bug 1845702).
+- Support Python 3.6 and 3.7.
 
 0.21 (2019-09-20)
 =================

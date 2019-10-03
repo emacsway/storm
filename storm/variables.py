@@ -421,6 +421,17 @@ class DateTimeVariable(Variable):
             elif not isinstance(value, datetime):
                 raise TypeError("Expected datetime, found %s" % repr(value))
             if self._tzinfo is not None:
+                # Python 3.6 gained support for calling the astimezone
+                # method on naive datetime objects, presuming them to
+                # represent system local time.  This is probably
+                # inappropriate for most uses of Storm, since depending on
+                # what the system local time happens to be is usually a
+                # mistake, so forbid this explicitly for now; we can always
+                # open it up later if there's a good reason.
+                if (value.tzinfo is None or
+                        value.tzinfo.utcoffset(value) is None):
+                    raise ValueError(
+                        "Expected aware datetime, found naive: %r" % value)
                 value = value.astimezone(self._tzinfo)
         return value
 
