@@ -5,7 +5,7 @@ Bug fixes
 ---------
 
 - Fix incorrect caching of wrapped DB-API exceptions (bug 1845702).
-- Support Python 3.6 and 3.7.
+- Support Python 3.6, 3.7, and 3.8.
 - Fix incorrect expected type for the 'join' parameter to the C version of
   Compile.__call__ on Python 3.
 
