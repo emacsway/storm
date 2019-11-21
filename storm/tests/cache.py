@@ -58,8 +58,8 @@ class BaseCacheTest(TestHelper):
         cache.add(self.obj1)
         cache.add(self.obj2)
         cache.add(self.obj3)
-        self.assertEquals(sorted(cache.get_cached()),
-                          [self.obj1, self.obj2, self.obj3])
+        self.assertEqual(sorted(cache.get_cached()),
+                         [self.obj1, self.obj2, self.obj3])
 
     def test_adding_similar_obj_infos(self):
         """If __eq__ is broken, this fails."""
@@ -70,9 +70,9 @@ class BaseCacheTest(TestHelper):
         cache.add(obj_info2)
         cache.add(obj_info2)
         cache.add(obj_info1)
-        self.assertEquals(sorted([hash(obj_info)
-                                  for obj_info in cache.get_cached()]),
-                          sorted([hash(obj_info1), hash(obj_info2)]))
+        self.assertEqual(sorted([hash(obj_info)
+                                 for obj_info in cache.get_cached()]),
+                         sorted([hash(obj_info1), hash(obj_info2)]))
 
     def test_remove(self):
         cache = self.Cache(5)
@@ -80,8 +80,8 @@ class BaseCacheTest(TestHelper):
         cache.add(self.obj2)
         cache.add(self.obj3)
         cache.remove(self.obj2)
-        self.assertEquals(sorted(cache.get_cached()),
-                          [self.obj1, self.obj3])
+        self.assertEqual(sorted(cache.get_cached()),
+                         [self.obj1, self.obj3])
 
     def test_add_existing(self):
         cache = self.Cache(5)
@@ -89,8 +89,8 @@ class BaseCacheTest(TestHelper):
         cache.add(self.obj2)
         cache.add(self.obj3)
         cache.add(self.obj2)
-        self.assertEquals(sorted(cache.get_cached()),
-                          [self.obj1, self.obj2, self.obj3])
+        self.assertEqual(sorted(cache.get_cached()),
+                         [self.obj1, self.obj2, self.obj3])
 
     def test_add_with_size_zero(self):
         """Cache is disabled entirely on add() if size is 0."""
@@ -99,7 +99,7 @@ class BaseCacheTest(TestHelper):
         # Ensure that we don't even check if obj_info is in the
         # cache, by testing if it was hashed.  Hopefully, that means
         # we got a faster path.
-        self.assertEquals(self.obj1.hashed, False)
+        self.assertEqual(self.obj1.hashed, False)
 
     def test_remove_with_size_zero(self):
         """Cache is disabled entirely on remove() if size is 0."""
@@ -112,12 +112,12 @@ class BaseCacheTest(TestHelper):
         for obj_info in self.obj_infos:
             cache.add(obj_info)
         cache.clear()
-        self.assertEquals(cache.get_cached(), [])
+        self.assertEqual(cache.get_cached(), [])
 
         # Just an additional check ensuring that any additional structures
         # which may be used were cleaned properly as well.
         for obj_info in self.obj_infos:
-            self.assertEquals(cache.remove(obj_info), False)
+            self.assertEqual(cache.remove(obj_info), False)
 
     def test_set_zero_size(self):
         """
@@ -127,7 +127,7 @@ class BaseCacheTest(TestHelper):
         cache.add(self.obj1)
         cache.add(self.obj2)
         cache.set_size(0)
-        self.assertEquals(cache.get_cached(), [])
+        self.assertEqual(cache.get_cached(), [])
 
     def test_fit_size(self):
         """
@@ -146,8 +146,8 @@ class CacheTest(BaseCacheTest):
         cache = Cache(5)
         for obj_info in self.obj_infos:
             cache.add(obj_info)
-        self.assertEquals([obj_info.id for obj_info in cache.get_cached()],
-                          [9, 8, 7, 6, 5])
+        self.assertEqual([obj_info.id for obj_info in cache.get_cached()],
+                         [9, 8, 7, 6, 5])
 
     def test_reduce_max_size_to_zero(self):
         """When setting the size to zero, there's an optimization."""
@@ -156,39 +156,39 @@ class CacheTest(BaseCacheTest):
         cache.add(obj_info)
         obj_info.hashed = False
         cache.set_size(0)
-        self.assertEquals(cache.get_cached(), [])
+        self.assertEqual(cache.get_cached(), [])
         # Ensure that we don't even check if obj_info is in the
         # cache, by testing if it was hashed.  Hopefully, that means
         # we got a faster path.
-        self.assertEquals(obj_info.hashed, False)
+        self.assertEqual(obj_info.hashed, False)
 
     def test_reduce_max_size(self):
         cache = Cache(5)
         for obj_info in self.obj_infos:
             cache.add(obj_info)
         cache.set_size(3)
-        self.assertEquals([obj_info.id for obj_info in cache.get_cached()],
-                          [9, 8, 7])
+        self.assertEqual([obj_info.id for obj_info in cache.get_cached()],
+                         [9, 8, 7])
 
         # Adding items past the new maximum size should drop older ones.
         for obj_info in self.obj_infos[:2]:
             cache.add(obj_info)
-        self.assertEquals([obj_info.id for obj_info in cache.get_cached()],
-                          [1, 0, 9])
+        self.assertEqual([obj_info.id for obj_info in cache.get_cached()],
+                         [1, 0, 9])
 
     def test_increase_max_size(self):
         cache = Cache(5)
         for obj_info in self.obj_infos:
             cache.add(obj_info)
         cache.set_size(10)
-        self.assertEquals([obj_info.id for obj_info in cache.get_cached()],
-                          [9, 8, 7, 6, 5])
+        self.assertEqual([obj_info.id for obj_info in cache.get_cached()],
+                         [9, 8, 7, 6, 5])
 
         # Adding items past the new maximum size should drop older ones.
         for obj_info in self.obj_infos[:6]:
             cache.add(obj_info)
-        self.assertEquals([obj_info.id for obj_info in cache.get_cached()],
-                          [5, 4, 3, 2, 1, 0, 9, 8, 7, 6])
+        self.assertEqual([obj_info.id for obj_info in cache.get_cached()],
+                         [5, 4, 3, 2, 1, 0, 9, 8, 7, 6])
 
 
 class TestGenerationalCache(BaseCacheTest):
@@ -258,7 +258,7 @@ class TestGenerationalCache(BaseCacheTest):
         cache = GenerationalCache(size)
         for value in range(5 * size):
             cache.add(StubObjectInfo(value))
-        self.assertEquals(len(cache.get_cached()), size * 2)
+        self.assertEqual(len(cache.get_cached()), size * 2)
 
     def test_set_size_smaller_than_current_size(self):
         """
@@ -272,7 +272,7 @@ class TestGenerationalCache(BaseCacheTest):
             cache.add(StubObjectInfo(i))
         cache.set_size(100)
         cached = cache.get_cached()
-        self.assertEquals(len(cached), 100)
+        self.assertEqual(len(cached), 100)
         for obj_info in cache.get_cached():
             self.assertTrue(obj_info.id >= 100)
 
@@ -301,7 +301,7 @@ class TestGenerationalCache(BaseCacheTest):
         cache.set_size(size)
         for value in range(size * 10):
             cache.add(StubObjectInfo(value))
-        self.assertEquals(len(cache.get_cached()), size * 2)
+        self.assertEqual(len(cache.get_cached()), size * 2)
 
     def test_two_generations(self):
         """

@@ -156,39 +156,39 @@ class ConnectionTest(TestHelper):
     def test_execute(self):
         result = self.connection.execute("something")
         self.assertTrue(isinstance(result, Result))
-        self.assertEquals(self.executed, [("something", marker)])
+        self.assertEqual(self.executed, [("something", marker)])
 
     def test_execute_params(self):
         result = self.connection.execute("something", (1,2,3))
         self.assertTrue(isinstance(result, Result))
-        self.assertEquals(self.executed, [("something", (1,2,3))])
+        self.assertEqual(self.executed, [("something", (1,2,3))])
 
     def test_execute_noresult(self):
         result = self.connection.execute("something", noresult=True)
-        self.assertEquals(result, None)
-        self.assertEquals(self.executed, [("something", marker), "RCLOSE"])
+        self.assertEqual(result, None)
+        self.assertEqual(self.executed, [("something", marker), "RCLOSE"])
 
     def test_execute_convert_param_style(self):
         class MyConnection(Connection):
             param_mark = "%s"
         connection = MyConnection(self.database)
         result = connection.execute("'?' ? '?' ? '?'")
-        self.assertEquals(self.executed, [("'?' %s '?' %s '?'", marker)])
+        self.assertEqual(self.executed, [("'?' %s '?' %s '?'", marker)])
 
         # TODO: Unsupported for now.
         #result = connection.execute("$$?$$ ? $asd$'?$asd$ ? '?'")
-        #self.assertEquals(self.executed,
-        #                  [("'?' %s '?' %s '?'", marker),
-        #                   ("$$?$$ %s $asd'?$asd$ %s '?'", marker)])
+        #self.assertEqual(self.executed,
+        #                 [("'?' %s '?' %s '?'", marker),
+        #                  ("$$?$$ %s $asd'?$asd$ %s '?'", marker)])
 
     def test_execute_select(self):
         select = Select([SQLToken("column1"), SQLToken("column2")],
                         tables=[SQLToken("table1"), SQLToken("table2")])
         result = self.connection.execute(select)
         self.assertTrue(isinstance(result, Result))
-        self.assertEquals(self.executed,
-                          [("SELECT column1, column2 FROM table1, table2",
-                            marker)])
+        self.assertEqual(self.executed,
+                         [("SELECT column1, column2 FROM table1, table2",
+                           marker)])
 
     def test_execute_select_and_params(self):
         select = Select(["column1", "column2"], tables=["table1", "table2"])
@@ -204,17 +204,17 @@ class ConnectionTest(TestHelper):
         tracer = FakeTracer()
         install_tracer(tracer)
         self.connection.execute("something")
-        self.assertEquals(tracer.seen, [("EXECUTE", self.connection, RawCursor,
-                                         "something", ()),
-                                        ("SUCCESS", self.connection, RawCursor,
-                                         "something", ())])
+        self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
+                                        "something", ()),
+                                       ("SUCCESS", self.connection, RawCursor,
+                                        "something", ())])
 
         del tracer.seen[:]
         self.connection.execute("something", (1, 2))
-        self.assertEquals(tracer.seen, [("EXECUTE", self.connection, RawCursor,
-                                         "something", (1, 2)),
-                                        ("SUCCESS", self.connection, RawCursor,
-                                         "something", (1, 2))])
+        self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
+                                        "something", (1, 2)),
+                                       ("SUCCESS", self.connection, RawCursor,
+                                        "something", (1, 2))])
 
     def test_raw_execute_error_tracing(self):
         cursor_mock = self.mocker.patch(RawCursor)
@@ -228,10 +228,10 @@ class ConnectionTest(TestHelper):
         install_tracer(tracer)
         self.assertRaises(ZeroDivisionError,
                           self.connection.execute, "something")
-        self.assertEquals(tracer.seen, [("EXECUTE", self.connection, RawCursor,
-                                         "something", ()),
-                                        ("ERROR", self.connection, RawCursor,
-                                         "something", (), error)])
+        self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
+                                        "something", ()),
+                                       ("ERROR", self.connection, RawCursor,
+                                        "something", (), error)])
 
     def test_raw_execute_setup_error_tracing(self):
         """
@@ -248,8 +248,8 @@ class ConnectionTest(TestHelper):
         install_tracer(tracer)
         self.assertRaises(ZeroDivisionError,
                           self.connection.execute, "something")
-        self.assertEquals(tracer.seen, [("ERROR", self.connection, RawCursor,
-                                         "something", (), error)])
+        self.assertEqual(tracer.seen, [("ERROR", self.connection, RawCursor,
+                                        "something", (), error)])
 
     def test_tracing_check_disconnect(self):
         tracer = FakeTracer()
@@ -304,46 +304,46 @@ class ConnectionTest(TestHelper):
 
     def test_commit(self):
         self.connection.commit()
-        self.assertEquals(self.executed, ["COMMIT"])
+        self.assertEqual(self.executed, ["COMMIT"])
 
     def test_commit_tracing(self):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
         tracer = FakeTracer()
         install_tracer(tracer)
         self.connection.commit()
-        self.assertEquals(tracer.seen, [("COMMIT", self.connection, None)])
+        self.assertEqual(tracer.seen, [("COMMIT", self.connection, None)])
 
     def test_rollback(self):
         self.connection.rollback()
-        self.assertEquals(self.executed, ["ROLLBACK"])
+        self.assertEqual(self.executed, ["ROLLBACK"])
 
     def test_rollback_tracing(self):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
         tracer = FakeTracer()
         install_tracer(tracer)
         self.connection.rollback()
-        self.assertEquals(tracer.seen, [("ROLLBACK", self.connection, None)])
+        self.assertEqual(tracer.seen, [("ROLLBACK", self.connection, None)])
 
     def test_close(self):
         self.connection.close()
-        self.assertEquals(self.executed, ["CCLOSE"])
+        self.assertEqual(self.executed, ["CCLOSE"])
 
     def test_close_twice(self):
         self.connection.close()
         self.connection.close()
-        self.assertEquals(self.executed, ["CCLOSE"])
+        self.assertEqual(self.executed, ["CCLOSE"])
 
     def test_close_deallocates_raw_connection(self):
         refs_before = len(gc.get_referrers(self.raw_connection))
         self.connection.close()
         refs_after = len(gc.get_referrers(self.raw_connection))
-        self.assertEquals(refs_after, refs_before-1)
+        self.assertEqual(refs_after, refs_before-1)
 
     def test_del_deallocates_raw_connection(self):
         refs_before = len(gc.get_referrers(self.raw_connection))
         self.connection.__del__()
         refs_after = len(gc.get_referrers(self.raw_connection))
-        self.assertEquals(refs_after, refs_before-1)
+        self.assertEqual(refs_after, refs_before-1)
 
     def test_wb_del_with_previously_deallocated_connection(self):
         self.connection._raw_connection = None
@@ -457,47 +457,47 @@ class ResultTest(TestHelper):
         self.result = Result(FakeConnection(), self.raw_cursor)
 
     def test_get_one(self):
-        self.assertEquals(self.result.get_one(), ("fetchone0",))
-        self.assertEquals(self.result.get_one(), ("fetchone1",))
-        self.assertEquals(self.result.get_one(), ("fetchone2",))
-        self.assertEquals(self.result.get_one(), None)
+        self.assertEqual(self.result.get_one(), ("fetchone0",))
+        self.assertEqual(self.result.get_one(), ("fetchone1",))
+        self.assertEqual(self.result.get_one(), ("fetchone2",))
+        self.assertEqual(self.result.get_one(), None)
 
     def test_get_all(self):
-        self.assertEquals(self.result.get_all(),
-                          [("fetchall0",), ("fetchall1",)])
-        self.assertEquals(self.result.get_all(), [])
+        self.assertEqual(self.result.get_all(),
+                         [("fetchall0",), ("fetchall1",)])
+        self.assertEqual(self.result.get_all(), [])
 
     def test_iter(self):
         result = Result(FakeConnection(), RawCursor(2))
-        self.assertEquals([item for item in result],
-                          [("fetchmany0",), ("fetchmany1",), ("fetchmany2",),
-                           ("fetchmany3",), ("fetchmany4",)])
+        self.assertEqual([item for item in result],
+                         [("fetchmany0",), ("fetchmany1",), ("fetchmany2",),
+                          ("fetchmany3",), ("fetchmany4",)])
 
     def test_set_variable(self):
         variable = Variable()
         self.result.set_variable(variable, marker)
-        self.assertEquals(variable.get(), marker)
+        self.assertEqual(variable.get(), marker)
 
     def test_close(self):
         self.result.close()
-        self.assertEquals(self.executed, ["RCLOSE"])
+        self.assertEqual(self.executed, ["RCLOSE"])
 
     def test_close_twice(self):
         self.result.close()
         self.result.close()
-        self.assertEquals(self.executed, ["RCLOSE"])
+        self.assertEqual(self.executed, ["RCLOSE"])
 
     def test_close_deallocates_raw_cursor(self):
         refs_before = len(gc.get_referrers(self.raw_cursor))
         self.result.close()
         refs_after = len(gc.get_referrers(self.raw_cursor))
-        self.assertEquals(refs_after, refs_before-1)
+        self.assertEqual(refs_after, refs_before-1)
 
     def test_del_deallocates_raw_cursor(self):
         refs_before = len(gc.get_referrers(self.raw_cursor))
         self.result.__del__()
         refs_after = len(gc.get_referrers(self.raw_cursor))
-        self.assertEquals(refs_after, refs_before-1)
+        self.assertEqual(refs_after, refs_before-1)
 
     def test_wb_del_with_previously_deallocated_cursor(self):
         self.result._raw_cursor = None
@@ -506,15 +506,15 @@ class ResultTest(TestHelper):
     def test_set_arraysize(self):
         """When the arraysize is 1, change it to a better value."""
         raw_cursor = RawCursor()
-        self.assertEquals(raw_cursor.arraysize, 1)
+        self.assertEqual(raw_cursor.arraysize, 1)
         result = Result(FakeConnection(), raw_cursor)
-        self.assertEquals(raw_cursor.arraysize, 10)
+        self.assertEqual(raw_cursor.arraysize, 10)
 
     def test_preserve_arraysize(self):
         """When the arraysize is not 1, preserve it."""
         raw_cursor = RawCursor(arraysize=123)
         result = Result(FakeConnection(), raw_cursor)
-        self.assertEquals(raw_cursor.arraysize, 123)
+        self.assertEqual(raw_cursor.arraysize, 123)
 
 
 class CreateDatabaseTest(TestHelper):
@@ -536,14 +536,14 @@ class CreateDatabaseTest(TestHelper):
     def test_create_database_with_str(self):
         create_database("db_module:db")
         self.assertTrue(self.uri)
-        self.assertEquals(self.uri.scheme, "db_module")
-        self.assertEquals(self.uri.database, "db")
+        self.assertEqual(self.uri.scheme, "db_module")
+        self.assertEqual(self.uri.database, "db")
 
     def test_create_database_with_unicode(self):
         create_database(u"db_module:db")
         self.assertTrue(self.uri)
-        self.assertEquals(self.uri.scheme, "db_module")
-        self.assertEquals(self.uri.database, "db")
+        self.assertEqual(self.uri.scheme, "db_module")
+        self.assertEqual(self.uri.database, "db")
 
     def test_create_database_with_uri(self):
         uri = URI("db_module:db")

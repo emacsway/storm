@@ -42,12 +42,12 @@ class TracerTest(TestHelper):
         d = object()
         install_tracer(c)
         install_tracer(d)
-        self.assertEquals(get_tracers(), [c, d])
+        self.assertEqual(get_tracers(), [c, d])
 
     def test_remove_all_tracers(self):
         install_tracer(object())
         remove_all_tracers()
-        self.assertEquals(get_tracers(), [])
+        self.assertEqual(get_tracers(), [])
 
     def test_remove_tracer(self):
         """The C{remote_tracer} function removes a specific tracer."""
@@ -56,13 +56,13 @@ class TracerTest(TestHelper):
         install_tracer(tracer1)
         install_tracer(tracer2)
         remove_tracer(tracer1)
-        self.assertEquals(get_tracers(), [tracer2])
+        self.assertEqual(get_tracers(), [tracer2])
 
     def test_remove_tracer_with_not_installed_tracer(self):
         """C{remote_tracer} exits gracefully if the tracer is not installed."""
         tracer = object()
         remove_tracer(tracer)
-        self.assertEquals(get_tracers(), [])
+        self.assertEqual(get_tracers(), [])
 
     def test_remove_tracer_type(self):
         class C(object):
@@ -78,26 +78,26 @@ class TracerTest(TestHelper):
         install_tracer(c)
         install_tracer(d2)
         remove_tracer_type(C)
-        self.assertEquals(get_tracers(), [d1, d2])
+        self.assertEqual(get_tracers(), [d1, d2])
         remove_tracer_type(D)
-        self.assertEquals(get_tracers(), [])
+        self.assertEqual(get_tracers(), [])
 
     def test_install_debug(self):
         debug(True)
         debug(True)
-        self.assertEquals([type(x) for x in get_tracers()], [DebugTracer])
+        self.assertEqual([type(x) for x in get_tracers()], [DebugTracer])
 
     def test_wb_install_debug_with_custom_stream(self):
         marker = object()
         debug(True, marker)
         [tracer] = get_tracers()
-        self.assertEquals(tracer._stream, marker)
+        self.assertEqual(tracer._stream, marker)
 
     def test_remove_debug(self):
         debug(True)
         debug(True)
         debug(False)
-        self.assertEquals(get_tracers(), [])
+        self.assertEqual(get_tracers(), [])
 
     def test_trace(self):
         stash = []
@@ -113,7 +113,7 @@ class TracerTest(TestHelper):
         trace("m1", 1, 2, c=3)
         trace("m2")
         trace("m3")
-        self.assertEquals(stash, ["m1", (1, 2), {"c": 3}, "m2", (), {}])
+        self.assertEqual(stash, ["m1", (1, 2), {"c": 3}, "m2", (), {}])
 
 
 class MockVariable(Variable):

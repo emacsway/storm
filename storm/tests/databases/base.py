@@ -151,7 +151,7 @@ class DatabaseTest(object):
         result = self.connection.execute(u"SELECT title FROM test")
         self.assertTrue(isinstance(result, Result))
         row = result.get_one()
-        self.assertEquals(row, ("Title 10",))
+        self.assertEqual(row, ("Title 10",))
         self.assertTrue(isinstance(row[0], six.text_type))
 
     def test_execute_params(self):
@@ -176,17 +176,17 @@ class DatabaseTest(object):
 
     def test_get_one(self):
         result = self.connection.execute("SELECT * FROM test ORDER BY id")
-        self.assertEquals(result.get_one(), (10, "Title 10"))
+        self.assertEqual(result.get_one(), (10, "Title 10"))
 
     def test_get_all(self):
         result = self.connection.execute("SELECT * FROM test ORDER BY id")
-        self.assertEquals(result.get_all(),
-                          [(10, "Title 10"), (20, "Title 20")])
+        self.assertEqual(result.get_all(),
+                         [(10, "Title 10"), (20, "Title 20")])
 
     def test_iter(self):
         result = self.connection.execute("SELECT * FROM test ORDER BY id")
-        self.assertEquals([item for item in result],
-                          [(10, "Title 10"), (20, "Title 20")])
+        self.assertEqual([item for item in result],
+                         [(10, "Title 10"), (20, "Title 20")])
 
     def test_simultaneous_iter(self):
         result1 = self.connection.execute("SELECT * FROM test "
@@ -195,10 +195,10 @@ class DatabaseTest(object):
                                           "ORDER BY id DESC")
         iter1 = iter(result1)
         iter2 = iter(result2)
-        self.assertEquals(next(iter1), (10, "Title 10"))
-        self.assertEquals(next(iter2), (20, "Title 20"))
-        self.assertEquals(next(iter1), (20, "Title 20"))
-        self.assertEquals(next(iter2), (10, "Title 10"))
+        self.assertEqual(next(iter1), (10, "Title 10"))
+        self.assertEqual(next(iter2), (20, "Title 20"))
+        self.assertEqual(next(iter1), (20, "Title 20"))
+        self.assertEqual(next(iter2), (10, "Title 10"))
         self.assertRaises(StopIteration, next, iter1)
         self.assertRaises(StopIteration, next, iter2)
 
@@ -210,7 +210,7 @@ class DatabaseTest(object):
         expr = result.get_insert_identity(primary_key, primary_variables)
         select = Select(Column("title", SQLToken("test")), expr)
         result = self.connection.execute(select)
-        self.assertEquals(result.get_one(), ("Title 30",))
+        self.assertEqual(result.get_one(), ("Title 30",))
 
     def test_get_insert_identity_composed(self):
         result = self.connection.execute("INSERT INTO test (title) "
@@ -221,7 +221,7 @@ class DatabaseTest(object):
         expr = result.get_insert_identity(primary_key, primary_variables)
         select = Select(Column("title", SQLToken("test")), expr)
         result = self.connection.execute(select)
-        self.assertEquals(result.get_one(), ("Title 30",))
+        self.assertEqual(result.get_one(), ("Title 30",))
 
     def test_datetime(self):
         value = datetime(1977, 4, 5, 12, 34, 56, 78)
@@ -232,7 +232,7 @@ class DatabaseTest(object):
         result.set_variable(variable, result.get_one()[0])
         if not self.supports_microseconds:
             value = value.replace(microsecond=0)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_date(self):
         value = date(1977, 4, 5)
@@ -241,7 +241,7 @@ class DatabaseTest(object):
         result = self.connection.execute("SELECT d FROM datetime_test")
         variable = DateVariable()
         result.set_variable(variable, result.get_one()[0])
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_time(self):
         value = time(12, 34, 56, 78)
@@ -252,7 +252,7 @@ class DatabaseTest(object):
         result.set_variable(variable, result.get_one()[0])
         if not self.supports_microseconds:
             value = value.replace(microsecond=0)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_timedelta(self):
         value = timedelta(12, 34, 56)
@@ -261,7 +261,7 @@ class DatabaseTest(object):
         result = self.connection.execute("SELECT td FROM datetime_test")
         variable = TimeDeltaVariable()
         result.set_variable(variable, result.get_one()[0])
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_pickle(self):
         value = {"a": 1, "b": 2}
@@ -271,7 +271,7 @@ class DatabaseTest(object):
         result = self.connection.execute("SELECT b FROM bin_test")
         variable = PickleVariable()
         result.set_variable(variable, result.get_one()[0])
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_binary(self):
         """Ensure database works with high bits and embedded zeros."""
@@ -281,7 +281,7 @@ class DatabaseTest(object):
         result = self.connection.execute("SELECT b FROM bin_test")
         variable = RawStrVariable()
         result.set_variable(variable, result.get_one()[0])
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
     def test_binary_ascii(self):
         """Some databases like pysqlite2 may return unicode for strings."""
@@ -290,7 +290,7 @@ class DatabaseTest(object):
         variable = RawStrVariable()
         # If the following doesn't raise a TypeError we're good.
         result.set_variable(variable, result.get_one()[0])
-        self.assertEquals(variable.get(), b"Value")
+        self.assertEqual(variable.get(), b"Value")
 
     def test_order_by_group_by(self):
         self.connection.execute("INSERT INTO test VALUES (100, 'Title 10')")
@@ -299,7 +299,7 @@ class DatabaseTest(object):
         title = Column("title", "test")
         expr = Select(Count(id), group_by=title, order_by=Count(id))
         result = self.connection.execute(expr)
-        self.assertEquals(result.get_all(), [(1,), (3,)])
+        self.assertEqual(result.get_all(), [(1,), (3,)])
 
     def test_set_decimal_variable_from_str_column(self):
         self.connection.execute("INSERT INTO test VALUES (40, '40.5')")
@@ -312,7 +312,7 @@ class DatabaseTest(object):
         variable.set("40.5", from_db=True)
         self.connection.execute("INSERT INTO test VALUES (40, ?)", (variable,))
         result = self.connection.execute("SELECT title FROM test WHERE id=40")
-        self.assertEquals(result.get_one()[0], "40.5")
+        self.assertEqual(result.get_one()[0], "40.5")
 
     def test_quoting(self):
         # FIXME "with'quote" should be in the list below, but it doesn't
@@ -322,7 +322,7 @@ class DatabaseTest(object):
             expr = Select(reserved_name,
                           tables=Alias(Select(Alias(1, reserved_name))))
             result = self.connection.execute(expr)
-            self.assertEquals(result.get_one(), (1,))
+            self.assertEqual(result.get_one(), (1,))
 
     def test_concurrent_behavior(self):
         """The default behavior should be to handle transactions in isolation.
@@ -342,15 +342,15 @@ class DatabaseTest(object):
         connection2 = self.database.connect()
         try:
             result = connection1.execute("SELECT title FROM test WHERE id=10")
-            self.assertEquals(result.get_one(), ("Title 10",))
+            self.assertEqual(result.get_one(), ("Title 10",))
             try:
                 connection2.execute("UPDATE test SET title='Title 100' "
                                     "WHERE id=10")
                 connection2.commit()
             except OperationalError as e:
-                self.assertEquals(str(e), "database is locked") # SQLite blocks
+                self.assertEqual(str(e), "database is locked") # SQLite blocks
             result = connection1.execute("SELECT title FROM test WHERE id=10")
-            self.assertEquals(result.get_one(), ("Title 10",))
+            self.assertEqual(result.get_one(), ("Title 10",))
         finally:
             connection1.rollback()
 
@@ -376,34 +376,34 @@ class DatabaseTest(object):
     def test_wb_result_get_one_goes_through_from_database(self):
         result = self.connection.execute("SELECT one, two FROM number")
         result.from_database = self.from_database
-        self.assertEquals(result.get_one(), (2, 3))
+        self.assertEqual(result.get_one(), (2, 3))
 
     def test_wb_result_get_all_goes_through_from_database(self):
         result = self.connection.execute("SELECT one, two FROM number")
         result.from_database = self.from_database
-        self.assertEquals(result.get_all(), [(2, 3)])
+        self.assertEqual(result.get_all(), [(2, 3)])
 
     def test_wb_result_iter_goes_through_from_database(self):
         result = self.connection.execute("SELECT one, two FROM number")
         result.from_database = self.from_database
-        self.assertEquals(next(iter(result)), (2, 3))
+        self.assertEqual(next(iter(result)), (2, 3))
 
     def test_rowcount_insert(self):
         # All supported backends support rowcount, so far.
         result = self.connection.execute(
             "INSERT INTO test VALUES (999, '999')")
-        self.assertEquals(result.rowcount, 1)
+        self.assertEqual(result.rowcount, 1)
 
     def test_rowcount_delete(self):
         # All supported backends support rowcount, so far.
         result = self.connection.execute("DELETE FROM test")
-        self.assertEquals(result.rowcount, 2)
+        self.assertEqual(result.rowcount, 2)
 
     def test_rowcount_update(self):
         # All supported backends support rowcount, so far.
         result = self.connection.execute(
             "UPDATE test SET title='whatever'")
-        self.assertEquals(result.rowcount, 2)
+        self.assertEqual(result.rowcount, 2)
 
     def test_expr_startswith(self):
         self.connection.execute("INSERT INTO test VALUES (30, '!!_%blah')")
@@ -412,7 +412,7 @@ class DatabaseTest(object):
         title = Column("title", SQLToken("test"))
         expr = Select(id, title.startswith(u"!!_%"))
         result = list(self.connection.execute(expr))
-        self.assertEquals(result, [(30,)])
+        self.assertEqual(result, [(30,)])
 
     def test_expr_endswith(self):
         self.connection.execute("INSERT INTO test VALUES (30, 'blah_%!!')")
@@ -421,7 +421,7 @@ class DatabaseTest(object):
         title = Column("title", SQLToken("test"))
         expr = Select(id, title.endswith(u"_%!!"))
         result = list(self.connection.execute(expr))
-        self.assertEquals(result, [(30,)])
+        self.assertEqual(result, [(30,)])
 
     def test_expr_contains_string(self):
         self.connection.execute("INSERT INTO test VALUES (30, 'blah_%!!x')")
@@ -430,7 +430,7 @@ class DatabaseTest(object):
         title = Column("title", SQLToken("test"))
         expr = Select(id, title.contains_string(u"_%!!"))
         result = list(self.connection.execute(expr))
-        self.assertEquals(result, [(30,)])
+        self.assertEqual(result, [(30,)])
 
     def test_block_access(self):
         """Access to the connection is blocked by block_access()."""

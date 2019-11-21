@@ -380,7 +380,7 @@ class MockerBase(six.with_metaclass(MockerMeta, object)):
                 mock.hello()
                 self.mocker.result("Hi!")
                 self.mocker.replay()
-                self.assertEquals(mock.hello(), "Hi!")
+                self.assertEqual(mock.hello(), "Hi!")
     """
 
     _recorders = []

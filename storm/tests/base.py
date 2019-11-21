@@ -35,7 +35,7 @@ class BaseTest(TestHelper):
         class Class(Storm):
             __storm_table__ = "table_name"
             prop = Property(primary=True)
-        self.assertEquals(type(Class), PropertyPublisherMeta)
+        self.assertEqual(type(Class), PropertyPublisherMeta)
 
     def test_class_is_collectable(self):
         class Class(Storm):
@@ -46,4 +46,4 @@ class BaseTest(TestHelper):
         obj_ref = weakref.ref(obj)
         del obj
         gc.collect()
-        self.assertEquals(obj_ref(), None)
+        self.assertEqual(obj_ref(), None)

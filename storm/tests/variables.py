@@ -65,38 +65,38 @@ class VariableTest(TestHelper):
 
     def test_constructor_value(self):
         variable = CustomVariable(marker)
-        self.assertEquals(variable.sets, [(marker, False)])
+        self.assertEqual(variable.sets, [(marker, False)])
 
     def test_constructor_value_from_db(self):
         variable = CustomVariable(marker, from_db=True)
-        self.assertEquals(variable.sets, [(marker, True)])
+        self.assertEqual(variable.sets, [(marker, True)])
 
     def test_constructor_value_factory(self):
         variable = CustomVariable(value_factory=lambda:marker)
-        self.assertEquals(variable.sets, [(marker, False)])
+        self.assertEqual(variable.sets, [(marker, False)])
 
     def test_constructor_value_factory_from_db(self):
         variable = CustomVariable(value_factory=lambda:marker, from_db=True)
-        self.assertEquals(variable.sets, [(marker, True)])
+        self.assertEqual(variable.sets, [(marker, True)])
 
     def test_constructor_column(self):
         variable = CustomVariable(column=marker)
-        self.assertEquals(variable.column, marker)
+        self.assertEqual(variable.column, marker)
 
     def test_constructor_event(self):
         variable = CustomVariable(event=marker)
-        self.assertEquals(variable.event, weakref.proxy(marker))
+        self.assertEqual(variable.event, weakref.proxy(marker))
 
     def test_get_default(self):
         variable = CustomVariable()
-        self.assertEquals(variable.get(default=marker), marker)
+        self.assertEqual(variable.get(default=marker), marker)
 
     def test_set(self):
         variable = CustomVariable()
         variable.set(marker)
-        self.assertEquals(variable.sets, [(marker, False)])
+        self.assertEqual(variable.sets, [(marker, False)])
         variable.set(marker, from_db=True)
-        self.assertEquals(variable.sets, [(marker, False), (marker, True)])
+        self.assertEqual(variable.sets, [(marker, False), (marker, True)])
 
     def test_set_leak(self):
         """When a variable is checkpointed, the value must not leak."""
@@ -113,13 +113,13 @@ class VariableTest(TestHelper):
     def test_get(self):
         variable = CustomVariable()
         variable.set(marker)
-        self.assertEquals(variable.get(), ("g", ("s", marker)))
-        self.assertEquals(variable.gets, [(("s", marker), False)])
+        self.assertEqual(variable.get(), ("g", ("s", marker)))
+        self.assertEqual(variable.gets, [(("s", marker), False)])
 
         variable = CustomVariable()
         variable.set(marker)
-        self.assertEquals(variable.get(to_db=True), ("g", ("s", marker)))
-        self.assertEquals(variable.gets, [(("s", marker), True)])
+        self.assertEqual(variable.get(to_db=True), ("g", ("s", marker)))
+        self.assertEqual(variable.gets, [(("s", marker), True)])
 
     def test_is_defined(self):
         variable = CustomVariable()
@@ -130,9 +130,9 @@ class VariableTest(TestHelper):
     def test_set_get_none(self):
         variable = CustomVariable()
         variable.set(None)
-        self.assertEquals(variable.get(marker), None)
-        self.assertEquals(variable.sets, [])
-        self.assertEquals(variable.gets, [])
+        self.assertEqual(variable.get(marker), None)
+        self.assertEqual(variable.sets, [])
+        self.assertEqual(variable.gets, [])
 
     def test_set_none_with_allow_none(self):
         variable = CustomVariable(allow_none=False)
@@ -165,7 +165,7 @@ class VariableTest(TestHelper):
             return value
         variable = CustomVariable(validator=validator)
         variable.set(3)
-        self.assertEquals(args, [(None, None, 3)])
+        self.assertEqual(args, [(None, None, 3)])
 
     def test_set_with_validator_and_validator_arguments(self):
         args = []
@@ -176,7 +176,7 @@ class VariableTest(TestHelper):
                                   validator_object_factory=lambda: 1,
                                   validator_attribute=2)
         variable.set(3)
-        self.assertEquals(args, [(1, 2, 3)])
+        self.assertEqual(args, [(1, 2, 3)])
 
     def test_set_with_validator_raising_error(self):
         args = []
@@ -185,8 +185,8 @@ class VariableTest(TestHelper):
             raise ZeroDivisionError()
         variable = CustomVariable(validator=validator)
         self.assertRaises(ZeroDivisionError, variable.set, marker)
-        self.assertEquals(args, [(None, None, marker)])
-        self.assertEquals(variable.get(), None)
+        self.assertEqual(args, [(None, None, marker)])
+        self.assertEqual(variable.get(), None)
 
     def test_set_with_validator_changing_value(self):
         args = []
@@ -195,8 +195,8 @@ class VariableTest(TestHelper):
             return 42
         variable = CustomVariable(validator=validator)
         variable.set(marker)
-        self.assertEquals(args, [(None, None, marker)])
-        self.assertEquals(variable.get(), ('g', ('s', 42)))
+        self.assertEqual(args, [(None, None, marker)])
+        self.assertEqual(variable.get(), ('g', ('s', 42)))
 
     def test_set_from_db_wont_call_validator(self):
         args = []
@@ -205,8 +205,8 @@ class VariableTest(TestHelper):
             return 42
         variable = CustomVariable(validator=validator)
         variable.set(marker, from_db=True)
-        self.assertEquals(args, [])
-        self.assertEquals(variable.get(), ('g', ('s', marker)))
+        self.assertEqual(args, [])
+        self.assertEqual(variable.get(), ('g', ('s', marker)))
 
     def test_event_changed(self):
         event = EventSystem(marker)
@@ -227,31 +227,31 @@ class VariableTest(TestHelper):
         variable.delete()
         variable.delete()
 
-        self.assertEquals(changed_values[0],
+        self.assertEqual(changed_values[0],
           (marker, variable, Undef, "value1", False))
-        self.assertEquals(changed_values[1],
+        self.assertEqual(changed_values[1],
           (marker, variable, ("g", ("s", "value1")), "value2", False))
-        self.assertEquals(changed_values[2],
+        self.assertEqual(changed_values[2],
           (marker, variable, ("g", ("s", "value2")), ("g", ("s", "value3")),
            True))
-        self.assertEquals(changed_values[3],
+        self.assertEqual(changed_values[3],
           (marker, variable, ("g", ("s", "value3")), None, True))
-        self.assertEquals(changed_values[4],
+        self.assertEqual(changed_values[4],
           (marker, variable, None, "value4", False))
-        self.assertEquals(changed_values[5],
+        self.assertEqual(changed_values[5],
           (marker, variable, ("g", ("s", "value4")), Undef, False))
-        self.assertEquals(len(changed_values), 6)
+        self.assertEqual(len(changed_values), 6)
 
     def test_get_state(self):
         variable = CustomVariable(marker)
-        self.assertEquals(variable.get_state(), (Undef, ("s", marker)))
+        self.assertEqual(variable.get_state(), (Undef, ("s", marker)))
 
     def test_set_state(self):
         lazy_value = object()
         variable = CustomVariable()
         variable.set_state((lazy_value, marker))
-        self.assertEquals(variable.get(), ("g", marker))
-        self.assertEquals(variable.get_lazy(), lazy_value)
+        self.assertEqual(variable.get(), ("g", marker))
+        self.assertEqual(variable.get_lazy(), lazy_value)
 
     def test_checkpoint_and_has_changed(self):
         variable = CustomVariable()
@@ -284,16 +284,16 @@ class VariableTest(TestHelper):
     def test_lazy_value_setting(self):
         variable = CustomVariable()
         variable.set(LazyValue())
-        self.assertEquals(variable.sets, [])
+        self.assertEqual(variable.sets, [])
         self.assertTrue(variable.has_changed())
 
     def test_lazy_value_getting(self):
         variable = CustomVariable()
         variable.set(LazyValue())
-        self.assertEquals(variable.get(marker), marker)
+        self.assertEqual(variable.get(marker), marker)
         variable.set(1)
         variable.set(LazyValue())
-        self.assertEquals(variable.get(marker), marker)
+        self.assertEqual(variable.get(marker), marker)
         self.assertFalse(variable.is_defined())
 
     def test_lazy_value_resolving(self):
@@ -312,8 +312,8 @@ class VariableTest(TestHelper):
 
         variable.get()
 
-        self.assertEquals(resolve_values,
-                          [(marker, variable, lazy_value)])
+        self.assertEqual(resolve_values,
+                         [(marker, variable, lazy_value)])
 
     def test_lazy_value_changed_event(self):
         event = EventSystem(marker)
@@ -331,8 +331,8 @@ class VariableTest(TestHelper):
 
         variable.set(lazy_value)
 
-        self.assertEquals(changed_values,
-                          [(marker, variable, Undef, lazy_value, False)])
+        self.assertEqual(changed_values,
+                         [(marker, variable, Undef, lazy_value, False)])
 
     def test_lazy_value_setting_on_resolving(self):
         event = EventSystem(marker)
@@ -345,7 +345,7 @@ class VariableTest(TestHelper):
         lazy_value = LazyValue()
         variable = CustomVariable(lazy_value, event=event)
 
-        self.assertEquals(variable.get(), ("g", ("s", marker)))
+        self.assertEqual(variable.get(), ("g", ("s", marker)))
 
     def test_lazy_value_reset_after_changed(self):
         event = EventSystem(marker)
@@ -360,16 +360,16 @@ class VariableTest(TestHelper):
 
         variable.set(LazyValue())
         variable.set(1)
-        self.assertEquals(variable.get(), ("g", ("s", 1)))
-        self.assertEquals(resolve_called, [])
+        self.assertEqual(variable.get(), ("g", ("s", 1)))
+        self.assertEqual(resolve_called, [])
 
     def test_get_lazy_value(self):
         lazy_value = LazyValue()
         variable = CustomVariable()
-        self.assertEquals(variable.get_lazy(), None)
-        self.assertEquals(variable.get_lazy(marker), marker)
+        self.assertEqual(variable.get_lazy(), None)
+        self.assertEqual(variable.get_lazy(marker), marker)
         variable.set(lazy_value)
-        self.assertEquals(variable.get_lazy(marker), lazy_value)
+        self.assertEqual(variable.get_lazy(marker), lazy_value)
 
 
 class BoolVariableTest(TestHelper):
@@ -396,11 +396,11 @@ class IntVariableTest(TestHelper):
     def test_set_get(self):
         variable = IntVariable()
         variable.set(1)
-        self.assertEquals(variable.get(), 1)
+        self.assertEqual(variable.get(), 1)
         variable.set(1.1)
-        self.assertEquals(variable.get(), 1)
+        self.assertEqual(variable.get(), 1)
         variable.set(Decimal(2))
-        self.assertEquals(variable.get(), 2)
+        self.assertEqual(variable.get(), 2)
         self.assertRaises(TypeError, variable.set, "1")
 
 
@@ -409,12 +409,12 @@ class FloatVariableTest(TestHelper):
     def test_set_get(self):
         variable = FloatVariable()
         variable.set(1.1)
-        self.assertEquals(variable.get(), 1.1)
+        self.assertEqual(variable.get(), 1.1)
         variable.set(1)
-        self.assertEquals(variable.get(), 1)
-        self.assertEquals(type(variable.get()), float)
+        self.assertEqual(variable.get(), 1)
+        self.assertEqual(type(variable.get()), float)
         variable.set(Decimal("1.1"))
-        self.assertEquals(variable.get(), 1.1)
+        self.assertEqual(variable.get(), 1.1)
         self.assertRaises(TypeError, variable.set, "1")
 
 
@@ -423,12 +423,12 @@ class DecimalVariableTest(TestHelper):
     def test_set_get(self):
         variable = DecimalVariable()
         variable.set(Decimal("1.1"))
-        self.assertEquals(variable.get(), Decimal("1.1"))
+        self.assertEqual(variable.get(), Decimal("1.1"))
         variable.set(1)
-        self.assertEquals(variable.get(), 1)
-        self.assertEquals(type(variable.get()), Decimal)
+        self.assertEqual(variable.get(), 1)
+        self.assertEqual(type(variable.get()), Decimal)
         variable.set(Decimal("1.1"))
-        self.assertEquals(variable.get(), Decimal("1.1"))
+        self.assertEqual(variable.get(), Decimal("1.1"))
         self.assertRaises(TypeError, variable.set, "1")
         self.assertRaises(TypeError, variable.set, 1.1)
 
@@ -436,8 +436,8 @@ class DecimalVariableTest(TestHelper):
         """Strings used to/from the database."""
         variable = DecimalVariable()
         variable.set("1.1", from_db=True)
-        self.assertEquals(variable.get(), Decimal("1.1"))
-        self.assertEquals(variable.get(to_db=True), "1.1")
+        self.assertEqual(variable.get(), Decimal("1.1"))
+        self.assertEqual(variable.get(to_db=True), "1.1")
 
 
 class RawStrVariableTest(TestHelper):
@@ -445,10 +445,10 @@ class RawStrVariableTest(TestHelper):
     def test_set_get(self):
         variable = RawStrVariable()
         variable.set(b"str")
-        self.assertEquals(variable.get(), b"str")
+        self.assertEqual(variable.get(), b"str")
         buffer_type = memoryview if six.PY3 else buffer
         variable.set(buffer_type(b"buffer"))
-        self.assertEquals(variable.get(), b"buffer")
+        self.assertEqual(variable.get(), b"buffer")
         self.assertRaises(TypeError, variable.set, u"unicode")
 
 
@@ -457,7 +457,7 @@ class UnicodeVariableTest(TestHelper):
     def test_set_get(self):
         variable = UnicodeVariable()
         variable.set(u"unicode")
-        self.assertEquals(variable.get(), u"unicode")
+        self.assertEqual(variable.get(), u"unicode")
         self.assertRaises(TypeError, variable.set, b"str")
 
 
@@ -467,16 +467,16 @@ class DateTimeVariableTest(TestHelper):
         epoch = datetime.utcfromtimestamp(0)
         variable = DateTimeVariable()
         variable.set(0)
-        self.assertEquals(variable.get(), epoch)
+        self.assertEqual(variable.get(), epoch)
         variable.set(0.0)
-        self.assertEquals(variable.get(), epoch)
+        self.assertEqual(variable.get(), epoch)
         if six.PY2:
             # 1L was more idiomatic in Python 2, but is a syntax error in
             # Python 3.
             variable.set(long(0))
-            self.assertEquals(variable.get(), epoch)
+            self.assertEqual(variable.get(), epoch)
         variable.set(epoch)
-        self.assertEquals(variable.get(), epoch)
+        self.assertEqual(variable.get(), epoch)
         self.assertRaises(TypeError, variable.set, marker)
 
     def test_get_set_from_database(self):
@@ -487,22 +487,22 @@ class DateTimeVariableTest(TestHelper):
         variable = DateTimeVariable()
 
         variable.set(datetime_str, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
         variable.set(datetime_uni, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
         variable.set(datetime_obj, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
 
         datetime_str = "1977-05-04 12:34:56"
         datetime_uni = six.text_type(datetime_str)
         datetime_obj = datetime(1977, 5, 4, 12, 34, 56)
 
         variable.set(datetime_str, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
         variable.set(datetime_uni, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
         variable.set(datetime_obj, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
 
         self.assertRaises(TypeError, variable.set, 0, from_db=True)
         self.assertRaises(TypeError, variable.set, marker, from_db=True)
@@ -517,9 +517,9 @@ class DateTimeVariableTest(TestHelper):
 
         # Naive timezone, from_db=True.
         variable.set(datetime_str, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
         variable.set(datetime_obj, from_db=True)
-        self.assertEquals(variable.get(), datetime_obj)
+        self.assertEqual(variable.get(), datetime_obj)
 
         # Naive timezone, from_db=False (doesn't work).
         datetime_obj = datetime(1977, 5, 4, 12, 34, 56, 780000)
@@ -530,16 +530,16 @@ class DateTimeVariableTest(TestHelper):
                                 tzinfo=tzoffset("1h", 3600))
         variable.set(datetime_obj, from_db=False)
         converted_obj = variable.get()
-        self.assertEquals(converted_obj, datetime_obj)
-        self.assertEquals(type(converted_obj.tzinfo), tzutc)
+        self.assertEqual(converted_obj, datetime_obj)
+        self.assertEqual(type(converted_obj.tzinfo), tzutc)
 
         # Different timezone, from_db=True.
         datetime_obj = datetime(1977, 5, 4, 12, 34, 56, 780000,
                                 tzinfo=tzoffset("1h", 3600))
         variable.set(datetime_obj, from_db=True)
         converted_obj = variable.get()
-        self.assertEquals(converted_obj, datetime_obj)
-        self.assertEquals(type(converted_obj.tzinfo), tzutc)
+        self.assertEqual(converted_obj, datetime_obj)
+        self.assertEqual(type(converted_obj.tzinfo), tzutc)
 
 
 class DateVariableTest(TestHelper):
@@ -551,9 +551,9 @@ class DateVariableTest(TestHelper):
         variable = DateVariable()
 
         variable.set(epoch)
-        self.assertEquals(variable.get(), epoch_date)
+        self.assertEqual(variable.get(), epoch_date)
         variable.set(epoch_date)
-        self.assertEquals(variable.get(), epoch_date)
+        self.assertEqual(variable.get(), epoch_date)
 
         self.assertRaises(TypeError, variable.set, marker)
 
@@ -566,13 +566,13 @@ class DateVariableTest(TestHelper):
         variable = DateVariable()
 
         variable.set(date_str, from_db=True)
-        self.assertEquals(variable.get(), date_obj)
+        self.assertEqual(variable.get(), date_obj)
         variable.set(date_uni, from_db=True)
-        self.assertEquals(variable.get(), date_obj)
+        self.assertEqual(variable.get(), date_obj)
         variable.set(date_obj, from_db=True)
-        self.assertEquals(variable.get(), date_obj)
+        self.assertEqual(variable.get(), date_obj)
         variable.set(datetime_obj, from_db=True)
-        self.assertEquals(variable.get(), date_obj)
+        self.assertEqual(variable.get(), date_obj)
 
         self.assertRaises(TypeError, variable.set, 0, from_db=True)
         self.assertRaises(TypeError, variable.set, marker, from_db=True)
@@ -583,7 +583,7 @@ class DateVariableTest(TestHelper):
         date_obj = date(1977, 5, 4)
         variable = DateVariable()
         variable.set(datetime_str, from_db=True)
-        self.assertEquals(variable.get(), date_obj)
+        self.assertEqual(variable.get(), date_obj)
 
 
 class TimeVariableTest(TestHelper):
@@ -595,9 +595,9 @@ class TimeVariableTest(TestHelper):
         variable = TimeVariable()
 
         variable.set(epoch)
-        self.assertEquals(variable.get(), epoch_time)
+        self.assertEqual(variable.get(), epoch_time)
         variable.set(epoch_time)
-        self.assertEquals(variable.get(), epoch_time)
+        self.assertEqual(variable.get(), epoch_time)
 
         self.assertRaises(TypeError, variable.set, marker)
 
@@ -609,22 +609,22 @@ class TimeVariableTest(TestHelper):
         variable = TimeVariable()
 
         variable.set(time_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
         variable.set(time_uni, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
         variable.set(time_obj, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
         time_str = "12:34:56"
         time_uni = six.text_type(time_str)
         time_obj = time(12, 34, 56)
 
         variable.set(time_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
         variable.set(time_uni, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
         variable.set(time_obj, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
         self.assertRaises(TypeError, variable.set, 0, from_db=True)
         self.assertRaises(TypeError, variable.set, marker, from_db=True)
@@ -635,28 +635,28 @@ class TimeVariableTest(TestHelper):
         time_obj = time(12, 34, 56, 780000)
         variable = TimeVariable()
         variable.set(datetime_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
     def test_microsecond_error(self):
         time_str = "15:14:18.598678"
         time_obj = time(15, 14, 18, 598678)
         variable = TimeVariable()
         variable.set(time_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
     def test_microsecond_error_less_digits(self):
         time_str = "15:14:18.5986"
         time_obj = time(15, 14, 18, 598600)
         variable = TimeVariable()
         variable.set(time_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
     def test_microsecond_error_more_digits(self):
         time_str = "15:14:18.5986789"
         time_obj = time(15, 14, 18, 598678)
         variable = TimeVariable()
         variable.set(time_str, from_db=True)
-        self.assertEquals(variable.get(), time_obj)
+        self.assertEqual(variable.get(), time_obj)
 
 
 class TimeDeltaVariableTest(TestHelper):
@@ -667,7 +667,7 @@ class TimeDeltaVariableTest(TestHelper):
         variable = TimeDeltaVariable()
 
         variable.set(delta)
-        self.assertEquals(variable.get(), delta)
+        self.assertEqual(variable.get(), delta)
 
         self.assertRaises(TypeError, variable.set, marker)
 
@@ -680,22 +680,22 @@ class TimeDeltaVariableTest(TestHelper):
         variable = TimeDeltaVariable()
 
         variable.set(delta_str, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
         variable.set(delta_uni, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
         variable.set(delta_obj, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
 
         delta_str = "1 day, 12:34:56"
         delta_uni = six.text_type(delta_str)
         delta_obj = timedelta(days=1, hours=12, minutes=34, seconds=56)
 
         variable.set(delta_str, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
         variable.set(delta_uni, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
         variable.set(delta_obj, from_db=True)
-        self.assertEquals(variable.get(), delta_obj)
+        self.assertEqual(variable.get(), delta_obj)
 
         self.assertRaises(TypeError, variable.set, 0, from_db=True)
         self.assertRaises(TypeError, variable.set, marker, from_db=True)
@@ -710,7 +710,7 @@ class TimeDeltaVariableTest(TestHelper):
 class ParseIntervalTest(TestHelper):
 
     def check(self, interval, td):
-        self.assertEquals(TimeDeltaVariable(interval, from_db=True).get(), td)
+        self.assertEqual(TimeDeltaVariable(interval, from_db=True).get(), td)
 
     def test_zero(self):
         self.check("0:00:00", timedelta(0))
@@ -776,8 +776,8 @@ class ParseIntervalTest(TestHelper):
         try:
             self.check("1 month", None)
         except ValueError as e:
-            self.assertEquals(str(e), "Unsupported interval unit 'month' "
-                                      "in interval '1 month'")
+            self.assertEqual(str(e), "Unsupported interval unit 'month' "
+                                     "in interval '1 month'")
         else:
             self.fail("ValueError not raised")
 
@@ -785,8 +785,8 @@ class ParseIntervalTest(TestHelper):
         try:
             self.check("day", None)
         except ValueError as e:
-            self.assertEquals(str(e), "Expected an interval value rather than "
-                                      "'day' in interval 'day'")
+            self.assertEqual(str(e), "Expected an interval value rather than "
+                                     "'day' in interval 'day'")
         else:
             self.fail("ValueError not raised")
 
@@ -799,8 +799,8 @@ class UUIDVariableTest(TestHelper):
         variable = UUIDVariable()
 
         variable.set(value)
-        self.assertEquals(variable.get(), value)
-        self.assertEquals(
+        self.assertEqual(variable.get(), value)
+        self.assertEqual(
             variable.get(to_db=True), "0609f76b-878f-4546-baf5-c1b135e8de72")
 
         self.assertRaises(TypeError, variable.set, marker)
@@ -816,17 +816,17 @@ class UUIDVariableTest(TestHelper):
 
         # Strings and UUID objects are accepted from the database.
         variable.set(value, from_db=True)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
         variable.set("0609f76b-878f-4546-baf5-c1b135e8de72", from_db=True)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
         variable.set(u"0609f76b-878f-4546-baf5-c1b135e8de72", from_db=True)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
         # Some other representations for UUID values.
         variable.set("{0609f76b-878f-4546-baf5-c1b135e8de72}", from_db=True)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
         variable.set("0609f76b878f4546baf5c1b135e8de72", from_db=True)
-        self.assertEquals(variable.get(), value)
+        self.assertEqual(variable.get(), value)
 
 
 class EncodedValueVariableTestMixin(object):
@@ -841,21 +841,21 @@ class EncodedValueVariableTestMixin(object):
         variable = self.variable_type()
 
         variable.set(d)
-        self.assertEquals(variable.get(), d)
-        self.assertEquals(variable.get(to_db=True), d_dump)
+        self.assertEqual(variable.get(), d)
+        self.assertEqual(variable.get(to_db=True), d_dump)
 
         variable.set(d_dump, from_db=True)
-        self.assertEquals(variable.get(), d)
-        self.assertEquals(variable.get(to_db=True), d_dump)
+        self.assertEqual(variable.get(), d)
+        self.assertEqual(variable.get(to_db=True), d_dump)
 
-        self.assertEquals(variable.get_state(), (Undef, d_dump))
+        self.assertEqual(variable.get_state(), (Undef, d_dump))
 
         variable.set(marker)
         variable.set_state((Undef, d_dump))
-        self.assertEquals(variable.get(), d)
+        self.assertEqual(variable.get(), d)
 
         variable.get()["b"] = 2
-        self.assertEquals(variable.get(), {"a": 1, "b": 2})
+        self.assertEqual(variable.get(), {"a": 1, "b": 2})
 
     def test_pickle_events(self):
         event = EventSystem(marker)
@@ -873,25 +873,25 @@ class EncodedValueVariableTestMixin(object):
 
         event.emit("flush")
 
-        self.assertEquals(changes, [])
+        self.assertEqual(changes, [])
 
         lst = variable.get()
 
-        self.assertEquals(lst, [])
-        self.assertEquals(changes, [])
+        self.assertEqual(lst, [])
+        self.assertEqual(changes, [])
 
         lst.append("a")
 
-        self.assertEquals(changes, [])
+        self.assertEqual(changes, [])
 
         event.emit("flush")
 
-        self.assertEquals(changes, [(variable, None, ["a"], False)])
+        self.assertEqual(changes, [(variable, None, ["a"], False)])
 
         del changes[:]
 
         event.emit("object-deleted")
-        self.assertEquals(changes, [(variable, None, ["a"], False)])
+        self.assertEqual(changes, [(variable, None, ["a"], False)])
 
 
 class PickleVariableTest(EncodedValueVariableTestMixin, TestHelper):
@@ -942,21 +942,21 @@ class ListVariableTest(TestHelper):
         variable = ListVariable(item_factory)
 
         variable.set(l)
-        self.assertEquals(variable.get(), l)
+        self.assertEqual(variable.get(), l)
         self.assertVariablesEqual(variable.get(to_db=True), l_vars)
 
         variable.set([1, 2], from_db=True)
-        self.assertEquals(variable.get(), l)
+        self.assertEqual(variable.get(), l)
         self.assertVariablesEqual(variable.get(to_db=True), l_vars)
 
-        self.assertEquals(variable.get_state(), (Undef, l_dump))
+        self.assertEqual(variable.get_state(), (Undef, l_dump))
 
         variable.set([])
         variable.set_state((Undef, l_dump))
-        self.assertEquals(variable.get(), l)
+        self.assertEqual(variable.get(), l)
 
         variable.get().append("c")
-        self.assertEquals(variable.get(), ["a", "b", "c"])
+        self.assertEqual(variable.get(), ["a", "b", "c"])
 
     def test_list_events(self):
         event = EventSystem(marker)
@@ -975,25 +975,25 @@ class ListVariableTest(TestHelper):
 
         event.emit("flush")
 
-        self.assertEquals(changes, [])
+        self.assertEqual(changes, [])
 
         lst = variable.get()
 
-        self.assertEquals(lst, [])
-        self.assertEquals(changes, [])
+        self.assertEqual(lst, [])
+        self.assertEqual(changes, [])
 
         lst.append("a")
 
-        self.assertEquals(changes, [])
+        self.assertEqual(changes, [])
 
         event.emit("flush")
 
-        self.assertEquals(changes, [(variable, None, ["a"], False)])
+        self.assertEqual(changes, [(variable, None, ["a"], False)])
 
         del changes[:]
 
         event.emit("object-deleted")
-        self.assertEquals(changes, [(variable, None, ["a"], False)])
+        self.assertEqual(changes, [(variable, None, ["a"], False)])
 
 
 class EnumVariableTest(TestHelper):
@@ -1001,21 +1001,21 @@ class EnumVariableTest(TestHelper):
     def test_set_get(self):
         variable = EnumVariable({1: "foo", 2: "bar"}, {"foo": 1, "bar": 2})
         variable.set("foo")
-        self.assertEquals(variable.get(), "foo")
-        self.assertEquals(variable.get(to_db=True), 1)
+        self.assertEqual(variable.get(), "foo")
+        self.assertEqual(variable.get(to_db=True), 1)
         variable.set(2, from_db=True)
-        self.assertEquals(variable.get(), "bar")
-        self.assertEquals(variable.get(to_db=True), 2)
+        self.assertEqual(variable.get(), "bar")
+        self.assertEqual(variable.get(to_db=True), 2)
         self.assertRaises(ValueError, variable.set, "foobar")
         self.assertRaises(ValueError, variable.set, 2)
 
     def test_in_map(self):
         variable = EnumVariable({1: "foo", 2: "bar"}, {"one": 1, "two": 2})
         variable.set("one")
-        self.assertEquals(variable.get(), "foo")
-        self.assertEquals(variable.get(to_db=True), 1)
+        self.assertEqual(variable.get(), "foo")
+        self.assertEqual(variable.get(to_db=True), 1)
         variable.set(2, from_db=True)
-        self.assertEquals(variable.get(), "bar")
-        self.assertEquals(variable.get(to_db=True), 2)
+        self.assertEqual(variable.get(), "bar")
+        self.assertEqual(variable.get(to_db=True), 2)
         self.assertRaises(ValueError, variable.set, "foo")
         self.assertRaises(ValueError, variable.set, 2)

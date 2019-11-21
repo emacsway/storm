@@ -28,117 +28,117 @@ class URITest(TestHelper):
 
     def test_parse_defaults(self):
         uri = URI("scheme:")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.options, {})
-        self.assertEquals(uri.username, None)
-        self.assertEquals(uri.password, None)
-        self.assertEquals(uri.host, None)
-        self.assertEquals(uri.port, None)
-        self.assertEquals(uri.database, None)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.options, {})
+        self.assertEqual(uri.username, None)
+        self.assertEqual(uri.password, None)
+        self.assertEqual(uri.host, None)
+        self.assertEqual(uri.port, None)
+        self.assertEqual(uri.database, None)
 
     def test_parse_no_colon(self):
         self.assertRaises(URIError, URI, "scheme")
 
     def test_parse_just_colon(self):
         uri = URI("scheme:")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.database, None)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.database, None)
 
     def test_parse_just_relative_database(self):
         uri = URI("scheme:d%61ta/base")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.database, "data/base")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.database, "data/base")
 
     def test_parse_just_absolute_database(self):
         uri = URI("scheme:/d%61ta/base")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.database, "/data/base")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.database, "/data/base")
 
     def test_parse_host(self):
         uri = URI("scheme://ho%73t")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.host, "host")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.host, "host")
 
     def test_parse_username(self):
         uri = URI("scheme://user%6eame@")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.host, None)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.host, None)
 
     def test_parse_username_password(self):
         uri = URI("scheme://user%6eame:pass%77ord@")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, None)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, None)
 
     def test_parse_username_host(self):
         uri = URI("scheme://user%6eame@ho%73t")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.host, "host")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.host, "host")
 
     def test_parse_username_password_host(self):
         uri = URI("scheme://user%6eame:pass%77ord@ho%73t")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, "host")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, "host")
 
     def test_parse_username_password_host_port(self):
         uri = URI("scheme://user%6eame:pass%77ord@ho%73t:1234")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, "host")
-        self.assertEquals(uri.port, 1234)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, "host")
+        self.assertEqual(uri.port, 1234)
 
     def test_parse_username_password_host_empty_port(self):
         uri = URI("scheme://user%6eame:pass%77ord@ho%73t:")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, "host")
-        self.assertEquals(uri.port, None)
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, "host")
+        self.assertEqual(uri.port, None)
 
     def test_parse_username_password_host_port_database(self):
         uri = URI("scheme://user%6eame:pass%77ord@ho%73t:1234/d%61tabase")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, "host")
-        self.assertEquals(uri.port, 1234)
-        self.assertEquals(uri.database, "database")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, "host")
+        self.assertEqual(uri.port, 1234)
+        self.assertEqual(uri.database, "database")
 
     def test_parse_username_password_database(self):
         uri = URI("scheme://user%6eame:pass%77ord@/d%61tabase")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.username, "username")
-        self.assertEquals(uri.password, "password")
-        self.assertEquals(uri.host, None)
-        self.assertEquals(uri.port, None)
-        self.assertEquals(uri.database, "database")
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.username, "username")
+        self.assertEqual(uri.password, "password")
+        self.assertEqual(uri.host, None)
+        self.assertEqual(uri.port, None)
+        self.assertEqual(uri.database, "database")
 
     def test_parse_options(self):
         uri = URI("scheme:?a%62c=d%65f&ghi=jkl")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.host, None)
-        self.assertEquals(uri.database, None)
-        self.assertEquals(uri.options, {"abc": "def", "ghi": "jkl"})
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.host, None)
+        self.assertEqual(uri.database, None)
+        self.assertEqual(uri.options, {"abc": "def", "ghi": "jkl"})
 
     def test_parse_host_options(self):
         uri = URI("scheme://ho%73t?a%62c=d%65f&ghi=jkl")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.host, "host")
-        self.assertEquals(uri.database, None)
-        self.assertEquals(uri.options, {"abc": "def", "ghi": "jkl"})
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.host, "host")
+        self.assertEqual(uri.database, None)
+        self.assertEqual(uri.options, {"abc": "def", "ghi": "jkl"})
 
     def test_parse_host_database_options(self):
         uri = URI("scheme://ho%73t/d%61tabase?a%62c=d%65f&ghi=jkl")
-        self.assertEquals(uri.scheme, "scheme")
-        self.assertEquals(uri.host, "host")
-        self.assertEquals(uri.database, "database")
-        self.assertEquals(uri.options, {"abc": "def", "ghi": "jkl"})
+        self.assertEqual(uri.scheme, "scheme")
+        self.assertEqual(uri.host, "host")
+        self.assertEqual(uri.database, "database")
+        self.assertEqual(uri.options, {"abc": "def", "ghi": "jkl"})
 
     def test_copy(self):
         uri = URI("scheme:///db?opt=value")
@@ -148,7 +148,7 @@ class URITest(TestHelper):
         self.assertTrue(uri_copy.options is not uri.options)
 
     def str(self, uri):
-        self.assertEquals(str(URI(uri)), uri)
+        self.assertEqual(str(URI(uri)), uri)
 
     def test_str_full_with_escaping(self):
         self.str("scheme://us%2Fer:pa%2Fss@ho%2Fst:0/d%3Fb?a%2Fb=c%2Fd&ghi=jkl")

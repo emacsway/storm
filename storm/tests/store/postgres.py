@@ -114,7 +114,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         self.store.add(lst)
 
         result = self.store.execute("SELECT ints FROM lst1 WHERE id=1")
-        self.assertEquals(result.get_one(), ([1,2,3,4],))
+        self.assertEqual(result.get_one(), ([1,2,3,4],))
 
         del lst
         gc.collect()
@@ -125,7 +125,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         lst.ints.append(5)
 
         result = self.store.execute("SELECT ints FROM lst1 WHERE id=1")
-        self.assertEquals(result.get_one(), ([1,2,3,4,5],))
+        self.assertEqual(result.get_one(), ([1,2,3,4,5],))
 
     def test_list_enum_variable(self):
 
@@ -135,7 +135,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         self.store.add(lst)
 
         result = self.store.execute("SELECT ints FROM lst1 WHERE id=1")
-        self.assertEquals(result.get_one(), ([1,2],))
+        self.assertEqual(result.get_one(), ([1,2],))
 
         del lst
         gc.collect()
@@ -146,7 +146,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         lst.ints.append("three")
 
         result = self.store.execute("SELECT ints FROM lst1 WHERE id=1")
-        self.assertEquals(result.get_one(), ([1,2,3],))
+        self.assertEqual(result.get_one(), ([1,2,3],))
 
     def test_list_variable_nested(self):
 
@@ -157,7 +157,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         self.store.add(lst)
 
         result = self.store.execute("SELECT ints FROM lst2 WHERE id=1")
-        self.assertEquals(result.get_one(), ([[1,2],[3,4]],))
+        self.assertEqual(result.get_one(), ([[1,2],[3,4]],))
 
         del lst
         gc.collect()
@@ -168,7 +168,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         lst.ints.append([5, 6])
 
         result = self.store.execute("SELECT ints FROM lst2 WHERE id=1")
-        self.assertEquals(result.get_one(), ([[1,2],[3,4],[5,6]],))
+        self.assertEqual(result.get_one(), ([[1,2],[3,4],[5,6]],))
 
     def test_add_find_with_schema(self):
         foo = FooWithSchema()
@@ -177,7 +177,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         self.store.flush()
         # We use find() here to actually exercise the backend code.
         # get() would just pick the object from the cache.
-        self.assertEquals(self.store.find(FooWithSchema, id=foo.id).one(), foo)
+        self.assertEqual(self.store.find(FooWithSchema, id=foo.id).one(), foo)
 
     def test_wb_currval_based_identity(self):
         """
@@ -189,7 +189,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         self.store.flush()
         foo2 = self.store.add(Foo())
         self.store.flush()
-        self.assertEquals(foo2.id-foo1.id, 1)
+        self.assertEqual(foo2.id-foo1.id, 1)
 
     def test_list_unnecessary_update(self):
         """
@@ -208,7 +208,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
         events = []
         obj_info.event.hook("changed", lambda *args: events.append(args))
         self.store.flush()
-        self.assertEquals(events, [])
+        self.assertEqual(events, [])
 
 
 class PostgresEmptyResultSetTest(TestHelper, EmptyResultSetTest):

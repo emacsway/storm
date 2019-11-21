@@ -69,9 +69,9 @@ class GetTest(TestHelper):
     def test_set_obj_info(self):
         obj_info1 = get_obj_info(self.obj)
         obj_info2 = ObjectInfo(self.obj)
-        self.assertEquals(get_obj_info(self.obj), obj_info1)
+        self.assertEqual(get_obj_info(self.obj), obj_info1)
         set_obj_info(self.obj, obj_info2)
-        self.assertEquals(get_obj_info(self.obj), obj_info2)
+        self.assertEqual(get_obj_info(self.obj), obj_info2)
 
 
 class ClassInfoTest(TestHelper):
@@ -90,19 +90,19 @@ class ClassInfoTest(TestHelper):
         self.assertRaises(ClassInfoError, ClassInfo, Class)
 
     def test_cls(self):
-        self.assertEquals(self.cls_info.cls, self.Class)
+        self.assertEqual(self.cls_info.cls, self.Class)
 
     def test_columns(self):
-        self.assertEquals(self.cls_info.columns,
-                          (self.Class.prop1, self.Class.prop2))
+        self.assertEqual(self.cls_info.columns,
+                         (self.Class.prop1, self.Class.prop2))
 
     def test_table(self):
-        self.assertEquals(self.cls_info.table.name, "table")
+        self.assertEqual(self.cls_info.table.name, "table")
 
     def test_primary_key(self):
         # Can't use == for props.
         self.assertTrue(self.cls_info.primary_key[0] is self.Class.prop1)
-        self.assertEquals(len(self.cls_info.primary_key), 1)
+        self.assertEqual(len(self.cls_info.primary_key), 1)
 
     def test_primary_key_with_attribute(self):
         class SubClass(self.Class):
@@ -111,7 +111,7 @@ class ClassInfoTest(TestHelper):
         cls_info = get_cls_info(SubClass)
 
         self.assertTrue(cls_info.primary_key[0] is SubClass.prop2)
-        self.assertEquals(len(self.cls_info.primary_key), 1)
+        self.assertEqual(len(self.cls_info.primary_key), 1)
 
     def test_primary_key_composed(self):
         class Class(object):
@@ -123,7 +123,7 @@ class ClassInfoTest(TestHelper):
         # Can't use == for props, since they're columns.
         self.assertTrue(cls_info.primary_key[0] is Class.prop2)
         self.assertTrue(cls_info.primary_key[1] is Class.prop1)
-        self.assertEquals(len(cls_info.primary_key), 2)
+        self.assertEqual(len(cls_info.primary_key), 2)
 
     def test_primary_key_composed_with_attribute(self):
         class Class(object):
@@ -138,7 +138,7 @@ class ClassInfoTest(TestHelper):
         # Can't use == for props, since they're columns.
         self.assertTrue(cls_info.primary_key[0] is Class.prop2)
         self.assertTrue(cls_info.primary_key[1] is Class.prop1)
-        self.assertEquals(len(cls_info.primary_key), 2)
+        self.assertEqual(len(cls_info.primary_key), 2)
 
     def test_primary_key_composed_duplicated(self):
         class Class(object):
@@ -169,7 +169,7 @@ class ClassInfoTest(TestHelper):
             prop2 = Property("column2")
             prop3 = Property("column3", primary=1)
         cls_info = ClassInfo(Class)
-        self.assertEquals(cls_info.primary_key_pos, (2, 0))
+        self.assertEqual(cls_info.primary_key_pos, (2, 0))
 
 
 class ObjectInfoTest(TestHelper):
@@ -188,7 +188,7 @@ class ObjectInfoTest(TestHelper):
         self.variable2 = self.obj_info.variables[Class.prop2]
 
     def test_hashing(self):
-        self.assertEquals(hash(self.obj_info), hash(self.obj_info))
+        self.assertEqual(hash(self.obj_info), hash(self.obj_info))
 
     def test_equals(self):
         obj_info1 = self.obj_info
@@ -211,8 +211,8 @@ class ObjectInfoTest(TestHelper):
             self.assertTrue(isinstance(variable, Variable))
             self.assertTrue(variable.column is column)
 
-        self.assertEquals(len(self.obj_info.variables),
-                          len(self.cls_info.columns))
+        self.assertEqual(len(self.obj_info.variables),
+                         len(self.cls_info.columns))
 
     def test_variable_has_validator_object_factory(self):
         args = []
@@ -226,33 +226,33 @@ class ObjectInfoTest(TestHelper):
         obj = Class()
         get_obj_info(obj).variables[Class.prop].set(123)
 
-        self.assertEquals(args, [(obj, "prop", 123)])
+        self.assertEqual(args, [(obj, "prop", 123)])
 
     def test_primary_vars(self):
         self.assertTrue(isinstance(self.obj_info.primary_vars, tuple))
 
         for column, variable in zip(self.cls_info.primary_key,
                                     self.obj_info.primary_vars):
-            self.assertEquals(self.obj_info.variables.get(column),
-                              variable)
+            self.assertEqual(self.obj_info.variables.get(column),
+                             variable)
 
-        self.assertEquals(len(self.obj_info.primary_vars),
-                          len(self.cls_info.primary_key))
+        self.assertEqual(len(self.obj_info.primary_vars),
+                         len(self.cls_info.primary_key))
 
     def test_checkpoint(self):
         self.obj.prop1 = 10
         self.obj_info.checkpoint()
-        self.assertEquals(self.obj.prop1, 10)
-        self.assertEquals(self.variable1.has_changed(), False)
+        self.assertEqual(self.obj.prop1, 10)
+        self.assertEqual(self.variable1.has_changed(), False)
         self.obj.prop1 = 20
-        self.assertEquals(self.obj.prop1, 20)
-        self.assertEquals(self.variable1.has_changed(), True)
+        self.assertEqual(self.obj.prop1, 20)
+        self.assertEqual(self.variable1.has_changed(), True)
         self.obj_info.checkpoint()
-        self.assertEquals(self.obj.prop1, 20)
-        self.assertEquals(self.variable1.has_changed(), False)
+        self.assertEqual(self.obj.prop1, 20)
+        self.assertEqual(self.variable1.has_changed(), False)
         self.obj.prop1 = 20
-        self.assertEquals(self.obj.prop1, 20)
-        self.assertEquals(self.variable1.has_changed(), False)
+        self.assertEqual(self.obj.prop1, 20)
+        self.assertEqual(self.variable1.has_changed(), False)
 
     def test_add_change_notification(self):
         changes1 = []
@@ -271,10 +271,10 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 10
         self.obj.prop1 = 20
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                       [(1, self.obj_info, self.variable2, Undef, 10, False),
                        (1, self.obj_info, self.variable1, Undef, 20, False)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                       [(2, self.obj_info, self.variable2, Undef, 10, False),
                        (2, self.obj_info, self.variable1, Undef, 20, False)])
 
@@ -284,10 +284,10 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop1 = None
         self.obj.prop2 = None
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                       [(1, self.obj_info, self.variable1, 20, None, False),
                        (1, self.obj_info, self.variable2, 10, None, False)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                       [(2, self.obj_info, self.variable1, 20, None, False),
                        (2, self.obj_info, self.variable2, 10, None, False)])
 
@@ -297,10 +297,10 @@ class ObjectInfoTest(TestHelper):
         del self.obj.prop1
         del self.obj.prop2
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                       [(1, self.obj_info, self.variable1, None, Undef, False),
                        (1, self.obj_info, self.variable2, None, Undef, False)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                       [(2, self.obj_info, self.variable1, None, Undef, False),
                        (2, self.obj_info, self.variable2, None, Undef, False)])
 
@@ -326,10 +326,10 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 10
         self.obj.prop1 = 20
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                   [(1, self.obj_info, self.variable2, Undef, 10, False, obj),
                    (1, self.obj_info, self.variable1, Undef, 20, False, obj)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                   [(2, self.obj_info, self.variable2, Undef, 10, False, obj),
                    (2, self.obj_info, self.variable1, Undef, 20, False, obj)])
 
@@ -339,10 +339,10 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop1 = None
         self.obj.prop2 = None
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                   [(1, self.obj_info, self.variable1, 20, None, False, obj),
                    (1, self.obj_info, self.variable2, 10, None, False, obj)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                   [(2, self.obj_info, self.variable1, 20, None, False, obj),
                    (2, self.obj_info, self.variable2, 10, None, False, obj)])
 
@@ -352,10 +352,10 @@ class ObjectInfoTest(TestHelper):
         del self.obj.prop1
         del self.obj.prop2
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
               [(1, self.obj_info, self.variable1, None, Undef, False, obj),
                (1, self.obj_info, self.variable2, None, Undef, False, obj)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
               [(2, self.obj_info, self.variable1, None, Undef, False, obj),
                (2, self.obj_info, self.variable2, None, Undef, False, obj)])
 
@@ -378,8 +378,8 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 20
         self.obj.prop1 = 10
 
-        self.assertEquals(changes1, [])
-        self.assertEquals(changes2,
+        self.assertEqual(changes1, [])
+        self.assertEqual(changes2,
                       [(2, self.obj_info, self.variable2, Undef, 20, False),
                        (2, self.obj_info, self.variable1, Undef, 10, False)])
 
@@ -406,8 +406,8 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 20
         self.obj.prop1 = 10
 
-        self.assertEquals(changes1, [])
-        self.assertEquals(changes2,
+        self.assertEqual(changes1, [])
+        self.assertEqual(changes2,
                   [(2, self.obj_info, self.variable2, Undef, 20, False, obj),
                    (2, self.obj_info, self.variable1, Undef, 10, False, obj)])
 
@@ -431,9 +431,9 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 20
         self.obj.prop1 = 10
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                       [(1, self.obj_info, self.variable2, Undef, 20, False)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                       [(2, self.obj_info, self.variable2, Undef, 20, False)])
 
     def test_auto_remove_change_notification_with_arg(self):
@@ -460,9 +460,9 @@ class ObjectInfoTest(TestHelper):
         self.obj.prop2 = 20
         self.obj.prop1 = 10
 
-        self.assertEquals(changes1,
+        self.assertEqual(changes1,
                   [(1, self.obj_info, self.variable2, Undef, 20, False, obj)])
-        self.assertEquals(changes2,
+        self.assertEqual(changes2,
                   [(2, self.obj_info, self.variable2, Undef, 20, False, obj)])
 
     def test_get_obj(self):
@@ -491,7 +491,7 @@ class ObjectInfoTest(TestHelper):
         obj = self.Class()
         obj_info = get_obj_info(obj)
         del obj
-        self.assertEquals(obj_info.get_obj(), None)
+        self.assertEqual(obj_info.get_obj(), None)
 
     def test_object_deleted_notification(self):
         obj = self.Class()
@@ -503,7 +503,7 @@ class ObjectInfoTest(TestHelper):
         obj_info.event.hook("object-deleted", object_deleted)
         del obj_info
         del obj
-        self.assertEquals(len(deleted), 1)
+        self.assertEqual(len(deleted), 1)
         self.assertTrue("tainted" in deleted[0])
 
     def test_object_deleted_notification_after_set_obj(self):
@@ -518,7 +518,7 @@ class ObjectInfoTest(TestHelper):
         obj_info.event.hook("object-deleted", object_deleted)
         del obj_info
         del obj
-        self.assertEquals(len(deleted), 1)
+        self.assertEqual(len(deleted), 1)
         self.assertTrue("tainted" in deleted[0])
 
 
@@ -534,35 +534,35 @@ class ClassAliasTest(TestHelper):
 
     def test_cls_info_cls(self):
         cls_info = get_cls_info(self.ClassAlias)
-        self.assertEquals(cls_info.cls, self.Class)
-        self.assertEquals(cls_info.table.name, "alias")
-        self.assertEquals(self.ClassAlias.prop1.name, "column1")
-        self.assertEquals(self.ClassAlias.prop1.table, self.ClassAlias)
+        self.assertEqual(cls_info.cls, self.Class)
+        self.assertEqual(cls_info.table.name, "alias")
+        self.assertEqual(self.ClassAlias.prop1.name, "column1")
+        self.assertEqual(self.ClassAlias.prop1.table, self.ClassAlias)
 
     def test_compile(self):
         statement = compile(self.ClassAlias)
-        self.assertEquals(statement, "alias")
+        self.assertEqual(statement, "alias")
 
     def test_compile_with_reserved_keyword(self):
         Alias = ClassAlias(self.Class, "select")
         statement = compile(Alias)
-        self.assertEquals(statement, '"select"')
+        self.assertEqual(statement, '"select"')
 
     def test_compile_in_select(self):
         expr = Select(self.ClassAlias.prop1, self.ClassAlias.prop1 == 1,
                       self.ClassAlias)
         statement = compile(expr)
-        self.assertEquals(statement,
-                          'SELECT alias.column1 FROM "table" AS alias '
-                          'WHERE alias.column1 = ?')
+        self.assertEqual(statement,
+                         'SELECT alias.column1 FROM "table" AS alias '
+                         'WHERE alias.column1 = ?')
 
     def test_compile_in_select_with_reserved_keyword(self):
         Alias = ClassAlias(self.Class, "select")
         expr = Select(Alias.prop1, Alias.prop1 == 1, Alias)
         statement = compile(expr)
-        self.assertEquals(statement,
-                          'SELECT "select".column1 FROM "table" AS "select" '
-                          'WHERE "select".column1 = ?')
+        self.assertEqual(statement,
+                         'SELECT "select".column1 FROM "table" AS "select" '
+                         'WHERE "select".column1 = ?')
 
     def test_crazy_metaclass(self):
         """We don't want metaclasses playing around when we build an alias."""
@@ -576,7 +576,7 @@ class ClassAliasTest(TestHelper):
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
         Alias = ClassAlias(Class, "USE_THIS")
-        self.assertEquals(Alias.__storm_table__, "USE_THIS")
+        self.assertEqual(Alias.__storm_table__, "USE_THIS")
 
     def test_cached_aliases(self):
         """
@@ -635,8 +635,8 @@ class TypeCompilerTest(TestHelper):
             __storm_table__ = Class1
             id = Property(primary=True)
         statement = compile(Class2)
-        self.assertEquals(statement, "class1")
+        self.assertEqual(statement, "class1")
         alias = ClassAlias(Class2, "alias")
         statement = compile(Select(alias.id))
-        self.assertEquals(statement, "SELECT alias.id FROM class1 AS alias")
+        self.assertEqual(statement, "SELECT alias.id FROM class1 AS alias")
 
