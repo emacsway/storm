@@ -149,7 +149,7 @@ class MockerTestCase(unittest.TestCase):
             elif os.path.isdir(path):
                 shutil.rmtree(path)
         self.mocker.restore()
-        for func, args, kwargs in self.__cleanup_funcs:
+        for func, args, kwargs in reversed(self.__cleanup_funcs):
             func(*args, **kwargs)
 
     def addCleanup(self, func, *args, **kwargs):

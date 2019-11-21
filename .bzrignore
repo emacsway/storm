@@ -2,6 +2,8 @@ __pycache__
 build
 storm.egg-info
 build-stamp
+db
+.db.lock
 dist
 debian/files
 debian/python-storm

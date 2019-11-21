@@ -21,6 +21,7 @@
 #
 import glob
 import optparse
+import re
 import unittest
 import sys
 import os
@@ -73,6 +74,43 @@ def test_with_unittest():
     return test_with_runner(runner)
 
 
+def with_postgresfixture(runner_func):
+    """If possible, wrap a test runner with code to set up PostgreSQL."""
+    try:
+        from postgresfixture import ClusterFixture
+    except ImportError:
+        return runner_func
+
+    from six.moves.urllib.parse import urlunsplit
+    from storm.uri import escape
+
+    def wrapper():
+        cluster = ClusterFixture("db")
+        cluster.create()
+        # Allow use of prepared transactions, which some tests need.
+        pg_conf_path = os.path.join(cluster.datadir, "postgresql.conf")
+        with open(pg_conf_path) as pg_conf_old:
+            with open(pg_conf_path + ".new", "w") as pg_conf_new:
+                for line in pg_conf_old:
+                    pg_conf_new.write(re.sub(
+                        r"^#(max_prepared_transactions.*)= 0", r"\1= 200",
+                        line))
+                os.fchmod(
+                    pg_conf_new.fileno(),
+                    os.fstat(pg_conf_old.fileno()).st_mode)
+        os.rename(pg_conf_path + ".new", pg_conf_path)
+
+        with cluster:
+            cluster.createdb("storm_test")
+            uri = urlunsplit(
+                ("postgres", escape(cluster.datadir), "/storm_test", "", ""))
+            os.environ["STORM_POSTGRES_URI"] = uri
+            os.environ["STORM_POSTGRES_HOST_URI"] = uri
+            return runner_func()
+
+    return wrapper
+
+
 if __name__ == "__main__":
     runner = os.environ.get("STORM_TEST_RUNNER")
     if not runner:
@@ -80,6 +118,7 @@ if __name__ == "__main__":
     runner_func = globals().get("test_with_%s" % runner.replace(".", "_"))
     if not runner_func:
         sys.exit("Test runner not found: %s" % runner)
+    runner_func = with_postgresfixture(runner_func)
     sys.exit(runner_func())
 
 # vim:ts=4:sw=4:et
