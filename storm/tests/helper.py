@@ -67,10 +67,10 @@ class TestHelper(mocker.MockerTestCase):
         super(TestHelper, self).run(result)
 
     def assertVariablesEqual(self, checked, expected):
-        self.assertEquals(len(checked), len(expected))
+        self.assertEqual(len(checked), len(expected))
         for check, expect in zip(checked, expected):
-            self.assertEquals(check.__class__, expect.__class__)
-            self.assertEquals(check.get(), expect.get())
+            self.assertEqual(check.__class__, expect.__class__)
+            self.assertEqual(check.get(), expect.get())
 
 
 class MakePath(object):
@@ -118,8 +118,8 @@ class LogKeeper(object):
         self.old_handlers = logger.handlers
         # Sanity check; this might not be 100% what we want
         if self.old_handlers:
-            test_case.assertEquals(len(self.old_handlers), 1)
-            test_case.assertEquals(self.old_handlers[0].stream, sys.stderr)
+            test_case.assertEqual(len(self.old_handlers), 1)
+            test_case.assertEqual(self.old_handlers[0].stream, sys.stderr)
         logger.handlers = [handler]
 
     def tear_down(self, test_case):

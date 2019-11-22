@@ -136,29 +136,29 @@ class ZStormTest(TestHelper):
         stores = []
         for name, store in self.zstorm.iterstores():
             stores.append((name, store))
-        self.assertEquals(len(stores), 3)
-        self.assertEquals(set(stores),
-                          set([(None, store1), (None, store2),
-                               ("name", store3)]))
+        self.assertEqual(len(stores), 3)
+        self.assertEqual(set(stores),
+                         set([(None, store1), (None, store2),
+                              ("name", store3)]))
 
     def test_get_name(self):
         store = self.zstorm.create("name", "sqlite:")
-        self.assertEquals(self.zstorm.get_name(store), "name")
+        self.assertEqual(self.zstorm.get_name(store), "name")
 
     def test_get_name_with_removed_store(self):
         store = self.zstorm.create("name", "sqlite:")
-        self.assertEquals(self.zstorm.get_name(store), "name")
+        self.assertEqual(self.zstorm.get_name(store), "name")
         self.zstorm.remove(store)
-        self.assertEquals(self.zstorm.get_name(store), None)
+        self.assertEqual(self.zstorm.get_name(store), None)
 
     def test_default_databases(self):
         self.zstorm.set_default_uri("name1", "sqlite:1")
         self.zstorm.set_default_uri("name2", "sqlite:2")
         self.zstorm.set_default_uri("name3", "sqlite:3")
         default_uris = self.zstorm.get_default_uris()
-        self.assertEquals(default_uris, {"name1": "sqlite:1",
-                                         "name2": "sqlite:2",
-                                         "name3": "sqlite:3"})
+        self.assertEqual(default_uris, {"name1": "sqlite:1",
+                                        "name2": "sqlite:2",
+                                        "name3": "sqlite:3"})
 
     def test_register_store_for_tpc_transaction(self):
         """
@@ -334,7 +334,7 @@ class ZStormTest(TestHelper):
         removed_store = self.zstorm.get("name", "sqlite:")
         self.zstorm.remove(removed_store)
         for name, store in self.zstorm.iterstores():
-            self.assertNotEquals(store, removed_store)
+            self.assertNotEqual(store, removed_store)
         self.assertRaises(ZStormError, self.zstorm.get, "name")
 
     def test_wb_removed_store_does_not_join_transaction(self):

@@ -58,11 +58,11 @@ class EventTest(TestHelper):
         self.event.emit("two", 3, 4)
         self.event.emit("three", 5, 6)
 
-        self.assertEquals(sorted(called1), [
+        self.assertEqual(sorted(called1), [
                           (marker, 1, 2),
                           (marker, 5, 6),
                          ])
-        self.assertEquals(sorted(called2), [
+        self.assertEqual(sorted(called2), [
                           (marker, 1, 2, 10, 20),
                           (marker, 3, 4, 10, 20),
                           (marker, 3, 4, 30, 40),
@@ -82,7 +82,7 @@ class EventTest(TestHelper):
         self.event.emit("event")
         self.event.emit("event")
 
-        self.assertEquals(called, [marker, marker])
+        self.assertEqual(called, [marker, marker])
 
     def test_weak_reference(self):
         marker = Marker()
@@ -96,9 +96,9 @@ class EventTest(TestHelper):
         self.event.hook("event", callback)
         self.event.emit("event")
 
-        self.assertEquals(called, [marker])
+        self.assertEqual(called, [marker])
         del called[:]
 
         del marker
         self.event.emit("event")
-        self.assertEquals(called, [])
+        self.assertEqual(called, [])

@@ -91,7 +91,7 @@ class SQLObjectTest(TestHelper):
     def test_get(self):
         person = self.Person.get(2)
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_get_not_found(self):
         self.assertRaises(SQLObjectNotFound, self.Person.get, 1000)
@@ -99,7 +99,7 @@ class SQLObjectTest(TestHelper):
     def test_get_typecast(self):
         person = self.Person.get("2")
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_destroySelf(self):
         person = self.Person.get(2)
@@ -117,7 +117,7 @@ class SQLObjectTest(TestHelper):
         person = MyPerson.get(2)
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_custom_id_name(self):
         class MyPerson(self.SQLObject):
@@ -131,24 +131,24 @@ class SQLObjectTest(TestHelper):
         person = MyPerson.get("John Doe")
 
         self.assertTrue(person)
-        self.assertEquals(person.id, "John Doe")
+        self.assertEqual(person.id, "John Doe")
 
     def test_create(self):
         person = self.Person(name="John Joe")
 
         self.assertTrue(Store.of(person) is self.store)
-        self.assertEquals(type(person.id), int)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(type(person.id), int)
+        self.assertEqual(person.name, "John Joe")
 
     def test_SO_creating(self):
         test = self
         class Person(self.Person):
             def set(self, **args):
-                test.assertEquals(self._SO_creating, True)
-                test.assertEquals(args, {"name": "John Joe"})
+                test.assertEqual(self._SO_creating, True)
+                test.assertEqual(args, {"name": "John Joe"})
 
         person = Person(name="John Joe")
-        self.assertEquals(person._SO_creating, False)
+        self.assertEqual(person._SO_creating, False)
 
     def test_object_not_added_if__create_fails(self):
         objects = []
@@ -157,9 +157,9 @@ class SQLObjectTest(TestHelper):
                 objects.append(self)
                 raise RuntimeError
         self.assertRaises(RuntimeError, Person, name="John Joe")
-        self.assertEquals(len(objects), 1)
+        self.assertEqual(len(objects), 1)
         person = objects[0]
-        self.assertEquals(Store.of(person), None)
+        self.assertEqual(Store.of(person), None)
 
     def test_init_hook(self):
         called = []
@@ -168,16 +168,16 @@ class SQLObjectTest(TestHelper):
                 called.append(True)
 
         person = Person(name="John Joe")
-        self.assertEquals(called, [True])
+        self.assertEqual(called, [True])
         Person.get(2)
-        self.assertEquals(called, [True, True])
+        self.assertEqual(called, [True, True])
 
     def test_alternateID(self):
         class Person(self.SQLObject):
             name = StringCol(alternateID=True)
         person = Person.byName("John Doe")
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_alternateMethodName(self):
         class Person(self.SQLObject):
@@ -185,13 +185,13 @@ class SQLObjectTest(TestHelper):
 
         person = Person.byFoo("John Doe")
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
         self.assertRaises(SQLObjectNotFound, Person.byFoo, "John None")
 
     def test_select(self):
         result = self.Person.select("name = 'John Joe'")
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_sqlbuilder(self):
         result = self.Person.select(self.Person.q.name == "John Joe")
@@ -199,37 +199,37 @@ class SQLObjectTest(TestHelper):
 
     def test_select_orderBy(self):
         result = self.Person.select("name LIKE 'John%'", orderBy=("name","id"))
-        self.assertEquals(result[0].name, "John Doe")
+        self.assertEqual(result[0].name, "John Doe")
 
     def test_select_orderBy_expr(self):
         result = self.Person.select("name LIKE 'John%'",
                                     orderBy=self.Person.name)
-        self.assertEquals(result[0].name, "John Doe")
+        self.assertEqual(result[0].name, "John Doe")
 
     def test_select_all(self):
         result = self.Person.select()
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_empty_string(self):
         result = self.Person.select('')
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_limit(self):
         result = self.Person.select(limit=1)
-        self.assertEquals(len(list(result)), 1)
+        self.assertEqual(len(list(result)), 1)
 
     def test_select_negative_offset(self):
         result = self.Person.select(orderBy="name")
-        self.assertEquals(result[-1].name, "John Joe")
+        self.assertEqual(result[-1].name, "John Joe")
 
     def test_select_slice_negative_offset(self):
         result = self.Person.select(orderBy="name")[-1:]
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_distinct(self):
         result = self.Person.select("person.name = 'John Joe'",
                                     clauseTables=["phone"], distinct=True)
-        self.assertEquals(len(list(result)), 1)
+        self.assertEqual(len(list(result)), 1)
 
     def test_select_selectAlso(self):
         # Since John Doe has two phone numbers, this would return him
@@ -241,9 +241,9 @@ class SQLObjectTest(TestHelper):
             orderBy="lower_name",
             distinct=True)
         people = list(result)
-        self.assertEquals(len(people), 2)
-        self.assertEquals(people[0].name, "John Doe")
-        self.assertEquals(people[1].name, "John Joe")
+        self.assertEqual(len(people), 2)
+        self.assertEqual(people[0].name, "John Doe")
+        self.assertEqual(people[1].name, "John Joe")
 
     def test_select_selectAlso_with_prejoin(self):
         class Person(self.Person):
@@ -258,48 +258,48 @@ class SQLObjectTest(TestHelper):
             selectAlso="LOWER(person.name) AS lower_name",
             orderBy="lower_name")
         people = list(result)
-        self.assertEquals(len(people), 2)
-        self.assertEquals([(person.name, person.address.city)
-                           for person in people],
-                          [("John Doe", "Sao Carlos"),
-                           ("John Joe", "Curitiba")])
+        self.assertEqual(len(people), 2)
+        self.assertEqual([(person.name, person.address.city)
+                          for person in people],
+                         [("John Doe", "Sao Carlos"),
+                          ("John Joe", "Curitiba")])
 
     def test_select_clauseTables_simple(self):
         result = self.Person.select("name = 'John Joe'", ["person"])
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_clauseTables_implicit_join(self):
         result = self.Person.select("person.name = 'John Joe' and "
                                     "phone.person_id = person.id",
                                     ["person", "phone"])
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_select_clauseTables_no_cls_table(self):
         result = self.Person.select("person.name = 'John Joe' and "
                                     "phone.person_id = person.id",
                                     ["phone"])
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_selectBy(self):
         result = self.Person.selectBy(name="John Joe")
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_selectBy_orderBy(self):
         result = self.Person.selectBy(age=20, orderBy="name")
-        self.assertEquals(result[0].name, "John Doe")
+        self.assertEqual(result[0].name, "John Doe")
 
         result = self.Person.selectBy(age=20, orderBy="-name")
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_selectOne(self):
         person = self.Person.selectOne("name = 'John Joe'")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
         nobody = self.Person.selectOne("name = 'John None'")
 
-        self.assertEquals(nobody, None)
+        self.assertEqual(nobody, None)
 
         # SQLBuilder style expression:
         person = self.Person.selectOne(self.Person.q.name == "John Joe")
@@ -315,17 +315,17 @@ class SQLObjectTest(TestHelper):
         person = self.Person.selectOne("person.name = 'John Joe' and "
                                        "phone.person_id = person.id",
                                        ["phone"])
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
     def test_selectOneBy(self):
         person = self.Person.selectOneBy(name="John Joe")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
         nobody = self.Person.selectOneBy(name="John None")
 
-        self.assertEquals(nobody, None)
+        self.assertEqual(nobody, None)
 
     def test_selectOneBy_multiple_results(self):
         self.assertRaises(SQLObjectMoreThanOneResultError,
@@ -335,16 +335,16 @@ class SQLObjectTest(TestHelper):
         person = self.Person.selectFirst("name LIKE 'John%'", orderBy="name")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
         person = self.Person.selectFirst("name LIKE 'John%'", orderBy="-name")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
         nobody = self.Person.selectFirst("name = 'John None'", orderBy="name")
 
-        self.assertEquals(nobody, None)
+        self.assertEqual(nobody, None)
 
         # SQLBuilder style expression:
         person = self.Person.selectFirst(LIKE(self.Person.q.name, u"John%"),
@@ -356,7 +356,7 @@ class SQLObjectTest(TestHelper):
         person = self.Person.selectFirst("name LIKE 'John%'")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
     def test_selectFirst_default_order_list(self):
         class Person(self.Person):
@@ -365,7 +365,7 @@ class SQLObjectTest(TestHelper):
         person = Person.selectFirst("name LIKE 'John%'")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_selectFirst_default_order_expr(self):
         class Person(self.Person):
@@ -374,7 +374,7 @@ class SQLObjectTest(TestHelper):
         person = Person.selectFirst("name LIKE 'John%'")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_selectFirst_default_order_fully_qualified(self):
         class Person(self.Person):
@@ -383,28 +383,28 @@ class SQLObjectTest(TestHelper):
         person = Person.selectFirst("name LIKE 'John%'")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_selectFirstBy(self):
         person = self.Person.selectFirstBy(age=20, orderBy="name")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
         person = self.Person.selectFirstBy(age=20, orderBy="-name")
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
         nobody = self.Person.selectFirstBy(age=1000, orderBy="name")
 
-        self.assertEquals(nobody, None)
+        self.assertEqual(nobody, None)
 
     def test_selectFirstBy_default_order(self):
         person = self.Person.selectFirstBy(age=20)
 
         self.assertTrue(person)
-        self.assertEquals(person.name, "John Joe")
+        self.assertEqual(person.name, "John Joe")
 
     def test_syncUpdate(self):
         """syncUpdate() flushes pending changes to the database."""
@@ -413,7 +413,7 @@ class SQLObjectTest(TestHelper):
         person.syncUpdate()
         name = self.store.execute(
             "SELECT name FROM person WHERE id = 1").get_one()[0]
-        self.assertEquals(name, "John Smith")
+        self.assertEqual(name, "John Smith")
 
     def test_sync(self):
         """sync() flushes pending changes and invalidates the cache."""
@@ -422,36 +422,36 @@ class SQLObjectTest(TestHelper):
         person.sync()
         name = self.store.execute(
             "SELECT name FROM person WHERE id = 1").get_one()[0]
-        self.assertEquals(name, "John Smith")
+        self.assertEqual(name, "John Smith")
         # Now make a change behind Storm's back and show that sync()
         # makes the new value from the database visible.
         self.store.execute("UPDATE person SET name = 'Jane Smith' "
                            "WHERE id = 1", noresult=True)
         person.sync()
-        self.assertEquals(person.name, "Jane Smith")
+        self.assertEqual(person.name, "Jane Smith")
 
     def test_col_name(self):
         class Person(self.SQLObject):
             foo = StringCol(dbName="name")
         person = Person.get(2)
-        self.assertEquals(person.foo, "John Doe")
+        self.assertEqual(person.foo, "John Doe")
 
         class Person(self.SQLObject):
             foo = StringCol("name")
         person = Person.get(2)
-        self.assertEquals(person.foo, "John Doe")
+        self.assertEqual(person.foo, "John Doe")
 
     def test_col_default(self):
         class Person(self.SQLObject):
             name = StringCol(default="Johny")
         person = Person()
-        self.assertEquals(person.name, "Johny")
+        self.assertEqual(person.name, "Johny")
 
     def test_col_default_factory(self):
         class Person(self.SQLObject):
             name = StringCol(default=lambda: "Johny")
         person = Person()
-        self.assertEquals(person.name, "Johny")
+        self.assertEqual(person.name, "Johny")
 
     def test_col_not_null(self):
         class Person(self.SQLObject):
@@ -468,25 +468,25 @@ class SQLObjectTest(TestHelper):
             name = StringCol(storm_validator=validator)
         person = Person.get(2)
         person.name = u'foo'
-        self.assertEquals(calls, [(person, 'name', u'foo')])
+        self.assertEqual(calls, [(person, 'name', u'foo')])
 
     def test_string_col(self):
         class Person(self.SQLObject):
             name = StringCol()
         person = Person.get(2)
-        self.assertEquals(person.name, "John Doe")
+        self.assertEqual(person.name, "John Doe")
 
     def test_int_col(self):
         class Person(self.SQLObject):
             age = IntCol()
         person = Person.get(2)
-        self.assertEquals(person.age, 20)
+        self.assertEqual(person.age, 20)
 
     def test_bool_col(self):
         class Person(self.SQLObject):
             age = BoolCol()
         person = Person.get(2)
-        self.assertEquals(person.age, True)
+        self.assertEqual(person.age, True)
 
     def test_float_col(self):
         class Person(self.SQLObject):
@@ -498,20 +498,20 @@ class SQLObjectTest(TestHelper):
         class Person(self.SQLObject):
             ts = UtcDateTimeCol()
         person = Person.get(2)
-        self.assertEquals(person.ts,
-                          datetime.datetime(2007, 2, 5, 20, 53, 15,
-                                            tzinfo=tzutc()))
+        self.assertEqual(person.ts,
+                         datetime.datetime(2007, 2, 5, 20, 53, 15,
+                                           tzinfo=tzutc()))
     def test_date_col(self):
         class Person(self.SQLObject):
             ts = DateCol()
         person = Person.get(2)
-        self.assertEquals(person.ts, datetime.date(2007, 2, 5))
+        self.assertEqual(person.ts, datetime.date(2007, 2, 5))
 
     def test_interval_col(self):
         class Person(self.SQLObject):
             delta = IntervalCol()
         person = Person.get(2)
-        self.assertEquals(person.delta, datetime.timedelta(42, 45296, 780000))
+        self.assertEqual(person.delta, datetime.timedelta(42, 45296, 780000))
 
     def test_foreign_key(self):
         class Person(self.Person):
@@ -523,8 +523,8 @@ class SQLObjectTest(TestHelper):
 
         person = Person.get(2)
 
-        self.assertEquals(person.addressID, 2)
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.addressID, 2)
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_foreign_key_no_dbname(self):
         self.store.execute("CREATE TABLE another_person "
@@ -541,8 +541,8 @@ class SQLObjectTest(TestHelper):
 
         person = AnotherPerson.get(2)
 
-        self.assertEquals(person.addressID, 2)
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.addressID, 2)
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_foreign_key_orderBy(self):
         class Person(self.Person):
@@ -554,7 +554,7 @@ class SQLObjectTest(TestHelper):
             city = StringCol()
 
         person = Person.selectFirst()
-        self.assertEquals(person.addressID, 1)
+        self.assertEqual(person.addressID, 1)
 
     def test_foreign_key_storm_validator(self):
         calls = []
@@ -572,7 +572,7 @@ class SQLObjectTest(TestHelper):
         person = Person.get(2)
         address = Address.get(1)
         person.address = address
-        self.assertEquals(calls, [(person, 'addressID', 1)])
+        self.assertEqual(calls, [(person, 'addressID', 1)])
 
     def test_multiple_join(self):
         class AnotherPerson(self.Person):
@@ -588,17 +588,17 @@ class SQLObjectTest(TestHelper):
         # Make sure that the result is wrapped.
         result = person.phones.orderBy("-number")
 
-        self.assertEquals([phone.number for phone in result],
-                          ["8765-5678", "1234-5678"])
+        self.assertEqual([phone.number for phone in result],
+                         ["8765-5678", "1234-5678"])
 
         # Test add/remove methods.
         number = Phone.selectOneBy(number="1234-5678")
         person.removePhone(number)
-        self.assertEquals(sorted(phone.number for phone in person.phones),
-                          ["8765-5678"])
+        self.assertEqual(sorted(phone.number for phone in person.phones),
+                         ["8765-5678"])
         person.addPhone(number)
-        self.assertEquals(sorted(phone.number for phone in person.phones),
-                          ["1234-5678", "8765-5678"])
+        self.assertEqual(sorted(phone.number for phone in person.phones),
+                         ["1234-5678", "8765-5678"])
 
     def test_multiple_join_prejoins(self):
         self.store.execute("ALTER TABLE phone ADD COLUMN address_id INT")
@@ -624,10 +624,10 @@ class SQLObjectTest(TestHelper):
         # Delete addresses behind Storm's back to show that the
         # addresses have been loaded.
         self.store.execute("DELETE FROM address")
-        self.assertEquals(phone1.number, "1234-5678")
-        self.assertEquals(phone1.address.city, "Curitiba")
-        self.assertEquals(phone2.number, "8765-5678")
-        self.assertEquals(phone2.address.city, "Sao Carlos")
+        self.assertEqual(phone1.number, "1234-5678")
+        self.assertEqual(phone1.address.city, "Curitiba")
+        self.assertEqual(phone2.number, "8765-5678")
+        self.assertEqual(phone2.address.city, "Sao Carlos")
 
     def test_related_join(self):
         class AnotherPerson(self.Person):
@@ -645,23 +645,23 @@ class SQLObjectTest(TestHelper):
 
         person = AnotherPerson.get(2)
 
-        self.assertEquals([phone.number for phone in person.phones],
-                          ["1234-5678", "8765-4321"])
+        self.assertEqual([phone.number for phone in person.phones],
+                         ["1234-5678", "8765-4321"])
 
         # Make sure that the result is wrapped.
         result = person.phones.orderBy("-number")
 
-        self.assertEquals([phone.number for phone in result],
-                          ["8765-4321", "1234-5678"])
+        self.assertEqual([phone.number for phone in result],
+                         ["8765-4321", "1234-5678"])
 
         # Test add/remove methods.
         number = Phone.selectOneBy(number="1234-5678")
         person.removePhone(number)
-        self.assertEquals(sorted(phone.number for phone in person.phones),
-                          ["8765-4321"])
+        self.assertEqual(sorted(phone.number for phone in person.phones),
+                         ["8765-4321"])
         person.addPhone(number)
-        self.assertEquals(sorted(phone.number for phone in person.phones),
-                          ["1234-5678", "8765-4321"])
+        self.assertEqual(sorted(phone.number for phone in person.phones),
+                         ["1234-5678", "8765-4321"])
 
     def test_related_join_prejoins(self):
         self.store.execute("ALTER TABLE phone ADD COLUMN address_id INT")
@@ -692,10 +692,10 @@ class SQLObjectTest(TestHelper):
         # Delete addresses behind Storm's back to show that the
         # addresses have been loaded.
         self.store.execute("DELETE FROM address")
-        self.assertEquals(phone1.number, "1234-5678")
-        self.assertEquals(phone1.address.city, "Curitiba")
-        self.assertEquals(phone2.number, "8765-4321")
-        self.assertEquals(phone2.address.city, "Sao Carlos")
+        self.assertEqual(phone1.number, "1234-5678")
+        self.assertEqual(phone1.address.city, "Curitiba")
+        self.assertEqual(phone2.number, "8765-4321")
+        self.assertEqual(phone2.address.city, "Sao Carlos")
 
     def test_single_join(self):
         self.store.execute("CREATE TABLE office "
@@ -725,94 +725,94 @@ class SQLObjectTest(TestHelper):
         result = self.Person.select()
 
         result = result.orderBy("-name")
-        self.assertEquals([person.name for person in result],
-                          ["John Joe", "John Doe"])
+        self.assertEqual([person.name for person in result],
+                         ["John Joe", "John Doe"])
 
         result = result.orderBy("name")
-        self.assertEquals([person.name for person in result],
-                          ["John Doe", "John Joe"])
+        self.assertEqual([person.name for person in result],
+                         ["John Doe", "John Joe"])
 
     def test_result_set_orderBy_fully_qualified(self):
         result = self.Person.select()
 
         result = result.orderBy("-person.name")
-        self.assertEquals([person.name for person in result],
-                          ["John Joe", "John Doe"])
+        self.assertEqual([person.name for person in result],
+                         ["John Joe", "John Doe"])
 
         result = result.orderBy("person.name")
-        self.assertEquals([person.name for person in result],
-                          ["John Doe", "John Joe"])
+        self.assertEqual([person.name for person in result],
+                         ["John Doe", "John Joe"])
 
     def test_result_set_count(self):
         result = self.Person.select()
-        self.assertEquals(result.count(), 2)
+        self.assertEqual(result.count(), 2)
 
     def test_result_set_count_limit(self):
         result = self.Person.select(limit=1)
-        self.assertEquals(len(list(result)), 1)
-        self.assertEquals(result.count(), 1)
+        self.assertEqual(len(list(result)), 1)
+        self.assertEqual(result.count(), 1)
 
     def test_result_set_count_sliced(self):
         result = self.Person.select()
         sliced_result = result[1:]
-        self.assertEquals(len(list(sliced_result)), 1)
-        self.assertEquals(sliced_result.count(), 1)
+        self.assertEqual(len(list(sliced_result)), 1)
+        self.assertEqual(sliced_result.count(), 1)
 
     def test_result_set_count_sliced_empty(self):
         result = self.Person.select()
         sliced_result = result[1:1]
-        self.assertEquals(len(list(sliced_result)), 0)
-        self.assertEquals(sliced_result.count(), 0)
+        self.assertEqual(len(list(sliced_result)), 0)
+        self.assertEqual(sliced_result.count(), 0)
 
     def test_result_set_count_sliced_empty_zero(self):
         result = self.Person.select()
         sliced_result = result[0:0]
-        self.assertEquals(len(list(sliced_result)), 0)
-        self.assertEquals(sliced_result.count(), 0)
+        self.assertEqual(len(list(sliced_result)), 0)
+        self.assertEqual(sliced_result.count(), 0)
 
     def test_result_set_count_sliced_none(self):
         result = self.Person.select()
         sliced_result = result[None:None]
-        self.assertEquals(len(list(sliced_result)), 2)
-        self.assertEquals(sliced_result.count(), 2)
+        self.assertEqual(len(list(sliced_result)), 2)
+        self.assertEqual(sliced_result.count(), 2)
 
     def test_result_set_count_sliced_start_none(self):
         result = self.Person.select()
         sliced_result = result[None:1]
-        self.assertEquals(len(list(sliced_result)), 1)
-        self.assertEquals(sliced_result.count(), 1)
+        self.assertEqual(len(list(sliced_result)), 1)
+        self.assertEqual(sliced_result.count(), 1)
 
     def test_result_set_count_sliced_end_none(self):
         result = self.Person.select()
         sliced_result = result[1:None]
-        self.assertEquals(len(list(sliced_result)), 1)
-        self.assertEquals(sliced_result.count(), 1)
+        self.assertEqual(len(list(sliced_result)), 1)
+        self.assertEqual(sliced_result.count(), 1)
 
     def test_result_set_count_distinct(self):
         result = self.Person.select(
             "person.id = phone.person_id",
             clauseTables=["phone"],
             distinct=True)
-        self.assertEquals(result.count(), 2)
+        self.assertEqual(result.count(), 2)
 
     def test_result_set_count_union_distinct(self):
         result1 = self.Person.select("person.id = 1", distinct=True)
         result2 = self.Person.select("person.id = 2", distinct=True)
-        self.assertEquals(result1.union(result2).count(), 2)
+        self.assertEqual(result1.union(result2).count(), 2)
 
     def test_result_set_count_with_joins(self):
         result = self.Person.select(
             "person.address_id = address.id",
             clauseTables=["address"])
-        self.assertEquals(result.count(), 2)
+        self.assertEqual(result.count(), 2)
 
     def test_result_set__getitem__(self):
         result = self.Person.select()
-        self.assertEquals(result[0].name, "John Joe")
+        self.assertEqual(result[0].name, "John Joe")
 
     def test_result_set__iter__(self):
         result = self.Person.select()
-        self.assertEquals(list(result.__iter__())[0].name, "John Joe")
+        self.assertEqual(list(result.__iter__())[0].name, "John Joe")
 
     def test_result_set__bool__(self):
         """
@@ -821,13 +821,13 @@ class SQLObjectTest(TestHelper):
         returned.
         """
         result = self.Person.select()
-        self.assertEquals(result.__bool__(), True)
+        self.assertEqual(result.__bool__(), True)
         if six.PY2:
-            self.assertEquals(result.__nonzero__(), True)
+            self.assertEqual(result.__nonzero__(), True)
         result = self.Person.select(self.Person.q.name == "No Person")
-        self.assertEquals(result.__bool__(), False)
+        self.assertEqual(result.__bool__(), False)
         if six.PY2:
-            self.assertEquals(result.__nonzero__(), False)
+            self.assertEqual(result.__nonzero__(), False)
 
     def test_result_set_is_empty(self):
         """
@@ -836,47 +836,47 @@ class SQLObjectTest(TestHelper):
         returned.
         """
         result = self.Person.select()
-        self.assertEquals(result.is_empty(), False)
+        self.assertEqual(result.is_empty(), False)
         result = self.Person.select(self.Person.q.name == "No Person")
-        self.assertEquals(result.is_empty(), True)
+        self.assertEqual(result.is_empty(), True)
 
     def test_result_set_distinct(self):
         result = self.Person.select("person.name = 'John Joe'",
                                     clauseTables=["phone"])
-        self.assertEquals(len(list(result.distinct())), 1)
+        self.assertEqual(len(list(result.distinct())), 1)
 
     def test_result_set_limit(self):
         result = self.Person.select()
-        self.assertEquals(len(list(result.limit(1))), 1)
+        self.assertEqual(len(list(result.limit(1))), 1)
 
     def test_result_set_union(self):
         result1 = self.Person.selectBy(id=1)
         result2 = self.Person.selectBy(id=2)
         result3 = result1.union(result2, orderBy="name")
-        self.assertEquals([person.name for person in result3],
-                          ["John Doe", "John Joe"])
+        self.assertEqual([person.name for person in result3],
+                         ["John Doe", "John Joe"])
 
     def test_result_set_union_all(self):
         result1 = self.Person.selectBy(id=1)
         result2 = result1.union(result1, unionAll=True)
-        self.assertEquals([person.name for person in result2],
-                          ["John Joe", "John Joe"])
+        self.assertEqual([person.name for person in result2],
+                         ["John Joe", "John Joe"])
 
     def test_result_set_except_(self):
         person = self.Person(id=3, name="John Moe")
         result1 = self.Person.select()
         result2 = self.Person.selectBy(id=2)
         result3 = result1.except_(result2, orderBy="name")
-        self.assertEquals([person.name for person in result3],
-                          ["John Joe", "John Moe"])
+        self.assertEqual([person.name for person in result3],
+                         ["John Joe", "John Moe"])
 
     def test_result_set_intersect(self):
         person = self.Person(id=3, name="John Moe")
         result1 = self.Person.select()
         result2 = self.Person.select(self.Person.id.is_in((2, 3)))
         result3 = result1.intersect(result2, orderBy="name")
-        self.assertEquals([person.name for person in result3],
-                          ["John Doe", "John Moe"])
+        self.assertEqual([person.name for person in result3],
+                         ["John Doe", "John Moe"])
 
     def test_result_set_prejoin(self):
         self.store.execute("ALTER TABLE person ADD COLUMN phone_id INTEGER")
@@ -902,10 +902,10 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM phone")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals([person.address.city for person in people],
-                          ["Sao Carlos"])
-        self.assertEquals([person.phone.number for person in people],
-                          ["1234-5678"])
+        self.assertEqual([person.address.city for person in people],
+                         ["Sao Carlos"])
+        self.assertEqual([person.phone.number for person in people],
+                         ["1234-5678"])
 
     def test_result_set_prejoin_getitem(self):
         """Ensure that detuplelizing is used on getitem."""
@@ -923,7 +923,7 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM address")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_one(self):
         """Ensure that detuplelizing is used on selectOne()."""
@@ -941,7 +941,7 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM address")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_first(self):
         """Ensure that detuplelizing is used on selectFirst()."""
@@ -959,7 +959,7 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM address")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_by(self):
         """Ensure that prejoins work with selectBy() queries."""
@@ -977,7 +977,7 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM address")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals(person.address.city, "Sao Carlos")
+        self.assertEqual(person.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_related(self):
         """Dotted prejoins are used to prejoin through another table."""
@@ -1000,8 +1000,8 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM person")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals(phone.person.name, "John Doe")
-        self.assertEquals(phone.person.address.city, "Sao Carlos")
+        self.assertEqual(phone.person.name, "John Doe")
+        self.assertEqual(phone.person.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_table_twice(self):
         """A single table can be prejoined multiple times."""
@@ -1030,10 +1030,10 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM address")
         self.store.execute("DELETE FROM person")
 
-        self.assertEquals(lease.landlord.name, "John Joe")
-        self.assertEquals(lease.landlord.address.city, "Curitiba")
-        self.assertEquals(lease.tenant.name, "John Doe")
-        self.assertEquals(lease.tenant.address.city, "Sao Carlos")
+        self.assertEqual(lease.landlord.name, "John Joe")
+        self.assertEqual(lease.landlord.address.city, "Curitiba")
+        self.assertEqual(lease.tenant.name, "John Doe")
+        self.assertEqual(lease.tenant.address.city, "Sao Carlos")
 
     def test_result_set_prejoin_count(self):
         """Prejoins do not affect the result of aggregates like COUNT()."""
@@ -1044,7 +1044,7 @@ class SQLObjectTest(TestHelper):
             city = StringCol()
 
         result = Person.select("name = 'John Doe'", prejoins=["address"])
-        self.assertEquals(result.count(), 1)
+        self.assertEqual(result.count(), 1)
 
     def test_result_set_prejoin_mismatch_union(self):
         """Prejoins do not cause UNION incompatibilities. """
@@ -1062,7 +1062,7 @@ class SQLObjectTest(TestHelper):
         result2 = Person.select("name = 'John Joe'")
         result = result1.union(result2)
         names = sorted(person.name for person in result)
-        self.assertEquals(names, ["John Doe", "John Joe"])
+        self.assertEqual(names, ["John Doe", "John Joe"])
 
     def test_result_set_prejoin_mismatch_except(self):
         """Prejoins do not cause EXCEPT incompatibilities. """
@@ -1080,7 +1080,7 @@ class SQLObjectTest(TestHelper):
         result2 = Person.select("name = 'John Joe'")
         result = result1.except_(result2)
         names = sorted(person.name for person in result)
-        self.assertEquals(names, ["John Doe"])
+        self.assertEqual(names, ["John Doe"])
 
     def test_result_set_prejoin_mismatch_intersect(self):
         """Prejoins do not cause INTERSECT incompatibilities. """
@@ -1098,7 +1098,7 @@ class SQLObjectTest(TestHelper):
         result2 = Person.select("name = 'John Doe'")
         result = result1.intersect(result2)
         names = sorted(person.name for person in result)
-        self.assertEquals(names, ["John Doe"])
+        self.assertEqual(names, ["John Doe"])
 
     def test_result_set_prejoinClauseTables(self):
         self.store.execute("ALTER TABLE person ADD COLUMN phone_id INTEGER")
@@ -1132,18 +1132,18 @@ class SQLObjectTest(TestHelper):
         self.store.execute("DELETE FROM phone")
 
         # They were prefetched, so it should work even then.
-        self.assertEquals([person.address.city for person in people],
-                          ["Sao Carlos"])
-        self.assertEquals([person.phone.number for person in people],
-                          ["1234-5678"])
+        self.assertEqual([person.address.city for person in people],
+                         ["Sao Carlos"])
+        self.assertEqual([person.phone.number for person in people],
+                         ["1234-5678"])
 
     def test_result_set_sum_string(self):
         result = self.Person.select()
-        self.assertEquals(result.sum('age'), 40)
+        self.assertEqual(result.sum('age'), 40)
 
     def test_result_set_sum_expr(self):
         result = self.Person.select()
-        self.assertEquals(result.sum(self.Person.q.age), 40)
+        self.assertEqual(result.sum(self.Person.q.age), 40)
 
     def test_result_set_contains(self):
         john = self.Person.selectOneBy(name="John Doe")
@@ -1194,15 +1194,15 @@ class SQLObjectTest(TestHelper):
             address = ForeignKey(foreignKey="Phone", dbName="address_id",
                                  notNull=True)
 
-        self.assertEquals(id(Person.q.id), id(Person.id))
-        self.assertEquals(id(Person.q.address), id(Person.address))
-        self.assertEquals(id(Person.q.addressID), id(Person.addressID))
+        self.assertEqual(id(Person.q.id), id(Person.id))
+        self.assertEqual(id(Person.q.address), id(Person.address))
+        self.assertEqual(id(Person.q.addressID), id(Person.addressID))
 
         person = Person.get("John Joe")
 
-        self.assertEquals(id(person.q.id), id(Person.id))
-        self.assertEquals(id(person.q.address), id(Person.address))
-        self.assertEquals(id(person.q.addressID), id(Person.addressID))
+        self.assertEqual(id(person.q.id), id(Person.id))
+        self.assertEqual(id(person.q.address), id(Person.address))
+        self.assertEqual(id(person.q.addressID), id(Person.addressID))
 
     def test_set(self):
         class Person(self.Person):
@@ -1210,19 +1210,19 @@ class SQLObjectTest(TestHelper):
                 kw["id"] += 1
                 super(Person, self).set(**kw)
         person = Person(id=3, name="John Moe")
-        self.assertEquals(person.id, 4)
-        self.assertEquals(person.name, "John Moe")
+        self.assertEqual(person.id, 4)
+        self.assertEqual(person.name, "John Moe")
 
     def test_CONTAINSSTRING(self):
         expr = CONTAINSSTRING(self.Person.q.name, u"Do")
         result = self.Person.select(expr)
-        self.assertEquals([person.name for person in result],
-                          [u"John Doe"])
+        self.assertEqual([person.name for person in result],
+                         [u"John Doe"])
 
         result[0].name = u"Funny !%_ Name"
 
         expr = NOT(CONTAINSSTRING(self.Person.q.name, u"!%_"))
         result = self.Person.select(expr)
-        self.assertEquals([person.name for person in result],
-                          [u"John Joe"])
+        self.assertEqual([person.name for person in result],
+                         [u"John Joe"])
 
