@@ -1091,11 +1091,11 @@ class Le(BinaryOper):
 
 class RShift(BinaryOper):
     __slots__ = ()
-    oper = ">>"
+    oper = " >> "
 
 class LShift(BinaryOper):
     __slots__ = ()
-    oper = "<<"
+    oper = " << "
 
 
 class Like(BinaryOper):
@@ -1139,23 +1139,23 @@ def compile_in(compile, expr, state):
 
 class Add(CompoundOper):
     __slots__ = ()
-    oper = "+"
+    oper = " + "
 
 class Sub(NonAssocBinaryOper):
     __slots__ = ()
-    oper = "-"
+    oper = " - "
 
 class Mul(CompoundOper):
     __slots__ = ()
-    oper = "*"
+    oper = " * "
 
 class Div(NonAssocBinaryOper):
     __slots__ = ()
-    oper = "/"
+    oper = " / "
 
 class Mod(NonAssocBinaryOper):
     __slots__ = ()
-    oper = "%"
+    oper = " % "
 
 
 class And(CompoundOper):

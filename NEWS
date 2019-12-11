@@ -1,6 +1,14 @@
 0.23 (XXXX-XX-XX)
 =================
 
+Improvements
+------------
+
+- Add whitespace around "<<", ">>", "+", "-", "*", "/", and "%" operators.
+  This helps to avoid confusion in tracers, since they run before parameter
+  substitution: for example, sqlparse parses "expr+%s" as "expr", "+%", "s"
+  rather than "expr", "+", "%s".
+
 Bug fixes
 ---------
 

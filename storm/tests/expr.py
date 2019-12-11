@@ -502,7 +502,8 @@ class CompileTest(TestHelper):
         expr = And(e[1], Or(e[2], e[3]),
                    Add(e[4], Mul(e[5], Sub(e[6], Div(e[7], Div(e[8], e[9]))))))
         statement = compile(expr)
-        self.assertEqual(statement, "1 AND (2 OR 3) AND 4+5*(6-7/(8/9))")
+        self.assertEqual(statement,
+                         "1 AND (2 OR 3) AND 4 + 5 * (6 - 7 / (8 / 9))")
 
         expr = Func1(Select(Count()), [Select(Count())])
         statement = compile(expr)
@@ -1196,26 +1197,26 @@ class CompileTest(TestHelper):
         expr = LShift(Func1(), Func2())
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()<<func2()")
+        self.assertEqual(statement, "func1() << func2()")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() << "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()<<?")
+        self.assertEqual(statement, "func1() << ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_rshift(self):
         expr = RShift(Func1(), Func2())
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()>>func2()")
+        self.assertEqual(statement, "func1() >> func2()")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() >> "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()>>?")
+        self.assertEqual(statement, "func1() >> ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_like(self):
@@ -1311,83 +1312,83 @@ class CompileTest(TestHelper):
         expr = Add(elem1, elem2, Add(elem3, elem4))
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1+elem2+elem3+elem4")
+        self.assertEqual(statement, "elem1 + elem2 + elem3 + elem4")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() + "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()+?")
+        self.assertEqual(statement, "func1() + ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_sub(self):
         expr = Sub(elem1, Sub(elem2, elem3))
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1-(elem2-elem3)")
+        self.assertEqual(statement, "elem1 - (elem2 - elem3)")
         self.assertEqual(state.parameters, [])
 
         expr = Sub(Sub(elem1, elem2), elem3)
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1-elem2-elem3")
+        self.assertEqual(statement, "elem1 - elem2 - elem3")
         self.assertVariablesEqual(state.parameters, [])
 
         expr = Func1() - "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()-?")
+        self.assertEqual(statement, "func1() - ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_mul(self):
         expr = Mul(elem1, elem2, Mul(elem3, elem4))
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1*elem2*elem3*elem4")
+        self.assertEqual(statement, "elem1 * elem2 * elem3 * elem4")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() * "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()*?")
+        self.assertEqual(statement, "func1() * ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_div(self):
         expr = Div(elem1, Div(elem2, elem3))
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1/(elem2/elem3)")
+        self.assertEqual(statement, "elem1 / (elem2 / elem3)")
         self.assertEqual(state.parameters, [])
 
         expr = Div(Div(elem1, elem2), elem3)
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1/elem2/elem3")
+        self.assertEqual(statement, "elem1 / elem2 / elem3")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() / "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()/?")
+        self.assertEqual(statement, "func1() / ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_mod(self):
         expr = Mod(elem1, Mod(elem2, elem3))
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1%(elem2%elem3)")
+        self.assertEqual(statement, "elem1 % (elem2 % elem3)")
         self.assertEqual(state.parameters, [])
 
         expr = Mod(Mod(elem1, elem2), elem3)
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "elem1%elem2%elem3")
+        self.assertEqual(statement, "elem1 % elem2 % elem3")
         self.assertEqual(state.parameters, [])
 
         expr = Func1() % "value"
         state = State()
         statement = compile(expr, state)
-        self.assertEqual(statement, "func1()%?")
+        self.assertEqual(statement, "func1() % ?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
 
     def test_func(self):
@@ -2138,7 +2139,8 @@ class CompilePythonTest(TestHelper):
         expr = And(e[1], Or(e[2], e[3]),
                    Add(e[4], Mul(e[5], Sub(e[6], Div(e[7], Div(e[8], e[9]))))))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "1 and (2 or 3) and 4+5*(6-7/(8/9))")
+        self.assertEqual(py_expr,
+                         "1 and (2 or 3) and 4 + 5 * (6 - 7 / (8 / 9))")
 
     def test_get_precedence(self):
         self.assertTrue(compile_python.get_precedence(Or) <
@@ -2290,14 +2292,14 @@ class CompilePythonTest(TestHelper):
         expr = LShift(Variable(1), Variable(2))
         state = State()
         py_expr = compile_python(expr, state)
-        self.assertEqual(py_expr, "_0<<_1")
+        self.assertEqual(py_expr, "_0 << _1")
         self.assertEqual(state.parameters, [1, 2])
 
     def test_rshift(self):
         expr = RShift(Variable(1), Variable(2))
         state = State()
         py_expr = compile_python(expr, state)
-        self.assertEqual(py_expr, "_0>>_1")
+        self.assertEqual(py_expr, "_0 >> _1")
         self.assertEqual(state.parameters, [1, 2])
 
     def test_in(self):
@@ -2320,7 +2322,7 @@ class CompilePythonTest(TestHelper):
     def test_add(self):
         expr = Add(elem1, elem2, Add(elem3, elem4))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1+elem2+elem3+elem4")
+        self.assertEqual(py_expr, "elem1 + elem2 + elem3 + elem4")
 
     def test_neg(self):
         expr = Neg(elem1)
@@ -2330,34 +2332,34 @@ class CompilePythonTest(TestHelper):
     def test_sub(self):
         expr = Sub(elem1, Sub(elem2, elem3))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1-(elem2-elem3)")
+        self.assertEqual(py_expr, "elem1 - (elem2 - elem3)")
 
         expr = Sub(Sub(elem1, elem2), elem3)
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1-elem2-elem3")
+        self.assertEqual(py_expr, "elem1 - elem2 - elem3")
 
     def test_mul(self):
         expr = Mul(elem1, elem2, Mul(elem3, elem4))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1*elem2*elem3*elem4")
+        self.assertEqual(py_expr, "elem1 * elem2 * elem3 * elem4")
 
     def test_div(self):
         expr = Div(elem1, Div(elem2, elem3))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1/(elem2/elem3)")
+        self.assertEqual(py_expr, "elem1 / (elem2 / elem3)")
 
         expr = Div(Div(elem1, elem2), elem3)
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1/elem2/elem3")
+        self.assertEqual(py_expr, "elem1 / elem2 / elem3")
 
     def test_mod(self):
         expr = Mod(elem1, Mod(elem2, elem3))
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1%(elem2%elem3)")
+        self.assertEqual(py_expr, "elem1 % (elem2 % elem3)")
 
         expr = Mod(Mod(elem1, elem2), elem3)
         py_expr = compile_python(expr)
-        self.assertEqual(py_expr, "elem1%elem2%elem3")
+        self.assertEqual(py_expr, "elem1 % elem2 % elem3")
 
     def test_match(self):
         col1 = Column(column1)
