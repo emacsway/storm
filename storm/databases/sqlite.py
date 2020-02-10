@@ -36,7 +36,7 @@ except ImportError:
     except ImportError:
         sqlite = dummy
 
-from storm.variables import Variable, RawStrVariable
+from storm.variables import Variable, BytesVariable
 from storm.database import Database, Connection, ConnectionWrapper, Result
 from storm.exceptions import (
     DatabaseModuleError, OperationalError, wrap_exceptions)
@@ -85,7 +85,7 @@ class SQLiteResult(Result):
 
     @staticmethod
     def set_variable(variable, value):
-        if (isinstance(variable, RawStrVariable) and
+        if (isinstance(variable, BytesVariable) and
                 isinstance(value, six.text_type)):
             # pysqlite2 may return unicode.
             value = value.encode("UTF-8")

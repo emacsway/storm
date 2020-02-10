@@ -33,7 +33,7 @@ from storm.databases.postgres import (
 from storm.database import create_database
 from storm.store import Store
 from storm.exceptions import InterfaceError, ProgrammingError
-from storm.variables import DateTimeVariable, RawStrVariable
+from storm.variables import DateTimeVariable, BytesVariable
 from storm.variables import ListVariable, IntVariable, Variable
 from storm.properties import Int
 from storm.exceptions import DisconnectionError, OperationalError
@@ -360,7 +360,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         Verify that the logic to enforce fix E''-styled strings isn't
         breaking on NULL values.
         """
-        variable = RawStrVariable(value=None)
+        variable = BytesVariable(value=None)
         result = self.connection.execute(Select(variable))
         self.assertEqual(result.get_one(), (None,))
 

@@ -20,7 +20,7 @@
 #
 from __future__ import print_function
 
-from storm.properties import Bool, Int, Float, RawStr, Chars, Unicode
+from storm.properties import Bool, Int, Float, Bytes, RawStr, Chars, Unicode
 from storm.properties import List, Decimal, DateTime, Date, Time, Enum, UUID
 from storm.properties import TimeDelta, Pickle, JSON
 from storm.references import Reference, ReferenceSet, Proxy

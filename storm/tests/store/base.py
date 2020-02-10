@@ -34,7 +34,7 @@ from six.moves import cPickle as pickle, cStringIO as StringIO
 from storm.references import Reference, ReferenceSet, Proxy
 from storm.database import Result, STATE_DISCONNECTED
 from storm.properties import (
-    Int, Float, RawStr, Unicode, Property, Pickle, UUID)
+    Int, Float, Bytes, Unicode, Property, Pickle, UUID)
 from storm.properties import PropertyPublisherMeta, Decimal
 from storm.variables import PickleVariable
 from storm.expr import (
@@ -73,7 +73,7 @@ class UniqueID(object):
 class Blob(object):
     __storm_table__ = "bin"
     id = Int(primary=True)
-    bin = RawStr()
+    bin = Bytes()
 
 class Link(object):
     __storm_table__ = "link"

@@ -29,14 +29,14 @@ from storm.info import get_obj_info, get_cls_info
 from storm.expr import Column, Undef
 from storm.variables import (
     Variable, VariableFactory, BoolVariable, IntVariable, FloatVariable,
-    DecimalVariable, RawStrVariable, UnicodeVariable, DateTimeVariable,
+    DecimalVariable, BytesVariable, UnicodeVariable, DateTimeVariable,
     DateVariable, TimeVariable, TimeDeltaVariable, UUIDVariable,
     PickleVariable, JSONVariable, ListVariable, EnumVariable)
 
 
 
 __all__ = ["Property", "SimpleProperty",
-           "Bool", "Int", "Float", "Decimal", "RawStr", "Unicode",
+           "Bool", "Int", "Float", "Decimal", "Bytes", "RawStr", "Unicode",
            "DateTime", "Date", "Time", "TimeDelta", "UUID", "Enum",
            "Pickle", "JSON", "List", "PropertyRegistry"]
 
@@ -147,12 +147,13 @@ class Float(SimpleProperty):
 class Decimal(SimpleProperty):
     variable_class = DecimalVariable
 
-# Bytes might be a clearer name nowadays, but we keep this for compatibility.
-class RawStr(SimpleProperty):
-    variable_class = RawStrVariable
+class Bytes(SimpleProperty):
+    variable_class = BytesVariable
 
-# OBSOLETE RawStr was Chars in 0.9. This will die soon.
-Chars = RawStr
+# OBSOLETE: Bytes was Chars in 0.9. This will die soon.
+Chars = Bytes
+# DEPRECATED: Bytes was RawStr until 0.22.
+RawStr = Bytes
 
 class Unicode(SimpleProperty):
     variable_class = UnicodeVariable
