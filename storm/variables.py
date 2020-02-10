@@ -43,6 +43,7 @@ __all__ = [
     "IntVariable",
     "FloatVariable",
     "DecimalVariable",
+    "BytesVariable",
     "RawStrVariable",
     "UnicodeVariable",
     "DateTimeVariable",
@@ -369,7 +370,7 @@ class DecimalVariable(Variable):
         return value
 
 
-class RawStrVariable(Variable):
+class BytesVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
@@ -379,6 +380,10 @@ class RawStrVariable(Variable):
             raise TypeError("Expected bytes, found %r: %r"
                             % (type(value), value))
         return value
+
+
+# DEPRECATED: BytesVariable was RawStrVariable until 0.22.
+RawStrVariable = BytesVariable
 
 
 class UnicodeVariable(Variable):

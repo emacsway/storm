@@ -32,7 +32,7 @@ from six.moves import cPickle as pickle
 
 from storm.uri import URI
 from storm.expr import Select, Column, SQLToken, SQLRaw, Count, Alias
-from storm.variables import (Variable, PickleVariable, RawStrVariable,
+from storm.variables import (Variable, PickleVariable, BytesVariable,
                              DecimalVariable, DateTimeVariable, DateVariable,
                              TimeVariable, TimeDeltaVariable)
 from storm.database import *
@@ -279,7 +279,7 @@ class DatabaseTest(object):
         self.connection.execute("INSERT INTO bin_test (b) VALUES (?)",
                                 (value,))
         result = self.connection.execute("SELECT b FROM bin_test")
-        variable = RawStrVariable()
+        variable = BytesVariable()
         result.set_variable(variable, result.get_one()[0])
         self.assertEqual(variable.get(), value)
 
@@ -287,7 +287,7 @@ class DatabaseTest(object):
         """Some databases like pysqlite2 may return unicode for strings."""
         self.connection.execute("INSERT INTO bin_test VALUES (10, 'Value')")
         result = self.connection.execute("SELECT b FROM bin_test")
-        variable = RawStrVariable()
+        variable = BytesVariable()
         # If the following doesn't raise a TypeError we're good.
         result.set_variable(variable, result.get_one()[0])
         self.assertEqual(variable.get(), b"Value")

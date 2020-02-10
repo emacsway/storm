@@ -574,7 +574,7 @@ class CompileTest(TestHelper):
         state = State()
         statement = compile(b"str", state)
         self.assertEqual(statement, "?")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"str")])
+        self.assertVariablesEqual(state.parameters, [BytesVariable(b"str")])
 
     def test_unicode(self):
         state = State()
@@ -1224,7 +1224,7 @@ class CompileTest(TestHelper):
         state = State()
         statement = compile(expr, state)
         self.assertEqual(statement, "func1() LIKE ?")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"value")])
+        self.assertVariablesEqual(state.parameters, [BytesVariable(b"value")])
 
         expr = Func1().like("Hello")
         state = State()
@@ -1238,14 +1238,14 @@ class CompileTest(TestHelper):
         statement = compile(expr, state)
         self.assertEqual(statement, "func1() LIKE ? ESCAPE ?")
         self.assertVariablesEqual(state.parameters,
-                          [RawStrVariable(b"value"), RawStrVariable(b"!")])
+                          [BytesVariable(b"value"), BytesVariable(b"!")])
 
         expr = Func1().like("Hello", b"!")
         state = State()
         statement = compile(expr, state)
         self.assertEqual(statement, "func1() LIKE ? ESCAPE ?")
         self.assertVariablesEqual(state.parameters,
-                          [Variable("Hello"), RawStrVariable(b"!")])
+                          [Variable("Hello"), BytesVariable(b"!")])
 
     def test_like_compareable_case(self):
         expr = Func1().like("Hello")
@@ -1260,7 +1260,7 @@ class CompileTest(TestHelper):
         state = State()
         statement = compile(expr, state)
         self.assertEqual(statement, "func1() IN (?)")
-        self.assertVariablesEqual(state.parameters, [RawStrVariable(b"value")])
+        self.assertVariablesEqual(state.parameters, [BytesVariable(b"value")])
 
         expr = In(Func1(), elem1)
         state = State()

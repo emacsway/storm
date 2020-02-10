@@ -31,7 +31,7 @@ import warnings
 import six
 
 from storm.properties import (
-    RawStr, Int, Bool, Float, DateTime, Date, TimeDelta)
+    Bytes, Int, Bool, Float, DateTime, Date, TimeDelta)
 from storm.references import Reference, ReferenceSet
 from storm.properties import SimpleProperty, PropertyPublisherMeta
 from storm.variables import Variable
@@ -211,7 +211,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
 
 
         id_type = dict.setdefault("_idType", int)
-        id_cls = {int: Int, bytes: RawStr, six.text_type: AutoUnicode}[id_type]
+        id_cls = {int: Int, bytes: Bytes, six.text_type: AutoUnicode}[id_type]
         dict["id"] = id_cls(id_name, primary=True, default=AutoReload)
         attr_to_prop[id_name] = "id"
 

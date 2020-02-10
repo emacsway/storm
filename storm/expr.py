@@ -30,7 +30,7 @@ import six
 
 from storm.exceptions import CompileError, NoTableError, ExprError
 from storm.variables import (
-    Variable, RawStrVariable, UnicodeVariable, LazyValue,
+    Variable, BytesVariable, UnicodeVariable, LazyValue,
     DateTimeVariable, DateVariable, TimeVariable, TimeDeltaVariable,
     BoolVariable, IntVariable, FloatVariable, DecimalVariable)
 from storm import Undef, has_cextensions
@@ -310,7 +310,7 @@ SELECT = Context("SELECT")
 
 @compile.when(bytes)
 def compile_bytes(compile, expr, state):
-    state.parameters.append(RawStrVariable(expr))
+    state.parameters.append(BytesVariable(expr))
     return "?"
 
 @compile.when(six.text_type)

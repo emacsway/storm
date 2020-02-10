@@ -440,10 +440,10 @@ class DecimalVariableTest(TestHelper):
         self.assertEqual(variable.get(to_db=True), "1.1")
 
 
-class RawStrVariableTest(TestHelper):
+class BytesVariableTest(TestHelper):
 
     def test_set_get(self):
-        variable = RawStrVariable()
+        variable = BytesVariable()
         variable.set(b"str")
         self.assertEqual(variable.get(), b"str")
         buffer_type = memoryview if six.PY3 else buffer
@@ -961,7 +961,7 @@ class ListVariableTest(TestHelper):
     def test_list_events(self):
         event = EventSystem(marker)
 
-        variable = ListVariable(RawStrVariable, event=event,
+        variable = ListVariable(BytesVariable, event=event,
                                 value_factory=list)
 
         changes = []
