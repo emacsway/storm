@@ -293,6 +293,9 @@ class BoundReferenceSetBase(object):
     def __iter__(self):
         return self.find().__iter__()
 
+    def __getitem__(self, index):
+        return self.find().__getitem__(index)
+
     def __contains__(self, item):
         return item in self.find()
 
