@@ -11,9 +11,9 @@ Improvements
 - Implement __getitem__ on bound ReferenceSets.
 - The storm.twisted.testing.FakeTransactor test helper now uses a fake
   transaction by default, so tests won't perform real commits as it's
-  not generally needed.
+  not generally needed (bug #1009983).
 - A new block_access context manager blocks database access for one
-  or more stores in the managed scope.
+  or more stores in the managed scope (bug #617182).
 - Implement is_empty on bound ReferenceSets.
 
 Bug fixes
