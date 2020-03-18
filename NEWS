@@ -19,6 +19,7 @@ Bug fixes
 ---------
 
 - Stop using deprecated assertEquals/assertNotEquals unittest methods.
+- Return self from EmptyResultSet.config() to match ResultSet (bug #905529).
 
 API changes
 -----------

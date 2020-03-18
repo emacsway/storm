@@ -1542,7 +1542,7 @@ class EmptyResultSet(object):
         return result
 
     def config(self, distinct=None, offset=None, limit=None):
-        pass
+        return self
 
     def __iter__(self):
         return
