@@ -299,6 +299,9 @@ class BoundReferenceSetBase(object):
     def __contains__(self, item):
         return item in self.find()
 
+    def is_empty(self):
+        return self.find().is_empty()
+
     def first(self, *args, **kwargs):
         return self.find(*args, **kwargs).first()
 
