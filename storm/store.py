@@ -1853,3 +1853,21 @@ class AutoReload(LazyValue):
     pass
 
 AutoReload = AutoReload()
+
+
+class block_access(object):
+    """
+    Context manager blocks database access by one or more L{Store}s in the
+    managed scope.
+    """
+
+    def __init__(self, *args):
+        self.stores = args
+
+    def __enter__(self):
+        for store in self.stores:
+            store.block_access()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for store in self.stores:
+            store.unblock_access()

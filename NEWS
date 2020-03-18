@@ -12,6 +12,8 @@ Improvements
 - The storm.twisted.testing.FakeTransactor test helper now uses a fake
   transaction by default, so tests won't perform real commits as it's
   not generally needed.
+- A new block_access context manager blocks database access for one
+  or more stores in the managed scope.
 
 Bug fixes
 ---------
