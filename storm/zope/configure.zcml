@@ -24,8 +24,22 @@
     </class>
 
     <class class="storm.references.BoundReferenceSet">
-        <allow attributes="__iter__ find first last one any values order_by
-                           count __contains__" />
+        <!-- Keep these in the order found in the implementation of
+             storm.references.BoundReferenceSetBase. -->
+        <allow attributes="
+            find
+            __iter__
+            __getitem__
+            __contains__
+            is_empty
+            first
+            last
+            any
+            one
+            values
+            order_by
+            count
+            " />
     </class>
 
     <class class="storm.references.BoundIndirectReferenceSet">
