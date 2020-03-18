@@ -3912,6 +3912,37 @@ class StoreTest(object):
                           (200, 20, "Title 200"),
                          ])
 
+    def test_reference_set_getitem(self):
+        self.add_reference_set_bar_400()
+
+        foo = self.store.get(FooRefSetOrderID, 20)
+
+        self.assertEqual(foo.bars[0].id, 200)
+        self.assertEqual(foo.bars[1].id, 400)
+        self.assertRaises(IndexError, foo.bars.__getitem__, 2)
+
+        items = []
+        for bar in foo.bars[:1]:
+            items.append((bar.id, bar.foo_id, bar.title))
+        self.assertEqual(items, [
+                          (200, 20, "Title 200"),
+                         ])
+
+        del items[:]
+        for bar in foo.bars[1:]:
+            items.append((bar.id, bar.foo_id, bar.title))
+        self.assertEqual(items, [
+                          (400, 20, "Title 100"),
+                         ])
+
+        del items[:]
+        for bar in foo.bars[:2]:
+            items.append((bar.id, bar.foo_id, bar.title))
+        self.assertEqual(items, [
+                          (200, 20, "Title 200"),
+                          (400, 20, "Title 100"),
+                         ])
+
     def test_reference_set_first_last(self):
         self.add_reference_set_bar_400()
 
@@ -4235,6 +4266,35 @@ class StoreTest(object):
 
         del items[:]
         for bar in foo.bars.find():
+            items.append((bar.id, bar.title))
+        self.assertEqual(items, [
+                          (100, "Title 300"),
+                          (200, "Title 200"),
+                         ])
+
+    def test_indirect_reference_set_getitem(self):
+        foo = self.store.get(FooIndRefSetOrderID, 20)
+
+        self.assertEqual(foo.bars[0].id, 100)
+        self.assertEqual(foo.bars[1].id, 200)
+        self.assertRaises(IndexError, foo.bars.__getitem__, 2)
+
+        items = []
+        for bar in foo.bars[:1]:
+            items.append((bar.id, bar.title))
+        self.assertEqual(items, [
+                          (100, "Title 300"),
+                         ])
+
+        del items[:]
+        for bar in foo.bars[1:]:
+            items.append((bar.id, bar.title))
+        self.assertEqual(items, [
+                          (200, "Title 200"),
+                         ])
+
+        del items[:]
+        for bar in foo.bars[:2]:
             items.append((bar.id, bar.title))
         self.assertEqual(items, [
                           (100, "Title 300"),
