@@ -3845,6 +3845,13 @@ class StoreTest(object):
                           (400, 20, "Title 100"),
                          ])
 
+    def test_reference_set_is_empty(self):
+        foo = self.store.get(FooRefSet, 20)
+        self.assertFalse(foo.bars.is_empty())
+
+        foo.bars.clear()
+        self.assertTrue(foo.bars.is_empty())
+
     def test_reference_set_count(self):
         self.add_reference_set_bar_400()
 
@@ -4209,6 +4216,13 @@ class StoreTest(object):
 
         items = [(bar.id, bar.foo_id, bar.title) for bar in foo.bars]
         self.assertEqual(items, [])
+
+    def test_indirect_reference_set_is_empty(self):
+        foo = self.store.get(FooIndRefSet, 20)
+        self.assertFalse(foo.bars.is_empty())
+
+        foo.bars.clear()
+        self.assertTrue(foo.bars.is_empty())
 
     def test_indirect_reference_set_count(self):
         foo = self.store.get(FooIndRefSet, 20)
