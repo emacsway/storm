@@ -9,6 +9,9 @@ Improvements
   substitution: for example, sqlparse parses "expr+%s" as "expr", "+%", "s"
   rather than "expr", "+", "%s".
 - Implement __getitem__ on bound ReferenceSets.
+- The storm.twisted.testing.FakeTransactor test helper now uses a fake
+  transaction by default, so tests won't perform real commits as it's
+  not generally needed.
 
 Bug fixes
 ---------
