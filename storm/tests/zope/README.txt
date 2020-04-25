@@ -193,6 +193,50 @@ on Storm-managed objects.
   >>> type(get_obj_info(ProxyFactory(person))) is ObjectInfo
   True
 
+Security-wrapped result sets can be used in the same way as unwrapped ones.
+
+  >>> from zope.component.testing import (
+  ...     setUp,
+  ...     tearDown,
+  ...     )
+  >>> from zope.configuration import xmlconfig
+  >>> from zope.security.protectclass import protectName
+  >>> import storm.zope
+
+  >>> setUp()
+  >>> _ = xmlconfig.file("configure.zcml", package=storm.zope)
+  >>> protectName(Person, "name", "zope.Public")
+
+  >>> another_person = Person(u"Jane Doe")
+  >>> store.add(another_person)
+  <...Person object at ...>
+  >>> result = ProxyFactory(store.find(Person).order_by(Person.name))
+  >>> for person in result:
+  ...     print(person.name)
+  Jane Doe
+  John Doe
+  >>> print(result[0].name)
+  Jane Doe
+  >>> another_person in result
+  True
+  >>> result.is_empty()
+  False
+  >>> result.any()
+  <...Person object at ...>
+  >>> print(result.first().name)
+  Jane Doe
+  >>> print(result.last().name)
+  John Doe
+  >>> print(result.count())
+  2
+
+  >>> result = ProxyFactory(
+  ...     store.find(Person, Person.name.startswith(u"John")))
+  >>> print(result.one().name)
+  John Doe
+
+  >>> tearDown()
+
 
 ResultSet interfaces
 --------------------
