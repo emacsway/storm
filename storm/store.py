@@ -1548,6 +1548,9 @@ class EmptyResultSet(object):
         return
         yield None
 
+    def __len__(self):
+        return 0
+
     def __getitem__(self, index):
         return self.copy()
 

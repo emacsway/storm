@@ -14,12 +14,12 @@
 
     <class class="storm.store.ResultSet">
         <allow interface=".interfaces.IResultSet" />
-        <allow attributes="__getslice__" />
+        <allow attributes="__getslice__ __len__" />
     </class>
 
     <class class="storm.store.EmptyResultSet">
         <allow interface=".interfaces.IResultSet" />
-        <allow attributes="__getslice__" />
+        <allow attributes="__getslice__ __len__" />
     </class>
 
     <class class="storm.sqlobject.SQLObjectResultSet">
@@ -32,6 +32,7 @@
         <allow attributes="
             find
             __iter__
+            __len__
             __getitem__
             __contains__
             is_empty

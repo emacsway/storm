@@ -230,6 +230,15 @@ Security-wrapped result sets can be used in the same way as unwrapped ones.
   >>> print(result.count())
   2
 
+Check ``list()`` as well as ordinary iteration: on Python 3, this tries to
+call ``__len__`` first (which doesn't exist, but is nevertheless allowed by
+the security wrapper).
+
+  >>> for person in list(result):
+  ...     print(person.name)
+  Jane Doe
+  John Doe
+
   >>> result = ProxyFactory(
   ...     store.find(Person, Person.name.startswith(u"John")))
   >>> print(result.one().name)
