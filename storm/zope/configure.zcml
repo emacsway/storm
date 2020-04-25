@@ -24,6 +24,7 @@
 
     <class class="storm.sqlobject.SQLObjectResultSet">
         <allow interface=".interfaces.ISQLObjectResultSet" />
+        <allow attributes="__len__" />
     </class>
 
     <class class="storm.references.BoundReferenceSet">
