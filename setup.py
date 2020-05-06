@@ -37,6 +37,7 @@ tests_require = [
     "transaction >= 1.0.0",
     "twisted >= 10.0.0",
     "zope.component >= 3.8.0",
+    "zope.configuration",
     "zope.interface >= 4.0.0",
     "zope.security >= 3.7.2",
     ]

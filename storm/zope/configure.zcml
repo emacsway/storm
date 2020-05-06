@@ -4,6 +4,9 @@
     i18n_domain="zope"
     >
 
+    <include package="zope.component" file="meta.zcml" />
+    <include package="zope.security" file="meta.zcml" />
+
     <utility
         component=".zstorm.global_zstorm"
         provides=".interfaces.IZStorm"
@@ -11,16 +14,17 @@
 
     <class class="storm.store.ResultSet">
         <allow interface=".interfaces.IResultSet" />
-        <allow attributes="__getslice__" />
+        <allow attributes="__getslice__ __len__" />
     </class>
 
     <class class="storm.store.EmptyResultSet">
         <allow interface=".interfaces.IResultSet" />
-        <allow attributes="__getslice__" />
+        <allow attributes="__getslice__ __len__" />
     </class>
 
     <class class="storm.sqlobject.SQLObjectResultSet">
         <allow interface=".interfaces.ISQLObjectResultSet" />
+        <allow attributes="__len__" />
     </class>
 
     <class class="storm.references.BoundReferenceSet">
@@ -29,6 +33,7 @@
         <allow attributes="
             find
             __iter__
+            __len__
             __getitem__
             __contains__
             is_empty
