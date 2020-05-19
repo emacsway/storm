@@ -35,6 +35,7 @@
             __iter__
             __len__
             __getitem__
+            __getslice__
             __contains__
             is_empty
             first

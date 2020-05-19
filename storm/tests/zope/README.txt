@@ -217,6 +217,9 @@ Security-wrapped result sets can be used in the same way as unwrapped ones.
   John Doe
   >>> print(result[0].name)
   Jane Doe
+  >>> for person in result[:1]:
+  ...     print(person.name)
+  Jane Doe
   >>> another_person in result
   True
   >>> result.is_empty()
@@ -243,6 +246,77 @@ the security wrapper).
   ...     store.find(Person, Person.name.startswith(u"John")))
   >>> print(result.one().name)
   John Doe
+
+Security-wrapped reference sets work too.
+
+  >>> _ = store.execute("""
+  ...     CREATE TABLE team (
+  ...         id INTEGER PRIMARY KEY,
+  ...         name TEXT)
+  ... """)
+  >>> _ = store.execute("""
+  ...     CREATE TABLE teammembership (
+  ...         id INTEGER PRIMARY KEY,
+  ...         person INTEGER NOT NULL REFERENCES person,
+  ...         team INTEGER NOT NULL REFERENCES team)
+  ... """)
+  >>> store.commit()
+
+  >>> from storm.locals import Reference, ReferenceSet, Store
+
+  >>> class TeamMembership(Storm):
+  ...
+  ...     __storm_table__ = "teammembership"
+  ...
+  ...     id = Int(primary=True)
+  ...
+  ...     person_id = Int(name="person", allow_none=False)
+  ...     person = Reference(person_id, "Person.id")
+  ...
+  ...     team_id = Int(name="team", allow_none=False)
+  ...     team = Reference(team_id, "Team.id")
+  ...
+  ...     def __init__(self, person, team):
+  ...         self.person = person
+  ...         self.team = team
+
+  >>> class Team(Person):
+  ...
+  ...     __storm_table__ = "team"
+  ...
+  ...     id = Int(primary=True)
+  ...     name = Unicode()
+  ...
+  ...     def __init__(self, name):
+  ...         self.name = name
+  ...
+  ...     members = ReferenceSet(
+  ...         "id", "TeamMembership.team_id",
+  ...         "TeamMembership.person_id", "Person.id",
+  ...         order_by="Person.name")
+  ...
+  ...     def addMember(self, person):
+  ...         Store.of(self).add(TeamMembership(person, self))
+
+  >>> protectName(Team, "members", "zope.Public")
+  >>> protectName(Team, "addMember", "zope.Public")
+
+  >>> doe_family = Team(U"does")
+  >>> store.add(doe_family)
+  <...Team object at ...>
+  >>> doe_family = ProxyFactory(doe_family)
+  >>> doe_family.addMember(person)
+  >>> doe_family.addMember(another_person)
+
+  >>> for member in doe_family.members:
+  ...     print(member.name)
+  Jane Doe
+  John Doe
+  >>> for person in doe_family.members[:1]:
+  ...     print(person.name)
+  Jane Doe
+  >>> print(doe_family.members[0].name)
+  Jane Doe
 
   >>> tearDown()
 
