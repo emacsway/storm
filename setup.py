@@ -86,5 +86,12 @@ setup(
     install_requires=["six"],
     test_suite="storm.tests.find_tests",
     tests_require=tests_require,
-    extras_require={"test": tests_require},
+    extras_require={
+        "doc": [
+            "fixtures",  # so that storm.testing can be imported
+            "sphinx",
+            "sphinx-epytext",
+            ],
+        "test": tests_require,
+        },
     )

@@ -1,31 +1,38 @@
-Copyright (c) 2006, 2007 Canonical
+..
+    Copyright (c) 2006, 2007 Canonical
 
-Written by Jamshed Kakar <jkakar@kakar.ca>
+    Written by Jamshed Kakar <jkakar@kakar.ca>
 
-This file is part of Storm Object Relational Mapper.
+    This file is part of Storm Object Relational Mapper.
 
-Storm is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as
-published by the Free Software Foundation; either version 2.1 of
-the License, or (at your option) any later version.
+    Storm is free software; you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as
+    published by the Free Software Foundation; either version 2.1 of
+    the License, or (at your option) any later version.
 
-Storm is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+    Storm is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Introduction
-------------
+Zope integration
+================
 
-The storm.zope package contains the ZStorm utility which provides
+The ``storm.zope`` package contains the ZStorm utility which provides
 seamless integration between Storm and Zope 3's transaction system.
 Setting up ZStorm is quite easy.  In most cases, you want to include
-storm/zope/configure.zcml in your application.  For the purposes of
-this doctest we'll register ZStorm manually.
+``storm/zope/configure.zcml`` in your application, which you would normally
+do in ZCML as follows:
+
+.. code-block:: xml
+
+  <include package="storm.zope" />
+
+For the purposes of this doctest we'll register ZStorm manually.
 
   >>> from zope.component import provideUtility, getUtility
   >>> import transaction
@@ -48,8 +55,8 @@ The ZStorm utility allows us work with named stores.
   >>> zstorm.set_default_uri("test", "sqlite:")
 
 Setting a default URI for stores isn't strictly required.  We could
-pass it as the second argument to zstorm.get.  Providing a default URI
-makes it possible to use zstorm.get more easily; this is especially
+pass it as the second argument to ``zstorm.get``.  Providing a default URI
+makes it possible to use ``zstorm.get`` more easily; this is especially
 handy when multiple threads are used as we'll see further on.
 
   >>> store = zstorm.get("test")
@@ -97,7 +104,7 @@ see how it works.
   ... """)
   >>> store.commit()
 
-We'll need a Person class to use with this database.
+We'll need a ``Person`` class to use with this database.
 
   >>> from storm.locals import Storm, Int, Unicode
 
@@ -118,7 +125,7 @@ Great!  Let's try it out.
   <...Person object at ...>
   >>> transaction.commit()
 
-Notice that we're not using store.commit directly; we're using Zope's
+Notice that we're not using ``store.commit`` directly; we're using Zope's
 transaction system.  Let's make sure it worked.
 
   >>> store.rollback()
@@ -137,7 +144,7 @@ Let's make sure aborting transactions works, too.
   >>> store.add(Person(u"Imposter!"))
   <...Person object at ...>
 
-At this point a store.find should return the new object.
+At this point a ``store.find`` should return the new object.
 
   >>> for name in sorted(person.name for person in store.find(Person)):
   ...     print(name)
@@ -145,7 +152,7 @@ At this point a store.find should return the new object.
   John Doe
 
 All this means is that the data has been flushed to the database; it's
-still not committed.  If we abort the transaction the new Person
+still not committed.  If we abort the transaction the new ``Person``
 object should disappear.
 
   >>> transaction.abort()
@@ -165,9 +172,11 @@ setting up named stores via ZCML directives is more desirable.  Add a
 stanza similar to the following to your ZCML configuration to setup a
 named store.
 
+.. code-block:: xml
+
   <store name="test" uri="sqlite:" />
 
-With that in place getUtility(IZStorm).get("test") will return the
+With that in place ``getUtility(IZStorm).get("test")`` will return the
 store named "test".
 
 
@@ -280,7 +289,7 @@ Security-wrapped reference sets work too.
   ...         self.person = person
   ...         self.team = team
 
-  >>> class Team(Person):
+  >>> class Team(Storm):
   ...
   ...     __storm_table__ = "team"
   ...
@@ -324,8 +333,8 @@ Security-wrapped reference sets work too.
 ResultSet interfaces
 --------------------
 
-Query results provide IResultSet (or ISQLObjectResultSet if SQLObject's
-compatibility layer is used).
+Query results provide ``IResultSet`` (or ``ISQLObjectResultSet`` if
+SQLObject's compatibility layer is used).
 
   >>> from storm.zope.interfaces import IResultSet, ISQLObjectResultSet
   >>> from storm.store import EmptyResultSet, ResultSet
@@ -339,13 +348,9 @@ compatibility layer is used).
   True
 
 
-The End
--------
-
+..
   >>> Team._storm_property_registry.clear()
   >>> TeamMembership._storm_property_registry.clear()
   >>> Person._storm_property_registry.clear()
   >>> transaction.abort()
   >>> zstorm._reset()
-
-# vim:ts=4:sw=4:et
