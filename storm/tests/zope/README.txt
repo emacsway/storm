@@ -342,6 +342,9 @@ compatibility layer is used).
 The End
 -------
 
+  >>> Team._storm_property_registry.clear()
+  >>> TeamMembership._storm_property_registry.clear()
+  >>> Person._storm_property_registry.clear()
   >>> transaction.abort()
   >>> zstorm._reset()
 
