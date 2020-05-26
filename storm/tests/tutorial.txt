@@ -958,4 +958,9 @@ are not answered somewhere else, feel free to ask them in the mailing
 list.
 
 
+==== Clean up ====
+
+    >>> Currency._storm_property_registry.clear()
+    >>> Country._storm_property_registry.clear()
+
 ## vim:ts=4:sw=4:et:ft=moin1_5

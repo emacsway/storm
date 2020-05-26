@@ -277,4 +277,8 @@ This pattern is very handy when using Storm with code that would naturally be
 implemented using inheritance.
 
 
+==== Clean up ====
+
+    >>> Person._storm_property_registry.clear()
+
 ## vim:ts=4:sw=4:et:ft=moin1_5
