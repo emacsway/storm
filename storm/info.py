@@ -59,7 +59,7 @@ def get_cls_info(cls):
 
 
 class ClassInfo(dict):
-    """Persistent storm-related information of a class.
+    """Persistent Storm-related information of a class.
 
     The following attributes are defined:
 

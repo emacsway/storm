@@ -11,7 +11,7 @@ class Cache(object):
     This prevents recently used objects from being deallocated by Python
     even if the user isn't holding any strong references to it.  It does
     that by holding strong references to the objects referenced by the
-    last C{N} C{obj_info}s added to it (where C{N} is the cache size).
+    last C{N} C{obj_info}\ s added to it (where C{N} is the cache size).
     """
 
     def __init__(self, size=1000):
@@ -54,7 +54,7 @@ class Cache(object):
     def set_size(self, size):
         """Set the maximum number of objects that may be held in this cache.
 
-        If the size is reduced, older C{obj_info}s may be dropped from
+        If the size is reduced, older C{obj_info}\ s may be dropped from
         the cache to respect the new size.
         """
         if size == 0:
@@ -66,7 +66,7 @@ class Cache(object):
         self._size = size
 
     def get_cached(self):
-        """Return an ordered list of the currently cached C{obj_info}s.
+        """Return an ordered list of the currently cached C{obj_info}\ s.
 
         The most recently added objects come first in the list.
         """
@@ -103,7 +103,7 @@ class GenerationalCache(object):
         self._old_cache = {}
 
     def clear(self):
-        """See `storm.store.Cache.clear`.
+        """See L{Cache.clear}.
 
         Clears both the primary and the secondary caches.
         """
@@ -125,20 +125,20 @@ class GenerationalCache(object):
         self._new_cache.clear()
 
     def add(self, obj_info):
-        """See `storm.store.Cache.add`."""
+        """See L{Cache.add}."""
         if self._size != 0 and obj_info not in self._new_cache:
             if len(self._new_cache) >= self._size:
                 self._bump_generation()
             self._new_cache[obj_info] = obj_info.get_obj()
 
     def remove(self, obj_info):
-        """See `storm.store.Cache.remove`."""
+        """See L{Cache.remove}."""
         in_new_cache = self._new_cache.pop(obj_info, None) is not None
         in_old_cache = self._old_cache.pop(obj_info, None) is not None
         return in_new_cache or in_old_cache
 
     def set_size(self, size):
-        """See `storm.store.Cache.set_size`.
+        """See L{Cache.set_size}.
 
         After calling this, the cache may still contain more than `size`
         objects, but no more than twice that number.
@@ -152,7 +152,7 @@ class GenerationalCache(object):
         self._old_cache.clear()
 
     def get_cached(self):
-        """See `storm.store.Cache.get_cached`.
+        """See L{Cache.get_cached}.
 
         The result is a loosely-ordered list.  Any object in the primary
         generation comes before any object that is only in the secondary

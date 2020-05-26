@@ -133,7 +133,7 @@ class Variable(object):
         @type column: L{storm.expr.Column}
         @param column: The column that this variable represents. It's
             used for reporting better error messages.
-        @type event: L{EventSystem}
+        @type event: L{storm.event.EventSystem}
         @param event: The event system to broadcast messages with. If
             not specified, then no events will be broadcast.
         """

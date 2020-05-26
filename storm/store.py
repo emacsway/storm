@@ -105,7 +105,7 @@ class Store(object):
     def execute(self, statement, params=None, noresult=False):
         """Execute a basic query.
 
-        This is just like L{storm.database.Database.execute}, except
+        This is just like L{storm.database.Connection.execute}, except
         that a flush is performed first.
         """
         if self._implicit_flush_block_count == 0:
@@ -119,16 +119,16 @@ class Store(object):
     def begin(self, xid):
         """Start a new two-phase transaction.
 
-        @param xid: A L{Xid} instance holding identification data for the
-            new transaction.
+        @param xid: A L{Xid <storm.xid.Xid>} instance holding identification
+            data for the new transaction.
         """
         self._connection.begin(xid)
 
     def prepare(self):
         """Prepare a two-phase transaction for the final commit.
 
-        @note: It must be call inside a two-phase transaction started
-            with begin().
+        @note: It must be called inside a two-phase transaction started
+            with L{begin}.
         """
         self._connection.prepare()
 
@@ -627,7 +627,7 @@ class Store(object):
         """Fill missing values in variables of the given obj_info.
 
         This method will verify which values are unset in obj_info,
-        and set them to AutoReload, or if it's part of the primary
+        and set them to L{AutoReload}, or if it's part of the primary
         key, query the database for the actual values.
 
         @param obj_info: ObjectInfo to have its values filled.
@@ -889,7 +889,7 @@ class Store(object):
 
         This method is hooked into the obj_info to resolve variables
         set to lazy values when they're accessed.  It will first flush
-        the store, and then set all variables set to AutoReload to
+        the store, and then set all variables set to L{AutoReload} to
         their database values.
         """
         if lazy_value is not AutoReload and not isinstance(lazy_value, Expr):
@@ -1083,7 +1083,7 @@ class ResultSet(object):
         """Return a single item from the result set.
 
         @return: An arbitrary object or C{None} if one isn't available.
-        @seealso: one(), first(), and last().
+        @see: L{one}, L{first}, and L{last}.
         """
         select = self._get_select()
         select.limit = 1
@@ -1112,7 +1112,7 @@ class ResultSet(object):
 
         @raises UnorderedError: Raised if the result set isn't ordered.
         @return: The first object or C{None} if one isn't available.
-        @seealso: last(), one(), and any().
+        @see: L{last}, L{one}, and L{any}.
         """
         if self._order_by is Undef:
             raise UnorderedError("Can't use first() on unordered result set")
@@ -1124,7 +1124,7 @@ class ResultSet(object):
         @raises FeatureError: Raised if the result set has a C{LIMIT} set.
         @raises UnorderedError: Raised if the result set isn't ordered.
         @return: The last object or C{None} if one isn't available.
-        @seealso: first(), one(), and any().
+        @see: L{first}, L{one}, and L{any}.
         """
         if self._order_by is Undef:
             raise UnorderedError("Can't use last() on unordered result set")
@@ -1154,7 +1154,7 @@ class ResultSet(object):
         @raises NotOneError: Raised if the result set contains more than one
             item.
         @return: The object or C{None} if one isn't available.
-        @seealso: first(), one(), and any().
+        @see: L{first}, L{last}, and L{any}.
         """
         select = self._get_select()
         # limit could be 1 due to slicing, for instance.
@@ -1860,7 +1860,7 @@ AutoReload = AutoReload()
 
 class block_access(object):
     """
-    Context manager blocks database access by one or more L{Store}s in the
+    Context manager blocks database access by one or more L{Store}\ s in the
     managed scope.
     """
 

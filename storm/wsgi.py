@@ -29,23 +29,23 @@ import weakref
 __all__ = ['make_app']
 
 def make_app(app):
-    """Capture the per-request timeline object needed for storm tracing.
+    """Capture the per-request timeline object needed for Storm tracing.
 
-    To use firstly make your app and then wrap it with this make_app::
+    To use firstly make your app and then wrap it with this C{make_app}::
 
        >>> app, find_timeline = make_app(app)
 
-    Then wrap the returned app with the timeline app (or anything that sets
-    environ['timeline.timeline'])::
+    Then wrap the returned app with the C{timeline} app (or anything that
+    sets C{environ['timeline.timeline']})::
 
        >>> app = timeline.wsgi.make_app(app)
 
-    Finally install a timeline tracer to capture storm queries::
+    Finally install a timeline tracer to capture Storm queries::
 
        >>> install_tracer(TimelineTracer(find_timeline))
 
     @return: A wrapped WSGI app and a timeline factory function for use with
-    TimelineTracer.
+        L{TimelineTracer <storm.tracer.TimelineTracer>}.
     """
     timeline_map = threading.local()
     def wrapper(environ, start_response):
