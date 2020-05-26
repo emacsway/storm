@@ -105,6 +105,9 @@ class Reference(object):
     Assigning to the property, for example with C{MyGuy().other_guy =
     OtherGuy()}, will link the objects and update either
     C{MyGuy.other_guy_id} or C{OtherGuy.my_guy_id} accordingly.
+
+    String references may be used in place of L{storm.expr.Column} objects
+    throughout, and are resolved to columns using L{PropertyResolver}.
     """
 
     # Must initialize _relation later because we don't want to resolve
@@ -214,6 +217,47 @@ class Reference(object):
 
 
 class ReferenceSet(object):
+    """Descriptor for many-to-one and many-to-many reference sets.
+
+    This is typically used when another class has a foreign key onto the
+    class being defined, either directly (the many-to-one case) or via an
+    intermediate table (the many-to-many case).  For instance::
+
+        class Person(Storm):
+            ...
+            id = Int(primary=True)
+            email_addresses = ReferenceSet("id", "EmailAddress.owner_id")
+
+        class EmailAddress(Storm):
+            ...
+            owner_id = Int(name="owner", allow_none=False)
+            owner = Reference(owner_id, "Person.id")
+
+        class TeamMembership(Storm):
+            ...
+            person_id = Int(name="person", allow_none=False)
+            person = Reference(person_id, "Person.id")
+            team_id = Int(name="team", allow_none=False)
+            team = Reference(team_id, "Team.id")
+
+        class Team(Storm):
+            ...
+            id = Int(primary=True)
+            members = ReferenceSet(
+                "id", "TeamMembership.team_id",
+                "TeamMembership.person_id", "Person.id",
+                order_by="Person.name")
+
+    In this case, C{Person().email_addresses} resolves to a
+    L{BoundReferenceSet} of all the email addresses linked to that person (a
+    many-to-one relationship), while C{Team().members} resolves to a
+    L{BoundIndirectReferenceSet} of all the members of that team (a
+    many-to-many relationship).  These can be used in a somewhat similar way
+    to L{ResultSet <storm.store.ResultSet>} objects.
+
+    String references may be used in place of L{storm.expr.Column} objects
+    throughout, and are resolved to columns using L{PropertyResolver}.
+    """
 
     # Must initialize later because we don't want to resolve string
     # references at definition time, since classes refered to might
@@ -224,6 +268,23 @@ class ReferenceSet(object):
 
     def __init__(self, local_key1, remote_key1,
                  remote_key2=None, local_key2=None, order_by=None):
+        """
+        @param local_key1: The sibling column which has the same value as
+            that for C{remote_key1} when resolved on an instance.
+        @param remote_key1: The column on the referring object (in the case
+            of a many-to-one relation) or on the intermediate table (in the
+            case of a many-to-many relation) which is the foreign key onto
+            C{local_key1}.
+        @param remote_key2: In the case of a many-to-many relation, the
+            column on the intermediate table which is the foreign key onto
+            C{local_key2}.
+        @param local_key2: In the case of a many-to-many relation, the
+            column on the referred-to object which has the same value as
+            C{remote_key2} when resolved on an instance.
+        @param order_by: If not C{None}, order the resolved
+            L{BoundReferenceSet} or L{BoundIndirectReferenceSet} by these
+            columns, as in L{storm.store.ResultSet.order_by}.
+        """
         self._local_key1 = local_key1
         self._remote_key1 = remote_key1
         self._remote_key2 = remote_key2
@@ -254,7 +315,7 @@ class ReferenceSet(object):
                                              self._order_by)
 
     def __set__(self, local, value):
-        raise FeatureError("Assigning to ResultSets not supported")
+        raise FeatureError("Assigning to ReferenceSets not supported")
 
     def _build_relations(self):
         resolver = PropertyResolver(self, self._cls)
@@ -325,6 +386,7 @@ class BoundReferenceSetBase(object):
 
 
 class BoundReferenceSet(BoundReferenceSetBase):
+    """An instance of a many-to-one relation."""
 
     def __init__(self, relation, local, order_by):
         self._relation = relation
@@ -354,6 +416,7 @@ class BoundReferenceSet(BoundReferenceSetBase):
 
 
 class BoundIndirectReferenceSet(BoundReferenceSetBase):
+    """An instance of a many-to-many relation."""
 
     def __init__(self, relation1, relation2, local, order_by):
         self._relation1 = relation1
