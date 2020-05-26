@@ -94,7 +94,7 @@ class TimeoutTracer(object):
 
     def connection_raw_execute_error(self, connection, raw_cursor,
                                      statement, params, error):
-        """Raise TimeoutError if the given error was a timeout issue.
+        """Raise L{TimeoutError} if the given error was a timeout issue.
 
         Must be specialized in the backend.
         """
@@ -102,7 +102,7 @@ class TimeoutTracer(object):
                                   "implemented" % self.__class__.__name__)
 
     def connection_commit(self, connection, xid=None):
-        """Reset Connection._timeout_tracer_remaining_time.
+        """Reset C{Connection._timeout_tracer_remaining_time}.
 
         @param connection: The L{Connection} to the database.
         @param xid: Optionally the L{Xid} of a previously prepared
@@ -111,7 +111,7 @@ class TimeoutTracer(object):
         self._reset_timeout_tracer_remaining_time(connection)
 
     def connection_rollback(self, connection, xid=None):
-        """Reset Connection._timeout_tracer_remaining_time.
+        """Reset C{Connection._timeout_tracer_remaining_time}.
 
         @param connection: The L{Connection} to the database.
         @param xid: Optionally the L{Xid} of a previously prepared
@@ -197,7 +197,7 @@ class TimelineTracer(BaseStatementTracer):
     """Storm tracer class to insert executed statements into a L{Timeline}.
 
     For more information on timelines see the module at
-    http://pypi.python.org/pypi/timeline.
+    U{https://pypi.org/project/timeline/}.
 
     The timeline to use is obtained by calling the timeline_factory supplied to
     the constructor. This simple function takes no parameters and returns a

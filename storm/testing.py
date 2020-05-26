@@ -8,7 +8,7 @@ from storm.tracer import BaseStatementTracer, install_tracer, remove_tracer
 class CaptureTracer(BaseStatementTracer, Fixture):
     """Trace SQL statements appending them to a C{list}.
 
-    Example:
+    Example::
 
         with CaptureTracer() as tracer:
             # Run queries

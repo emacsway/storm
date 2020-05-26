@@ -408,8 +408,8 @@ class Proxy(ComparableExpr):
           bar = Reference(bar_id, Bar.id)
           bar_title = Proxy(bar, Bar.title)
 
-    For most uses, Foo.bar_title should behave as if it were
-    a native property of Foo.
+    For most uses, C{Foo.bar_title} should behave as if it were
+    a native property of C{Foo}.
     """
 
     class RemoteProp(object):

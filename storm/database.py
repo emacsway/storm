@@ -377,7 +377,7 @@ class Connection(object):
             self._check_disconnect(trace, "connection_commit", self, xid)
 
     def recover(self):
-        """Return a list of L{Xid}s representing pending transactions."""
+        """Return a list of L{Xid}\ s representing pending transactions."""
         self._ensure_connected()
         raw_xids = self._check_disconnect(self._raw_connection.tpc_recover)
         return [Xid(raw_xid[0], raw_xid[1], raw_xid[2])
@@ -422,8 +422,9 @@ class Connection(object):
         It is acceptable to override this method in subclasses, but it
         is not intended to be used externally.
 
-        This delegates conversion to any L{Variable}s in the parameter
-        list, and passes through all other values untouched.
+        This delegates conversion to any
+        L{Variable <storm.variable.Variable>}\ s in the parameter list, and
+        passes through all other values untouched.
         """
         for param in params:
             if isinstance(param, Variable):
@@ -671,13 +672,23 @@ def create_database(uri):
     """Create a database instance.
 
     @param uri: An URI instance, or a string describing the URI. Some examples:
-        - "sqlite:" An in memory sqlite database.
-        - "sqlite:example.db" A SQLite database called example.db
-        - "postgres:test" The database 'test' from the local postgres server.
-        - "postgres://user:password@host/test" The database test on machine host
-          with supplied user credentials, using postgres.
-        - "anything:..." Where 'anything' has previously been registered
-          with L{register_scheme}.
+
+    "sqlite:"
+        An in memory sqlite database.
+
+    "sqlite:example.db"
+        A SQLite database called example.db
+
+    "postgres:test"
+        The database 'test' from the local postgres server.
+
+    "postgres://user:password@host/test"
+        The database test on machine host with supplied user credentials,
+        using postgres.
+
+    "anything:..."
+        Where 'anything' has previously been registered with
+        L{register_scheme}.
     """
     if isinstance(uri, six.string_types):
         uri = URI(uri)
