@@ -13,6 +13,7 @@ debian/python-storm.preinst.debhelper
 debian/python-storm.prerm.debhelper
 debian/python-storm.substvars
 apidoc
+storm/docs/_build
 .tox
 _trial_temp
 *.egg

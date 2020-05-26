@@ -29,6 +29,7 @@ __all__ = [
     ]
 
 import doctest
+from itertools import chain
 import os
 import unittest
 
@@ -71,14 +72,16 @@ def find_tests(testpaths=()):
     topdir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
     testdir = os.path.dirname(__file__)
+    docdir = os.path.join(os.path.dirname(testdir), "docs")
     testpaths = set(testpaths)
-    for root, dirnames, filenames in os.walk(testdir):
+    for root, dirnames, filenames in chain(os.walk(testdir), os.walk(docdir)):
         for filename in filenames:
             filepath = os.path.join(root, filename)
             relpath = filepath[len(topdir)+1:]
 
             if (filename == "__init__.py" or filename.endswith(".pyc") or
-                relpath == os.path.join("storm", "tests", "conftest.py")):
+                    relpath == os.path.join("storm", "docs", "conf.py") or
+                    relpath == os.path.join("storm", "tests", "conftest.py")):
                 # Skip non-tests.
                 continue
 
@@ -95,10 +98,9 @@ def find_tests(testpaths=()):
                 module = __import__(modpath, None, None, [""])
                 suite.addTest(
                     unittest.defaultTestLoader.loadTestsFromModule(module))
-            elif filename.endswith(".txt"):
+            elif filename.endswith(".rst"):
                 load_test = True
-                if relpath == os.path.join(
-                        "storm", "tests", "zope", "README.txt"):
+                if relpath == os.path.join("storm", "docs", "zope.rst"):
                     # Special case the inclusion of the Zope-dependent
                     # ZStorm doctest.
                     import storm.tests.zope as ztest

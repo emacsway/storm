@@ -1,5 +1,8 @@
-recursive-include storm *.py *.c *.zcml *.txt
+recursive-include storm *.py *.c *.zcml *.rst
 
 include MANIFEST.in LICENSE README TODO NEWS Makefile dev/test setup.cfg tox.ini
+
+include storm/docs/Makefile
+prune storm/docs/_build
 
 prune db
