@@ -24,7 +24,7 @@ with open("README") as readme:
 
 
 tests_require = [
-    "fixtures >= 0.3.5",
+    "fixtures >= 1.3.0",
     "pgbouncer >= 0.0.7",
     "postgresfixture",
     "psycopg2 >= 2.3.0",
