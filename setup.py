@@ -24,15 +24,12 @@ with open("README") as readme:
 
 
 tests_require = [
-    # Versions based on Lucid, where packaged.
     "fixtures >= 0.3.5",
-    # pgbouncer (the Python module) is not yet packaged in Ubuntu.
     "pgbouncer >= 0.0.7",
     "postgresfixture",
     "psycopg2 >= 2.3.0",
     "testresources >= 0.2.4",
     "testtools >= 0.9.8",
-    # timeline is not yet packaged in Ubuntu.
     "timeline >= 0.0.2",
     "transaction >= 1.0.0",
     "twisted >= 10.0.0",
