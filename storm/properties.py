@@ -42,9 +42,24 @@ __all__ = ["Property", "SimpleProperty",
 
 
 class Property(object):
+    """A property representing a database column.
+
+    Properties can be set as attributes of classes that have a
+    C{__storm_table__}, and can then be used like ordinary Python properties
+    on instances of the class, corresponding to database columns.
+    """
 
     def __init__(self, name=None, primary=False,
                  variable_class=Variable, variable_kwargs={}):
+        """
+        @param name: The name of this property.
+        @param primary: A boolean indicating whether this property is a
+            primary key.
+        @param variable_class: The type of L{storm.variables.Variable}
+            corresponding to this property.
+        @param variable_kwargs: Dictionary of keyword arguments to be passed
+            when constructing the underlying variable.
+        """
         self._name = name
         self._primary = primary
         self._variable_class = variable_class
@@ -130,60 +145,190 @@ class SimpleProperty(Property):
     variable_class = None
 
     def __init__(self, name=None, primary=False, **kwargs):
+        """
+        @param name: The name of this property.
+        @param primary: A boolean indicating whether this property is a
+            primary key.
+        @param default: The initial value of this variable.  The default
+            behavior is for the value to stay undefined until it is
+            set with L{set}.
+        @param default_factory: If specified, this will immediately be
+            called to get the initial value.
+        @param allow_none: A boolean indicating whether None should be
+            allowed to be set as the value of this variable.
+        @param validator: Validation function called whenever trying to
+            set the variable to a non-db value.  The function should
+            look like validator(object, attr, value), where the first and
+            second arguments are the result of validator_object_factory()
+            (or None, if this parameter isn't provided) and the value of
+            validator_attribute, respectively.  When called, the function
+            should raise an error if the value is unacceptable, or return
+            the value to be used in place of the original value otherwise.
+        @param kwargs: Other keyword arguments passed through when
+            constructing the underlying variable.
+        """
         kwargs["value"] = kwargs.pop("default", Undef)
         kwargs["value_factory"] = kwargs.pop("default_factory", Undef)
         Property.__init__(self, name, primary, self.variable_class, kwargs)
 
 
 class Bool(SimpleProperty):
+    """Boolean property.
+
+    This accepts integer, L{float}, or L{decimal.Decimal} values, and stores
+    them as booleans.
+    """
     variable_class = BoolVariable
- 
+
+
 class Int(SimpleProperty):
+    """Integer property.
+
+    This accepts integer, L{float}, or L{decimal.Decimal} values, and stores
+    them as integers.
+    """
     variable_class = IntVariable
 
+
 class Float(SimpleProperty):
+    """Float property.
+
+    This accepts integer, L{float}, or L{decimal.Decimal} values, and stores
+    them as floating-point values.
+    """
     variable_class = FloatVariable
 
+
 class Decimal(SimpleProperty):
+    """Decimal property.
+
+    This accepts integer or L{decimal.Decimal} values, and stores them as
+    text strings containing their decimal representation.
+    """
     variable_class = DecimalVariable
 
+
 class Bytes(SimpleProperty):
+    """Bytes property.
+
+    This accepts L{bytes}, L{buffer} (Python 2), or L{memoryview} (Python 3)
+    objects, and stores them as byte strings.
+
+    Deprecated aliases: L{Chars}, L{RawStr}.
+    """
     variable_class = BytesVariable
+
 
 # OBSOLETE: Bytes was Chars in 0.9. This will die soon.
 Chars = Bytes
 # DEPRECATED: Bytes was RawStr until 0.22.
 RawStr = Bytes
 
+
 class Unicode(SimpleProperty):
+    """Unicode property.
+
+    This accepts L{unicode} (Python 2) or L{str} (Python 3) objects, and
+    stores them as text strings.  Note that it does not accept L{str}
+    objects on Python 2.
+    """
     variable_class = UnicodeVariable
 
+
 class DateTime(SimpleProperty):
+    """Date and time property.
+
+    This accepts aware L{datetime.datetime} objects and stores them as
+    timestamps; it also accepts integer or L{float} objects, converting them
+    using L{datetime.utcfromtimestamp}.  Note that it does not accept naive
+    L{datetime.datetime} objects (those that do not have timezone
+    information).
+    """
     variable_class = DateTimeVariable
 
+
 class Date(SimpleProperty):
+    """Date property.
+
+    This accepts L{datetime.date} objects and stores them as datestamps; it
+    also accepts L{datetime.datetime} objects, converting them using
+    L{datetime.datetime.date}.
+    """
     variable_class = DateVariable
 
+
 class Time(SimpleProperty):
+    """Time property.
+
+    This accepts L{datetime.time} objects and stores them as datestamps; it
+    also accepts L{datetime.datetime} objects, converting them using
+    L{datetime.datetime.time}.
+    """
     variable_class = TimeVariable
 
+
 class TimeDelta(SimpleProperty):
+    """Time delta property.
+
+    This accepts L{datetime.timedelta} objects and stores them as time
+    intervals.
+    """
     variable_class = TimeDeltaVariable
 
+
 class UUID(SimpleProperty):
+    """UUID property.
+
+    This accepts L{uuid.UUID} objects and stores them as their text
+    representation.
+    """
     variable_class = UUIDVariable
 
+
 class Pickle(SimpleProperty):
+    """Pickle property.
+
+    This accepts any object that can be serialized using L{pickle}, and
+    stores it as a byte string containing its pickled representation.
+    """
     variable_class = PickleVariable
 
+
 class JSON(SimpleProperty):
+    """JSON property.
+
+    This accepts any object that can be serialized using L{json}, and stores
+    it as a text string containing its JSON representation.
+    """
     variable_class = JSONVariable
 
 
 class List(SimpleProperty):
+    """List property.
+
+    This accepts iterable objects and stores them as a list where each
+    element is an object of the given value type.
+    """
     variable_class = ListVariable
 
     def __init__(self, name=None, **kwargs):
+        """
+        @param name: The name of this property.
+        @param type: An instance of L{Property} defining the type of each
+            element of this list.
+        @param default_factory: If specified, this will immediately be
+            called to get the initial value.
+        @param validator: Validation function called whenever trying to
+            set the variable to a non-db value.  The function should
+            look like validator(object, attr, value), where the first and
+            second arguments are the result of validator_object_factory()
+            (or None, if this parameter isn't provided) and the value of
+            validator_attribute, respectively.  When called, the function
+            should raise an error if the value is unacceptable, or return
+            the value to be used in place of the original value otherwise.
+        @param kwargs: Other keyword arguments passed through when
+            constructing the underlying variable.
+        """
         if "default" in kwargs:
             raise ValueError("'default' not allowed for List. "
                              "Use 'default_factory' instead.")
