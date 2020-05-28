@@ -21,8 +21,7 @@ class CaptureTracer(BaseStatementTracer, Fixture):
         super(CaptureTracer, self).__init__()
         self.queries = []
 
-    def setUp(self):
-        super(CaptureTracer, self).setUp()
+    def _setUp(self):
         install_tracer(self)
         self.addCleanup(remove_tracer, self)
 
