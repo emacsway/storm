@@ -47,7 +47,12 @@ from storm.cache import Cache
 from storm.event import EventSystem
 
 
-__all__ = ["Store", "AutoReload", "EmptyResultSet"]
+__all__ = [
+    "AutoReload",
+    "block_access",
+    "EmptyResultSet",
+    "Store",
+    ]
 
 
 PENDING_ADD = 1
