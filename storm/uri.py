@@ -27,6 +27,18 @@ from storm.exceptions import URIError
 
 
 class URI(object):
+    """A representation of a Uniform Resource Identifier (URI).
+
+    This is intended exclusively for database connection URIs.
+
+    @ivar username: The username part of the URI, or C{None}.
+    @ivar password: The password part of the URI, or C{None}.
+    @ivar host: The host part of the URI, or C{None}.
+    @type port: L{int}
+    @ivar port: The port part of the URI, or C{None}.
+    @ivar database: The part of the URI representing the database name, or
+        C{None}.
+    """
 
     username = None
     password = None
