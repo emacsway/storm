@@ -199,6 +199,15 @@ class ExprTest(TestHelper):
         self.assertEqual(like_expr.expr2, u"abc!!!!!_!%%")
         self.assertEqual(like_expr.escape, u"!")
 
+    def test_startswith_case(self):
+        expr = Func1()
+        like_expr = expr.startswith(u"abc!!_%")
+        self.assertIsNone(like_expr.case_sensitive)
+        like_expr = expr.startswith(u"abc!!_%", case_sensitive=True)
+        self.assertIs(True, like_expr.case_sensitive)
+        like_expr = expr.startswith(u"abc!!_%", case_sensitive=False)
+        self.assertIs(False, like_expr.case_sensitive)
+
     def test_endswith(self):
         expr = Func1()
         self.assertRaises(ExprError, expr.startswith, b"not a unicode string")
@@ -208,6 +217,15 @@ class ExprTest(TestHelper):
         self.assertTrue(like_expr.expr1 is expr)
         self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%")
         self.assertEqual(like_expr.escape, u"!")
+
+    def test_endswith_case(self):
+        expr = Func1()
+        like_expr = expr.endswith(u"abc!!_%")
+        self.assertIsNone(like_expr.case_sensitive)
+        like_expr = expr.endswith(u"abc!!_%", case_sensitive=True)
+        self.assertIs(True, like_expr.case_sensitive)
+        like_expr = expr.endswith(u"abc!!_%", case_sensitive=False)
+        self.assertIs(False, like_expr.case_sensitive)
 
     def test_contains_string(self):
         expr = Func1()
@@ -219,6 +237,15 @@ class ExprTest(TestHelper):
         self.assertTrue(like_expr.expr1 is expr)
         self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%%")
         self.assertEqual(like_expr.escape, u"!")
+
+    def test_contains_string_case(self):
+        expr = Func1()
+        like_expr = expr.contains_string(u"abc!!_%")
+        self.assertIsNone(like_expr.case_sensitive)
+        like_expr = expr.contains_string(u"abc!!_%", case_sensitive=True)
+        self.assertIs(True, like_expr.case_sensitive)
+        like_expr = expr.contains_string(u"abc!!_%", case_sensitive=False)
+        self.assertIs(False, like_expr.case_sensitive)
 
     def test_eq(self):
         expr = Eq(elem1, elem2)
