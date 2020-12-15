@@ -517,23 +517,23 @@ class Comparable(object):
     def upper(self):
         return Upper(self)
 
-    def startswith(self, prefix):
+    def startswith(self, prefix, case_sensitive=None):
         if not isinstance(prefix, six.text_type):
             raise ExprError("Expected text argument, got %r" % type(prefix))
         pattern = prefix.translate(like_escape) + u"%"
-        return Like(self, pattern, u"!")
+        return Like(self, pattern, u"!", case_sensitive)
 
-    def endswith(self, suffix):
+    def endswith(self, suffix, case_sensitive=None):
         if not isinstance(suffix, six.text_type):
             raise ExprError("Expected text argument, got %r" % type(suffix))
         pattern = u"%" + suffix.translate(like_escape)
-        return Like(self, pattern, u"!")
+        return Like(self, pattern, u"!", case_sensitive)
 
-    def contains_string(self, substring):
+    def contains_string(self, substring, case_sensitive=None):
         if not isinstance(substring, six.text_type):
             raise ExprError("Expected text argument, got %r" % type(substring))
         pattern = u"%" + substring.translate(like_escape) + u"%"
-        return Like(self, pattern, u"!")
+        return Like(self, pattern, u"!", case_sensitive)
 
 
 class ComparableExpr(Expr, Comparable):
