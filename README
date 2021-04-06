@@ -135,43 +135,6 @@ directory with:
 This ensures that all dependencies are available, downloading from
 PyPI as appropriate.
 
-Setting up database users and access security
----------------------------------------------
-
-PostgreSQL needs to be setup to allow TCP/IP connections from
-localhost.  Edit /etc/postgresql/8.3/main/pg_hba.conf and make sure
-the following line is present:
-
- host all all 127.0.0.1/32 trust
-
-This will probably (with PostgresSQL 8.4) entail changing 'md5' to
-'trust'.
-
-In order to run the two-phase commit tests, you will also need to
-change the max_prepared_transactions value in postgres.conf to
-something like
-
-  max_prepared_transactions = 200
-
-Now save and close, then restart the server:
-
- $ sudo /etc/init.d/postgresql-8.4 restart
-
-Lets create our PostgreSQL user now.  As noted in the Ubuntu PostgreSQL
-documentation, the easiest thing is to create a user with the same name as your
-username.  Run the following command to create a user for yourself (if prompted
-for a password, leave it blank):
-
- $ sudo -u postgres createuser --superuser $USER
-
-Creating test databases
------------------------
-
-The test suite needs some local databases in place to exercise PostgreSQL
-functionality. Run:
-
- $ createdb storm_test
-
 Running the tests
 -----------------
 
