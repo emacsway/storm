@@ -36,7 +36,7 @@ SQLite database to play with, and a store using that database.
     >>> database = create_database("sqlite:")
     >>> store = Store(database)
 
-Two databases are supported at the moment: SQLite and PostgreSQL.
+Three databases are supported at the moment: SQLite, MySQL, and PostgreSQL.
 The parameter passed to :py:func:`~storm.database.create_database` is an
 URI, as follows:
 
@@ -45,7 +45,7 @@ URI, as follows:
     # database = create_database(
     #     "scheme://username:password@hostname:port/database_name")
 
-The ``scheme`` may be ``sqlite`` or ``postgres``.
+The ``scheme`` may be ``sqlite``, ``mysql``, or ``postgres``.
 
 Now we have to create the table that will actually hold the data
 for our class.

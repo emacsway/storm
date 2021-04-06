@@ -7,11 +7,14 @@ function apt_get() {
 
 apt_get install --no-install-recommends \
     build-essential \
+    libmysqlclient-dev \
     libpq-dev \
+    mysql-server \
     pgbouncer \
     postgresql \
     python-dev \
     python-fixtures \
+    python-mysqldb \
     python-psycopg2 \
     python-setuptools \
     python-six \

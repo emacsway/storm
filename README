@@ -22,7 +22,8 @@ Design:
  * Storm is well designed (different classes have very clear
    boundaries, with small and clean public APIs).
  * Designed from day one to work both with thin relational
-   databases, such as SQLite, and big iron systems like PostgreSQL.
+   databases, such as SQLite, and big iron systems like PostgreSQL
+   and MySQL.
  * Storm is easy to debug, since its code is written with a KISS
    principle, and thus is easy to understand.
  * Designed from day one to work both at the low end, with trivial
@@ -89,6 +90,8 @@ following should work.  If not, and for reference, the long version
 is below.
 
  $ dev/ubuntu-deps
+ $ echo "$PWD/** rwk," | sudo tee /etc/apparmor.d/local/usr.sbin.mysqld >/dev/null
+ $ sudo aa-enforce /usr/sbin/mysqld
  $ make develop
  $ make check
 
@@ -103,15 +106,15 @@ Installing dependencies
 The following instructions assume that you're using Ubuntu.  The same procedure
 will probably work without changes on a Debian system and with minimal changes
 on a non-Debian-based linux distribution.  In order to run the test suite, and
-exercise all supported backends, you will need to install PostgreSQL, along
-with the related Python database drivers:
+exercise all supported backends, you will need to install MySQL and
+PostgreSQL, along with the related Python database drivers:
 
  $ sudo apt-get install \
+       mysql-server \
        postgresql pgbouncer \
        build-essential
 
-These will take a few minutes to download (its a bit under 200MB all
-together).
+These will take a few minutes to download.
 
 The Python dependencies for running tests can mostly be installed with
 apt-get:
@@ -134,6 +137,21 @@ directory with:
 
 This ensures that all dependencies are available, downloading from
 PyPI as appropriate.
+
+Database setup
+--------------
+
+Most database setup is done automatically by the test suite.  However,
+Ubuntu's default MySQL packaging ships an AppArmor profile that prevents it
+from writing to a local data directory.  To allow the test suite to do this,
+you will need to grant it access, which is most easily done by adding a line
+such as this to /etc/apparmor.d/local/usr.sbin.mysqld:
+
+  /path/to/storm/** rwk,
+
+Then reload the profile:
+
+  $ sudo aa-enforce /usr/sbin/mysqld
 
 Running the tests
 -----------------

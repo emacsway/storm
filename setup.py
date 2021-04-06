@@ -25,6 +25,8 @@ with open("README") as readme:
 
 tests_require = [
     "fixtures >= 1.3.0",
+    "mysqlclient",
+    "mysqlclient < 2.0.0; python_version < '3'",
     "pgbouncer >= 0.0.7",
     "postgresfixture",
     "psycopg2 >= 2.3.0",
