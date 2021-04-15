@@ -3,6 +3,7 @@ build
 storm.egg-info
 build-stamp
 db
+db-mysql
 .db.lock
 dist
 debian/files

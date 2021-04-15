@@ -22,7 +22,8 @@ Design:
  * Storm is well designed (different classes have very clear
    boundaries, with small and clean public APIs).
  * Designed from day one to work both with thin relational
-   databases, such as SQLite, and big iron systems like PostgreSQL.
+   databases, such as SQLite, and big iron systems like PostgreSQL
+   and MySQL.
  * Storm is easy to debug, since its code is written with a KISS
    principle, and thus is easy to understand.
  * Designed from day one to work both at the low end, with trivial
@@ -89,6 +90,8 @@ following should work.  If not, and for reference, the long version
 is below.
 
  $ dev/ubuntu-deps
+ $ echo "$PWD/** rwk," | sudo tee /etc/apparmor.d/local/usr.sbin.mysqld >/dev/null
+ $ sudo aa-enforce /usr/sbin/mysqld
  $ make develop
  $ make check
 
@@ -103,15 +106,15 @@ Installing dependencies
 The following instructions assume that you're using Ubuntu.  The same procedure
 will probably work without changes on a Debian system and with minimal changes
 on a non-Debian-based linux distribution.  In order to run the test suite, and
-exercise all supported backends, you will need to install PostgreSQL, along
-with the related Python database drivers:
+exercise all supported backends, you will need to install MySQL and
+PostgreSQL, along with the related Python database drivers:
 
  $ sudo apt-get install \
+       mysql-server \
        postgresql pgbouncer \
        build-essential
 
-These will take a few minutes to download (its a bit under 200MB all
-together).
+These will take a few minutes to download.
 
 The Python dependencies for running tests can mostly be installed with
 apt-get:
@@ -135,42 +138,20 @@ directory with:
 This ensures that all dependencies are available, downloading from
 PyPI as appropriate.
 
-Setting up database users and access security
----------------------------------------------
+Database setup
+--------------
 
-PostgreSQL needs to be setup to allow TCP/IP connections from
-localhost.  Edit /etc/postgresql/8.3/main/pg_hba.conf and make sure
-the following line is present:
+Most database setup is done automatically by the test suite.  However,
+Ubuntu's default MySQL packaging ships an AppArmor profile that prevents it
+from writing to a local data directory.  To allow the test suite to do this,
+you will need to grant it access, which is most easily done by adding a line
+such as this to /etc/apparmor.d/local/usr.sbin.mysqld:
 
- host all all 127.0.0.1/32 trust
+  /path/to/storm/** rwk,
 
-This will probably (with PostgresSQL 8.4) entail changing 'md5' to
-'trust'.
+Then reload the profile:
 
-In order to run the two-phase commit tests, you will also need to
-change the max_prepared_transactions value in postgres.conf to
-something like
-
-  max_prepared_transactions = 200
-
-Now save and close, then restart the server:
-
- $ sudo /etc/init.d/postgresql-8.4 restart
-
-Lets create our PostgreSQL user now.  As noted in the Ubuntu PostgreSQL
-documentation, the easiest thing is to create a user with the same name as your
-username.  Run the following command to create a user for yourself (if prompted
-for a password, leave it blank):
-
- $ sudo -u postgres createuser --superuser $USER
-
-Creating test databases
------------------------
-
-The test suite needs some local databases in place to exercise PostgreSQL
-functionality. Run:
-
- $ createdb storm_test
+  $ sudo aa-enforce /usr/sbin/mysqld
 
 Running the tests
 -----------------

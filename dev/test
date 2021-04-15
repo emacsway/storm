@@ -21,10 +21,16 @@
 #
 import glob
 import optparse
-import re
-import unittest
-import sys
 import os
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import time
+import unittest
+
+from pkg_resources import parse_version
 
 
 def add_eggs_to_path():
@@ -111,6 +117,120 @@ def with_postgresfixture(runner_func):
     return wrapper
 
 
+def with_mysql(runner_func):
+    """If possible, wrap a test runner with code to set up MySQL.
+
+    Loosely based on the approach taken by pytest-mysql, although
+    implemented separately.
+    """
+    try:
+        import MySQLdb
+    except ImportError:
+        return runner_func
+
+    from six.moves.urllib.parse import (
+        urlencode,
+        urlunsplit,
+        )
+
+    def wrapper():
+        basedir = os.path.abspath("db-mysql")
+        datadir = os.path.join(basedir, "data")
+        unix_socket = os.path.join(basedir, "mysql.sock")
+        logfile = os.path.join(basedir, "mysql.log")
+        if os.path.exists(basedir):
+            shutil.rmtree(basedir)
+        os.makedirs(basedir)
+
+        mysqld_version_output = subprocess.check_output(
+            ["mysqld", "--version"], universal_newlines=True).rstrip("\n")
+        version = re.search(
+            r"Ver ([\d.]+)", mysqld_version_output, flags=re.I).group(1)
+        if ("MariaDB" not in mysqld_version_output and
+                parse_version(version) >= parse_version("5.7.6")):
+            subprocess.check_call([
+                "mysqld",
+                "--initialize-insecure",
+                "--datadir=%s" % datadir,
+                "--tmpdir=%s" % basedir,
+                "--log-error=%s" % logfile,
+                ])
+        else:
+            subprocess.check_call([
+                "mysql_install_db",
+                "--datadir=%s" % datadir,
+                "--tmpdir=%s" % basedir,
+                ])
+        with open("/dev/null", "w") as devnull:
+            server_proc = subprocess.Popen([
+                "mysqld_safe",
+                "--datadir=%s" % datadir,
+                "--pid-file=%s" % os.path.join(basedir, "mysql.pid"),
+                "--socket=%s" % unix_socket,
+                "--skip-networking",
+                "--log-error=%s" % logfile,
+                "--tmpdir=%s" % basedir,
+                "--skip-syslog",
+                # We don't care about durability of test data.  Try to
+                # persuade MySQL to agree.
+                "--innodb-doublewrite=0",
+                "--innodb-flush-log-at-trx-commit=0",
+                "--innodb-flush-method=O_DIRECT_NO_FSYNC",
+                "--skip-innodb-file-per-table",
+                "--sync-binlog=0",
+                ], stdout=devnull)
+
+        try:
+            start_time = time.time()
+            while time.time() < start_time + 60:
+                code = server_proc.poll()
+                if code is not None and code != 0:
+                    raise Exception("mysqld_base exited %d" % code)
+
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                try:
+                    sock.connect(unix_socket)
+                    break
+                except socket.error:
+                    pass  # try again
+                finally:
+                    sock.close()
+
+                time.sleep(0.1)
+
+            try:
+                connection = MySQLdb.connect(
+                    user="root", unix_socket=unix_socket)
+                try:
+                    cursor = connection.cursor()
+                    try:
+                        cursor.execute(
+                            "CREATE DATABASE storm_test CHARACTER SET utf8;")
+                    finally:
+                        cursor.close()
+                finally:
+                    connection.close()
+                uri = urlunsplit(
+                    ("mysql", "root@localhost", "/storm_test",
+                     urlencode({"unix_socket": unix_socket}), ""))
+                os.environ["STORM_MYSQL_URI"] = uri
+                os.environ["STORM_MYSQL_HOST_URI"] = uri
+                return runner_func()
+            finally:
+                subprocess.check_call([
+                    "mysqladmin",
+                    "--socket=%s" % unix_socket,
+                    "--user=root",
+                    "shutdown",
+                    ])
+        finally:
+            if server_proc.poll() is None:
+                server_proc.kill()
+            server_proc.wait()
+
+    return wrapper
+
+
 if __name__ == "__main__":
     runner = os.environ.get("STORM_TEST_RUNNER")
     if not runner:
@@ -119,6 +239,7 @@ if __name__ == "__main__":
     if not runner_func:
         sys.exit("Test runner not found: %s" % runner)
     runner_func = with_postgresfixture(runner_func)
+    runner_func = with_mysql(runner_func)
     sys.exit(runner_func())
 
 # vim:ts=4:sw=4:et
