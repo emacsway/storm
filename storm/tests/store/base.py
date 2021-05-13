@@ -6039,7 +6039,7 @@ class StoreTest(object):
             except AssertionError as e:
                 raise AssertionError(six.text_type(e, 'replace') +
                     " (ensure your database was created with CREATE DATABASE"
-                    " ... CHARACTER SET utf8)")
+                    " ... CHARACTER SET utf8mb3)")
 
     def test_creation_order_is_preserved_when_possible(self):
         foos = [self.store.add(Foo()) for i in range(10)]

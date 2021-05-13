@@ -1,3 +1,11 @@
+0.26
+====
+
+Bug fixes
+---------
+
+- Fix test compatibility with MySQL >= 8.0.24.
+
 0.25 (2021-04-19)
 =================
 
