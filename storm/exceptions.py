@@ -178,8 +178,12 @@ def wrap_exceptions(database):
                 # As close to "raise wrapped.with_traceback(tb) from e" as
                 # we can manage, but without causing syntax errors on
                 # various versions of Python.
-                if six.PY2:
-                    six.reraise(wrapped, None, tb)
-                else:
-                    six.raise_from(wrapped.with_traceback(tb), e)
+                try:
+                    if six.PY2:
+                        six.reraise(wrapped, None, tb)
+                    else:
+                        six.raise_from(wrapped.with_traceback(tb), e)
+                finally:
+                    # Avoid traceback reference cycles.
+                    del wrapped, tb
         raise
