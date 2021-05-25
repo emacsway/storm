@@ -205,7 +205,8 @@ def with_mysql(runner_func):
                     cursor = connection.cursor()
                     try:
                         cursor.execute(
-                            "CREATE DATABASE storm_test CHARACTER SET utf8;")
+                            "CREATE DATABASE storm_test "
+                            "CHARACTER SET utf8mb4;")
                     finally:
                         cursor.close()
                 finally:

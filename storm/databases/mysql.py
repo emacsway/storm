@@ -167,7 +167,10 @@ class MySQL(Database):
 
         self._connect_kwargs["conv"] = self._converters
         self._connect_kwargs["use_unicode"] = True
-        self._connect_kwargs["charset"] = uri.options.get("charset", "utf8")
+        # utf8mb3 (a.k.a. utf8) is deprecated, but it's not clear that we
+        # can change it without breaking applications.  Default to utf8mb3
+        # for now.
+        self._connect_kwargs["charset"] = uri.options.get("charset", "utf8mb3")
 
     def _raw_connect(self):
         raw_connection = ConnectionWrapper(

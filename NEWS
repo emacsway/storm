@@ -5,6 +5,7 @@ Bug fixes
 ---------
 
 - Avoid traceback reference cycles when wrapping exceptions.
+- Fix test compatibility with MySQL >= 8.0.24.
 
 0.25 (2021-04-19)
 =================

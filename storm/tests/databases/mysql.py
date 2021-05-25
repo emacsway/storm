@@ -78,9 +78,9 @@ class MySQLTest(DatabaseTest, TestHelper):
                            ("unix_socket", "us")]:
             self.assertEqual(database._connect_kwargs.get(key), value)
 
-    def test_charset_defaults_to_utf8(self):
+    def test_charset_defaults_to_utf8mb3(self):
         result = self.connection.execute("SELECT @@character_set_client")
-        self.assertEqual(result.get_one(), ("utf8",))
+        self.assertEqual(result.get_one(), ("utf8mb3",))
 
     def test_charset_option(self):
         uri = URI(os.environ["STORM_MYSQL_URI"])
