@@ -254,7 +254,7 @@ a new kind of data in our model: companies.  For the company, we'll
 use a constructor, just for the fun of it.  It will be the simplest
 company class you've ever seen:
 
-.. doctest:
+.. doctest::
 
     >>> class Company(object):
     ...     __storm_table__ = "company"
