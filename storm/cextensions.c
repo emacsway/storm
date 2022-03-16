@@ -581,6 +581,15 @@ Variable_init(VariableObject *self, PyObject *args, PyObject *kwargs)
         /* self._allow_none = False */
         Py_INCREF(Py_False);
         REPLACE(self->_allow_none, Py_False);
+        /* if value is None: */
+        if (value == Py_None) {
+            /* raise_none_error(column, default=True) */
+            tmp = PyObject_CallFunctionObjArgs(raise_none_error, column,
+                                               Py_True, NULL);
+            /* tmp should always be NULL here. */
+            Py_XDECREF(tmp);
+            goto error;
+        }
     }
 
     /* if value is not Undef: */

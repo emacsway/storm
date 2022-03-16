@@ -846,6 +846,14 @@ class PropertyKindsTest(TestHelper):
             self.assertRaises(NoneError, variable.set, None)
             self.assertEqual(variable.get(), value)
 
+            # Test default=None and allow_none=False (incoherent).
+            Class.prop = func(name="name", default=None, allow_none=False)
+            column = Class.prop.__get__(None, Class)
+            self.assertEqual(column.name, "name")
+            self.assertEqual(column.table, Class)
+
+            self.assertRaises(NoneError, column.variable_factory)
+
             # Test default_factory.
             Class.prop = func(name="name", default_factory=lambda:value)
             column = Class.prop.__get__(None, Class)

@@ -69,9 +69,10 @@ class LazyValue(object):
     __slots__ = ()
 
 
-def raise_none_error(column):
+def raise_none_error(column, default=False):
+    description = "default value" if default else "value"
     if not column:
-        raise NoneError("None isn't acceptable as a value")
+        raise NoneError("None isn't acceptable as a %s" % description)
     else:
         from storm.expr import compile, CompileError
         name = column.name
@@ -81,7 +82,8 @@ def raise_none_error(column):
                 name = "%s.%s" % (table, name)
             except CompileError:
                 pass
-        raise NoneError("None isn't acceptable as a value for %s" % name)
+        raise NoneError(
+            "None isn't acceptable as a %s for %s" % (description, name))
 
 
 VariableFactory = partial
@@ -139,6 +141,8 @@ class Variable(object):
         """
         if not allow_none:
             self._allow_none = False
+            if value is None:
+                raise_none_error(column, default=True)
         if value is not Undef:
             self.set(value, from_db)
         elif value_factory is not Undef:
