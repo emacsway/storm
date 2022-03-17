@@ -1,6 +1,12 @@
 0.26
 ====
 
+Improvements
+------------
+
+- Clarify exception when creating a property with both allow_none=False and
+  default=None.
+
 Bug fixes
 ---------
 

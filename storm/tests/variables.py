@@ -136,27 +136,44 @@ class VariableTest(TestHelper):
 
     def test_set_none_with_allow_none(self):
         variable = CustomVariable(allow_none=False)
-        self.assertRaises(NoneError, variable.set, None)
+        self.assertRaisesRegex(
+            NoneError, r"^None isn't acceptable as a value$",
+            variable.set, None)
 
     def test_set_none_with_allow_none_and_column(self):
         column = Column("column_name")
         variable = CustomVariable(allow_none=False, column=column)
-        try:
-            variable.set(None)
-        except NoneError as e:
-            self.assertTrue("column_name" in str(e))
-        else:
-            self.fail("NoneError not raised")
+        self.assertRaisesRegex(
+            NoneError, r"^None isn't acceptable as a value for column_name$",
+            variable.set, None)
 
     def test_set_none_with_allow_none_and_column_with_table(self):
         column = Column("column_name", SQLToken("table_name"))
         variable = CustomVariable(allow_none=False, column=column)
-        try:
-            variable.set(None)
-        except NoneError as e:
-            self.assertTrue("table_name.column_name" in str(e))
-        else:
-            self.fail("NoneError not raised")
+        self.assertRaisesRegex(
+            NoneError,
+            r"^None isn't acceptable as a value for table_name.column_name$",
+            variable.set, None)
+
+    def test_set_default_none_with_allow_none(self):
+        self.assertRaisesRegex(
+            NoneError, r"^None isn't acceptable as a default value$",
+            CustomVariable, allow_none=False, value=None)
+
+    def test_set_default_none_with_allow_none_and_column(self):
+        column = Column("column_name")
+        self.assertRaisesRegex(
+            NoneError,
+            r"^None isn't acceptable as a default value for column_name$",
+            CustomVariable, allow_none=False, value=None, column=column)
+
+    def test_set_default_none_with_allow_none_and_column_with_table(self):
+        column = Column("column_name", SQLToken("table_name"))
+        self.assertRaisesRegex(
+            NoneError,
+            r"^None isn't acceptable as a default value for "
+            r"table_name.column_name$",
+            CustomVariable, allow_none=False, value=None, column=column)
 
     def test_set_with_validator(self):
         args = []
