@@ -247,6 +247,16 @@ class ExprTest(TestHelper):
         like_expr = expr.contains_string(u"abc!!_%", case_sensitive=False)
         self.assertIs(False, like_expr.case_sensitive)
 
+    def test_is(self):
+        expr = Is(elem1, elem2)
+        self.assertEqual(expr.expr1, elem1)
+        self.assertEqual(expr.expr2, elem2)
+
+    def test_is_not(self):
+        expr = IsNot(elem1, elem2)
+        self.assertEqual(expr.expr1, elem1)
+        self.assertEqual(expr.expr2, elem2)
+
     def test_eq(self):
         expr = Eq(elem1, elem2)
         self.assertEqual(expr.expr1, elem1)
@@ -1100,6 +1110,56 @@ class CompileTest(TestHelper):
         statement = compile(expr, state)
         self.assertEqual(statement, "?")
         self.assertVariablesEqual(state.parameters, [Variable("value")])
+
+    def test_is_null(self):
+        expr = Is(Func1(), None)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS NULL")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_true(self):
+        expr = Is(Func1(), True)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS TRUE")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_false(self):
+        expr = Is(Func1(), False)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS FALSE")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_invalid(self):
+        expr = Is(Func1(), "x")
+        self.assertRaises(CompileError, compile, expr)
+
+    def test_is_not_null(self):
+        expr = IsNot(Func1(), None)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS NOT NULL")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_not_true(self):
+        expr = IsNot(Func1(), True)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS NOT TRUE")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_not_false(self):
+        expr = IsNot(Func1(), False)
+        state = State()
+        statement = compile(expr, state)
+        self.assertEqual(statement, "func1() IS NOT FALSE")
+        self.assertEqual(state.parameters, [])
+
+    def test_is_not_invalid(self):
+        expr = IsNot(Func1(), "x")
+        self.assertRaises(CompileError, compile, expr)
 
     def test_eq(self):
         expr = Eq(Func1(), Func2())
@@ -2272,6 +2332,48 @@ class CompilePythonTest(TestHelper):
         py_expr = compile_python(expr, state)
         self.assertEqual(py_expr, "_0")
         self.assertEqual(state.parameters, ["value"])
+
+    def test_is_null(self):
+        expr = Is(Variable(True), None)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is None")
+        self.assertEqual(state.parameters, [True])
+
+    def test_is_true(self):
+        expr = Is(Variable(True), True)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is _1")
+        self.assertEqual(state.parameters, [True, True])
+
+    def test_is_false(self):
+        expr = Is(Variable(True), False)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is _1")
+        self.assertEqual(state.parameters, [True, False])
+
+    def test_is_not_null(self):
+        expr = IsNot(Variable(True), None)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is not None")
+        self.assertEqual(state.parameters, [True])
+
+    def test_is_not_true(self):
+        expr = IsNot(Variable(True), True)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is not _1")
+        self.assertEqual(state.parameters, [True, True])
+
+    def test_is_not_false(self):
+        expr = IsNot(Variable(True), False)
+        state = State()
+        statement = compile_python(expr, state)
+        self.assertEqual(statement, "_0 is not _1")
+        self.assertEqual(state.parameters, [True, False])
 
     def test_eq(self):
         expr = Eq(Variable(1), Variable(2))
