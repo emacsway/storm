@@ -6,6 +6,7 @@ Improvements
 
 - Clarify exception when creating a property with both allow_none=False and
   default=None.
+- Support Python 3.10 and 3.11.
 
 Bug fixes
 ---------
