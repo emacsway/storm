@@ -1047,6 +1047,74 @@ def compile_compound_oper(compile, expr, state):
     return compile(expr.exprs, state, join=expr.oper.lower())
 
 
+class Is(BinaryOper):
+    """The SQL C{IS ...} operators, e.g. C{IS NULL}.
+
+    C{Is(expr, None)} is synonymous with C{expr == None}, but is less likely
+    to trip up linters.
+
+    Unlike C{expr} or C{expr == True}, C{Is(expr, True)} returns C{FALSE}
+    when C{expr} is C{NULL}.
+
+    Unlike C{Not(expr)} or C{expr == False}, C{Is(expr, False)} returns
+    C{FALSE} when C{expr} is C{NULL}.
+    """
+    __slots__ = ()
+    oper = " IS "
+
+@compile.when(Is)
+def compile_is(compile, is_, state):
+    tokens = [compile(is_.expr1, state), "IS"]
+    if is_.expr2 is None:
+        tokens.append("NULL")
+    elif is_.expr2 is True:
+        tokens.append("TRUE")
+    elif is_.expr2 is False:
+        tokens.append("FALSE")
+    else:
+        raise CompileError("expr2 must be None, True, or False")
+    return " ".join(tokens)
+
+@compile_python.when(Is)
+def compile_is(compile, is_, state):
+    return "%s is %s" % (compile(is_.expr1, state), compile(is_.expr2, state))
+
+
+class IsNot(BinaryOper):
+    """The SQL C{IS NOT ...} operators, e.g. C{IS NOT NULL}.
+
+    C{IsNot(expr, None)} is synonymous with C{expr != None}, but is less
+    likely to trip up linters.
+
+    Unlike C{Not(expr)} or C{expr != True}, C{IsNot(expr, True)} returns
+    C{TRUE} when C{expr} is C{NULL}.
+
+    Unlike C{expr} or C{expr != False}, C{IsNot(expr, False)} returns
+    C{TRUE} when C{expr} is C{NULL}.
+    """
+    __slots__ = ()
+    oper = " IS NOT "
+
+@compile.when(IsNot)
+def compile_is_not(compile, is_not, state):
+    tokens = [compile(is_not.expr1, state), "IS NOT"]
+    if is_not.expr2 is None:
+        tokens.append("NULL")
+    elif is_not.expr2 is True:
+        tokens.append("TRUE")
+    elif is_not.expr2 is False:
+        tokens.append("FALSE")
+    else:
+        raise CompileError("expr2 must be None, True, or False")
+    return " ".join(tokens)
+
+@compile_python.when(IsNot)
+def compile_is_not(compile, is_not, state):
+    return "%s is not %s" % (
+        compile(is_not.expr1, state), compile(is_not.expr2, state)
+    )
+
+
 class Eq(BinaryOper):
     __slots__ = ()
     oper = " = "
@@ -1553,6 +1621,7 @@ compile.set_precedence(10, Union, Except, Intersect)
 compile.set_precedence(20, SQL)
 compile.set_precedence(30, Or)
 compile.set_precedence(40, And)
+compile.set_precedence(45, Is, IsNot)
 compile.set_precedence(50, Eq, Ne, Gt, Ge, Lt, Le, Like, In)
 compile.set_precedence(60, LShift, RShift)
 compile.set_precedence(70, Add, Sub)
@@ -1560,6 +1629,7 @@ compile.set_precedence(80, Mul, Div, Mod)
 
 compile_python.set_precedence(10, Or)
 compile_python.set_precedence(20, And)
+compile_python.set_precedence(25, Is, IsNot)
 compile_python.set_precedence(30, Eq, Ne, Gt, Ge, Lt, Le, Like, In)
 compile_python.set_precedence(40, LShift, RShift)
 compile_python.set_precedence(50, Add, Sub)
