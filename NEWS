@@ -7,6 +7,7 @@ Improvements
 - Clarify exception when creating a property with both allow_none=False and
   default=None.
 - Add storm.expr.Is and storm.expr.IsNot operators.
+- Support Python 3.10 and 3.11.
 
 Bug fixes
 ---------
