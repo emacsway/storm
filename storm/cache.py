@@ -11,7 +11,7 @@ class Cache(object):
     This prevents recently used objects from being deallocated by Python
     even if the user isn't holding any strong references to it.  It does
     that by holding strong references to the objects referenced by the
-    last C{N} C{obj_info}\ s added to it (where C{N} is the cache size).
+    last C{N} C{obj_info}\\ s added to it (where C{N} is the cache size).
     """
 
     def __init__(self, size=1000):
@@ -54,7 +54,7 @@ class Cache(object):
     def set_size(self, size):
         """Set the maximum number of objects that may be held in this cache.
 
-        If the size is reduced, older C{obj_info}\ s may be dropped from
+        If the size is reduced, older C{obj_info}\\ s may be dropped from
         the cache to respect the new size.
         """
         if size == 0:
@@ -66,7 +66,7 @@ class Cache(object):
         self._size = size
 
     def get_cached(self):
-        """Return an ordered list of the currently cached C{obj_info}\ s.
+        """Return an ordered list of the currently cached C{obj_info}\\ s.
 
         The most recently added objects come first in the list.
         """

@@ -1,3 +1,11 @@
+0.27
+====
+
+Improvements
+------------
+
+- Fix several syntax warnings from recent Python versions.
+
 0.26 (2023-07-04)
 =================
 

@@ -142,7 +142,7 @@ class ExprTest(TestHelper):
         self.assertIdentical(expr.compile_cache, None)
 
         # Test for identity. We don't want False there.
-        self.assertTrue(expr.primary is 0)
+        self.assertIs(expr.primary, 0)
 
         self.assertEqual(expr.variable_factory, Variable)
 
@@ -154,7 +154,7 @@ class ExprTest(TestHelper):
         self.assertEqual(expr.table, objects[1])
 
         # Test for identity. We don't want True there either.
-        self.assertTrue(expr.primary is 1)
+        self.assertIs(expr.primary, 1)
 
         self.assertEqual(expr.variable_factory, objects[3])
 
@@ -195,7 +195,7 @@ class ExprTest(TestHelper):
 
         like_expr = expr.startswith(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
-        self.assertTrue(like_expr.expr1 is expr)
+        self.assertIs(like_expr.expr1, expr)
         self.assertEqual(like_expr.expr2, u"abc!!!!!_!%%")
         self.assertEqual(like_expr.escape, u"!")
 
@@ -214,7 +214,7 @@ class ExprTest(TestHelper):
 
         like_expr = expr.endswith(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
-        self.assertTrue(like_expr.expr1 is expr)
+        self.assertIs(like_expr.expr1, expr)
         self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%")
         self.assertEqual(like_expr.escape, u"!")
 
@@ -234,7 +234,7 @@ class ExprTest(TestHelper):
 
         like_expr = expr.contains_string(u"abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
-        self.assertTrue(like_expr.expr1 is expr)
+        self.assertIs(like_expr.expr1, expr)
         self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%%")
         self.assertEqual(like_expr.escape, u"!")
 
@@ -1199,7 +1199,7 @@ class CompileTest(TestHelper):
     def test_eq_none(self):
         expr = Func1() == None
 
-        self.assertTrue(expr.expr2 is None)
+        self.assertIsNone(expr.expr2)
 
         state = State()
         statement = compile(expr, state)
@@ -1222,7 +1222,7 @@ class CompileTest(TestHelper):
     def test_ne_none(self):
         expr = Func1() != None
 
-        self.assertTrue(expr.expr2 is None)
+        self.assertIsNone(expr.expr2)
 
         state = State()
         statement = compile(expr, state)
@@ -2519,4 +2519,4 @@ class LazyValueExprTest(TestHelper):
         expr = SQL("Hullah!")
         variable = Variable()
         variable.set(expr)
-        self.assertTrue(variable.get(marker) is marker)
+        self.assertIs(variable.get(marker), marker)

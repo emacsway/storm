@@ -1865,7 +1865,7 @@ AutoReload = AutoReload()
 
 class block_access(object):
     """
-    Context manager blocks database access by one or more L{Store}\ s in the
+    Context manager blocks database access by one or more L{Store}\\ s in the
     managed scope.
     """
 
