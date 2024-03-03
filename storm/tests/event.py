@@ -25,7 +25,18 @@ from storm.tests.helper import TestHelper
 
 
 class Marker(object):
-    pass
+    def __eq__(self, other):
+        return self is other
+
+    def __lt__(self, other):
+        return False if self is other else NotImplemented
+
+    __gt__ = __lt__
+
+    def __le__(self, other):
+        return True if self is other else NotImplemented
+
+    __ge__ = __le__
 
 marker = Marker()
 
