@@ -77,6 +77,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Database",
         "Topic :: Database :: Front-Ends",
         "Topic :: Software Development :: Libraries :: Python Modules",
@@ -87,7 +88,7 @@ setup(
     # warning) by distutils.
     include_package_data=True,
     zip_safe=False,
-    install_requires=["six"],
+    install_requires=["packaging >= 14.1", "six"],
     test_suite="storm.tests.find_tests",
     tests_require=tests_require,
     extras_require={
