@@ -18,19 +18,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from functools import partial
+import json
+import pickle
 import re
 import uuid
 import weakref
 
-import six
-from six.moves import cPickle as pickle
-
-from storm.compat import json
 from storm.exceptions import NoneError
 from storm import Undef, has_cextensions
 
@@ -56,12 +52,6 @@ __all__ = [
     "JSONVariable",
     "ListVariable",
 ]
-
-
-if six.PY3:
-    _buffer_type = memoryview
-else:
-    _buffer_type = buffer
 
 
 class LazyValue(object):
@@ -328,7 +318,7 @@ class BoolVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (six.integer_types, float, Decimal)):
+        if not isinstance(value, (int, float, Decimal)):
             raise TypeError("Expected bool, found %r: %r"
                             % (type(value), value))
         return bool(value)
@@ -338,7 +328,7 @@ class IntVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (six.integer_types, float, Decimal)):
+        if not isinstance(value, (int, float, Decimal)):
             raise TypeError("Expected int, found %r: %r"
                             % (type(value), value))
         return int(value)
@@ -348,7 +338,7 @@ class FloatVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, (six.integer_types, float, Decimal)):
+        if not isinstance(value, (int, float, Decimal)):
             raise TypeError("Expected float, found %r: %r"
                             % (type(value), value))
         return float(value)
@@ -359,8 +349,7 @@ class DecimalVariable(Variable):
 
     @staticmethod
     def parse_set(value, from_db):
-        if (from_db and isinstance(value, six.string_types) or
-            isinstance(value, six.integer_types)):
+        if (from_db and isinstance(value, str)) or isinstance(value, int):
             value = Decimal(value)
         elif not isinstance(value, Decimal):
             raise TypeError("Expected Decimal, found %r: %r"
@@ -370,7 +359,7 @@ class DecimalVariable(Variable):
     @staticmethod
     def parse_get(value, to_db):
         if to_db:
-            return six.text_type(value)
+            return str(value)
         return value
 
 
@@ -378,7 +367,7 @@ class BytesVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if isinstance(value, _buffer_type):
+        if isinstance(value, memoryview):
             value = bytes(value)
         elif not isinstance(value, bytes):
             raise TypeError("Expected bytes, found %r: %r"
@@ -394,7 +383,7 @@ class UnicodeVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if not isinstance(value, six.text_type):
+        if not isinstance(value, str):
             raise TypeError("Expected text, found %r: %r"
                             % (type(value), value))
         return value
@@ -411,7 +400,7 @@ class DateTimeVariable(Variable):
         if from_db:
             if isinstance(value, datetime):
                 pass
-            elif isinstance(value, six.string_types):
+            elif isinstance(value, str):
                 if " " not in value:
                     raise ValueError("Unknown date/time format: %r" % value)
                 date_str, time_str = value.split(" ")
@@ -425,7 +414,7 @@ class DateTimeVariable(Variable):
                 else:
                     value = value.astimezone(self._tzinfo)
         else:
-            if type(value) in six.integer_types + (float, ):
+            if type(value) in (int, float):
                 value = datetime.utcfromtimestamp(value)
             elif not isinstance(value, datetime):
                 raise TypeError("Expected datetime, found %s" % repr(value))
@@ -456,7 +445,7 @@ class DateVariable(Variable):
                 return value.date()
             if isinstance(value, date):
                 return value
-            if not isinstance(value, six.string_types):
+            if not isinstance(value, str):
                 raise TypeError("Expected date, found %s" % repr(value))
             if " " in value:
                 value, time_str = value.split(" ")
@@ -479,7 +468,7 @@ class TimeVariable(Variable):
                 return None
             if isinstance(value, time):
                 return value
-            if not isinstance(value, six.string_types):
+            if not isinstance(value, str):
                 raise TypeError("Expected time, found %s" % repr(value))
             if " " in value:
                 date_str, value = value.split(" ")
@@ -502,7 +491,7 @@ class TimeDeltaVariable(Variable):
                 return None
             if isinstance(value, timedelta):
                 return value
-            if not isinstance(value, six.string_types):
+            if not isinstance(value, str):
                 raise TypeError("Expected timedelta, found %s" % repr(value))
             return _parse_interval(value)
         else:
@@ -515,7 +504,7 @@ class UUIDVariable(Variable):
     __slots__ = ()
 
     def parse_set(self, value, from_db):
-        if from_db and isinstance(value, six.string_types):
+        if from_db and isinstance(value, str):
             value = uuid.UUID(value)
         elif not isinstance(value, uuid.UUID):
             raise TypeError("Expected UUID, found %r: %r"
@@ -524,7 +513,7 @@ class UUIDVariable(Variable):
 
     def parse_get(self, value, to_db):
         if to_db:
-            return six.text_type(value)
+            return str(value)
         return value
 
 
@@ -607,7 +596,7 @@ class EncodedValueVariable(MutableValueVariable):
 
     def parse_set(self, value, from_db):
         if from_db:
-            if isinstance(value, _buffer_type):
+            if isinstance(value, memoryview):
                 value = bytes(value)
             return self._loads(value)
         else:
@@ -641,7 +630,7 @@ class JSONVariable(EncodedValueVariable):
     __slots__ = ()
 
     def _loads(self, value):
-        if not isinstance(value, six.text_type):
+        if not isinstance(value, str):
             raise TypeError(
                 "Cannot safely assume encoding of byte string %r." % value)
         return json.loads(value)
@@ -651,7 +640,7 @@ class JSONVariable(EncodedValueVariable):
         # and so we treat it as such here. In other words, this method returns
         # Unicode text and never bytes.
         dump = json.dumps(value, ensure_ascii=False)
-        if not isinstance(dump, six.text_type):
+        if not isinstance(dump, str):
             # json.dumps() does not always return unicode. See
             # http://code.google.com/p/simplejson/issues/detail?id=40 for one
             # of many discussions of str/unicode handling in simplejson.

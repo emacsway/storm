@@ -43,8 +43,6 @@ where patch_module is a Python module containing database patches used to
 upgrade the schema over time.
 """
 
-from __future__ import print_function
-
 import types
 
 from storm.locals import StormError

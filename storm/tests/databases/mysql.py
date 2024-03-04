@@ -18,11 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import os
-
-from six.moves.urllib.parse import urlunsplit
+from urllib.parse import urlunsplit
 
 from storm.databases.mysql import MySQL
 from storm.database import create_database

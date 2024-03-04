@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2006, 2007 Canonical
 #
@@ -87,7 +87,7 @@ def with_postgresfixture(runner_func):
     except ImportError:
         return runner_func
 
-    from six.moves.urllib.parse import urlunsplit
+    from urllib.parse import urlunsplit
     from storm.uri import escape
 
     def wrapper():
@@ -128,7 +128,7 @@ def with_mysql(runner_func):
     except ImportError:
         return runner_func
 
-    from six.moves.urllib.parse import (
+    from urllib.parse import (
         urlencode,
         urlunsplit,
         )

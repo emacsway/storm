@@ -34,14 +34,10 @@ patches. After a patch has been applied, its version is recorded in a special
 'patch' table in the given L{Store}, and it won't be applied again.
 """
 
-from __future__ import print_function
-
 import sys
 import os
 import re
 import types
-
-import six
 
 from storm.locals import StormError, Int
 
@@ -122,12 +118,10 @@ class PatchApplier(object):
         except:
             type, value, traceback = sys.exc_info()
             patch_repr = getattr(module, "__file__", version)
-            six.reraise(
-                BadPatchError,
-                BadPatchError(
-                    "Patch %s failed: %s: %s" %
-                    (patch_repr, type.__name__, str(value))),
-                traceback)
+            raise BadPatchError(
+                "Patch %s failed: %s: %s" %
+                (patch_repr, type.__name__, str(value))
+            ).with_traceback(traceback)
         self._committer.commit()
 
     def apply_all(self):

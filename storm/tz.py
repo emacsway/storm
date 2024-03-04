@@ -4,8 +4,6 @@
 This module offers extensions to the standard python 2.3+
 datetime module.
 """
-from __future__ import print_function
-
 __author__ = "Gustavo Niemeyer <gustavo@niemeyer.net>"
 __license__ = "PSF License"
 
@@ -14,8 +12,6 @@ import struct
 import time
 import sys
 import os
-
-import six
 
 relativedelta = None
 parser = None
@@ -198,7 +194,7 @@ class tzfile(datetime.tzinfo):
     # ftp://elsie.nci.nih.gov/pub/tz*.tar.gz
 
     def __init__(self, fileobj):
-        if isinstance(fileobj, six.string_types):
+        if isinstance(fileobj, str):
             self._filename = fileobj
             fileobj = open(fileobj)
         elif hasattr(fileobj, "name"):
@@ -699,7 +695,7 @@ class tzical:
         if not rrule:
             from dateutil import rrule
 
-        if isinstance(fileobj, six.string_types):
+        if isinstance(fileobj, str):
             self._s = fileobj
             fileobj = open(fileobj)
         elif hasattr(fileobj, "name"):
@@ -716,7 +712,7 @@ class tzical:
 
     def get(self, tzid=None):
         if tzid is None:
-            keys = list(six.iterkeys(self._vtz))
+            keys = list(self._vtz)
             if len(keys) == 0:
                 raise Exception("no timezones defined")
             elif len(keys) > 1:

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from unittest import defaultTestLoader
 
 from storm.properties import Int

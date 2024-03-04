@@ -18,18 +18,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 import gc
+import json
+import pickle
 import weakref
 import uuid
 
-import six
-from six.moves import cPickle as pickle
-
-from storm.compat import json
 from storm.exceptions import NoneError
 from storm.variables import *
 from storm.event import EventSystem
@@ -463,8 +459,7 @@ class BytesVariableTest(TestHelper):
         variable = BytesVariable()
         variable.set(b"str")
         self.assertEqual(variable.get(), b"str")
-        buffer_type = memoryview if six.PY3 else buffer
-        variable.set(buffer_type(b"buffer"))
+        variable.set(memoryview(b"buffer"))
         self.assertEqual(variable.get(), b"buffer")
         self.assertRaises(TypeError, variable.set, u"unicode")
 
@@ -487,18 +482,13 @@ class DateTimeVariableTest(TestHelper):
         self.assertEqual(variable.get(), epoch)
         variable.set(0.0)
         self.assertEqual(variable.get(), epoch)
-        if six.PY2:
-            # 1L was more idiomatic in Python 2, but is a syntax error in
-            # Python 3.
-            variable.set(long(0))
-            self.assertEqual(variable.get(), epoch)
         variable.set(epoch)
         self.assertEqual(variable.get(), epoch)
         self.assertRaises(TypeError, variable.set, marker)
 
     def test_get_set_from_database(self):
         datetime_str = "1977-05-04 12:34:56.78"
-        datetime_uni = six.text_type(datetime_str)
+        datetime_uni = str(datetime_str)
         datetime_obj = datetime(1977, 5, 4, 12, 34, 56, 780000)
 
         variable = DateTimeVariable()
@@ -511,7 +501,7 @@ class DateTimeVariableTest(TestHelper):
         self.assertEqual(variable.get(), datetime_obj)
 
         datetime_str = "1977-05-04 12:34:56"
-        datetime_uni = six.text_type(datetime_str)
+        datetime_uni = str(datetime_str)
         datetime_obj = datetime(1977, 5, 4, 12, 34, 56)
 
         variable.set(datetime_str, from_db=True)
@@ -576,7 +566,7 @@ class DateVariableTest(TestHelper):
 
     def test_get_set_from_database(self):
         date_str = "1977-05-04"
-        date_uni = six.text_type(date_str)
+        date_uni = str(date_str)
         date_obj = date(1977, 5, 4)
         datetime_obj = datetime(1977, 5, 4, 0, 0, 0)
 
@@ -620,7 +610,7 @@ class TimeVariableTest(TestHelper):
 
     def test_get_set_from_database(self):
         time_str = "12:34:56.78"
-        time_uni = six.text_type(time_str)
+        time_uni = str(time_str)
         time_obj = time(12, 34, 56, 780000)
 
         variable = TimeVariable()
@@ -633,7 +623,7 @@ class TimeVariableTest(TestHelper):
         self.assertEqual(variable.get(), time_obj)
 
         time_str = "12:34:56"
-        time_uni = six.text_type(time_str)
+        time_uni = str(time_str)
         time_obj = time(12, 34, 56)
 
         variable.set(time_str, from_db=True)
@@ -690,7 +680,7 @@ class TimeDeltaVariableTest(TestHelper):
 
     def test_get_set_from_database(self):
         delta_str = "42 days 12:34:56.78"
-        delta_uni = six.text_type(delta_str)
+        delta_uni = str(delta_str)
         delta_obj = timedelta(days=42, hours=12, minutes=34,
                               seconds=56, microseconds=780000)
 
@@ -704,7 +694,7 @@ class TimeDeltaVariableTest(TestHelper):
         self.assertEqual(variable.get(), delta_obj)
 
         delta_str = "1 day, 12:34:56"
-        delta_uni = six.text_type(delta_str)
+        delta_uni = str(delta_str)
         delta_obj = timedelta(days=1, hours=12, minutes=34, seconds=56)
 
         variable.set(delta_str, from_db=True)
@@ -919,10 +909,7 @@ class PickleVariableTest(EncodedValueVariableTestMixin, TestHelper):
 
 class JSONVariableTest(EncodedValueVariableTestMixin, TestHelper):
 
-    if six.PY3:
-        encode = staticmethod(lambda data: json.dumps(data))
-    else:
-        encode = staticmethod(lambda data: json.dumps(data).decode("utf-8"))
+    encode = staticmethod(lambda data: json.dumps(data))
     variable_type = JSONVariable
 
     def is_supported(self):
@@ -939,7 +926,7 @@ class JSONVariableTest(EncodedValueVariableTestMixin, TestHelper):
         # json.
         variable = self.variable_type()
         variable.set({u"a": 1})
-        self.assertTrue(isinstance(variable.get(to_db=True), six.text_type))
+        self.assertTrue(isinstance(variable.get(to_db=True), str))
 
 
 class ListVariableTest(TestHelper):

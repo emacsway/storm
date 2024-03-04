@@ -24,16 +24,6 @@
 #include <structmember.h>
 
 
-#if PY_VERSION_HEX >= 0x03000000
-#define PyInt_FromLong PyLong_FromLong
-#define PyText_AsString _PyUnicode_AsString
-#define PyString_Check(o) 0
-#define PyString_CheckExact(o) 0
-#else
-/* 2.x */
-#define PyText_AsString PyString_AsString
-#endif
-
 #define CATCH(error_value, expression) \
         do { \
             if ((expression) == error_value) {\
@@ -1423,7 +1413,7 @@ Compile_get_precedence(CompileObject *self, PyObject *type)
     PyObject *result = PyDict_GetItem(self->_precedence, type);
     if (result == NULL && !PyErr_Occurred()) {
         /* That should be MAX_PRECEDENCE, defined in expr.py */
-        return PyInt_FromLong(1000);
+        return PyLong_FromLong(1000);
     }
     Py_INCREF(result);
     return result;
@@ -1511,7 +1501,7 @@ Compile_single(CompileObject *self,
             if (repr) {
                 PyErr_Format(CompileError,
                              "Don't know how to compile type %s of %s",
-                             expr->ob_type->tp_name, PyText_AsString(repr));
+                             expr->ob_type->tp_name, _PyUnicode_AsString(repr));
                 Py_DECREF(repr);
             }
             goto error;
@@ -1570,24 +1560,20 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
 
     /*
       expr_type = type(expr)
-      string_types = (str,) if six.PY3 else (str, unicode)
-      if expr_type is SQLRaw or (raw and expr_type in string_types):
+      if expr_type is SQLRaw or (raw and expr_type is str):
           return expr
     */
-    /* Note that PyString_CheckExact(o) is defined at the top of this file
-       to 0 on Python 3, so we can safely translate the string_types checks
-       here to PyString_CheckExact || PyUnicode_CheckExact. */
     if ((PyObject *)expr->ob_type == SQLRaw ||
-        (raw && (PyString_CheckExact(expr) || PyUnicode_CheckExact(expr)))) {
+        (raw && PyUnicode_CheckExact(expr))) {
         /* Pass our reference on. */
         return expr;
     }
 
     /*
-       if token and expr_type in string_types:
+       if token and expr_type is str:
            expr = SQLToken(expr)
     */
-    if (token && (PyString_CheckExact(expr) || PyUnicode_CheckExact(expr))) {
+    if (token && PyUnicode_CheckExact(expr)) {
         PyObject *tmp;
         CATCH(NULL, tmp = PyObject_CallFunctionObjArgs(SQLToken, expr, NULL));
         Py_DECREF(expr);
@@ -1614,12 +1600,10 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             PyObject *subexpr = PySequence_Fast_GET_ITEM(sequence, i);
             /*
                subexpr_type = type(subexpr)
-               if (subexpr_type is SQLRaw or
-                       (raw and subexpr_type in string_types)):
+               if subexpr_type is SQLRaw or (raw and subexpr_type is str):
             */
             if ((PyObject *)subexpr->ob_type == (PyObject *)SQLRaw ||
-                (raw && (PyString_CheckExact(subexpr) ||
-                         PyUnicode_CheckExact(subexpr)))) {
+                (raw && PyUnicode_CheckExact(subexpr))) {
                 /* statement = subexpr */
                 Py_INCREF(subexpr);
                 statement = subexpr;
@@ -1636,10 +1620,9 @@ Compile_one_or_many(CompileObject *self, PyObject *expr, PyObject *state,
             /* else: */
             } else {
                 /*
-                   if token and subexpr_type in string_types:
+                   if token and subexpr_type is str:
                 */
-                if (token && (PyUnicode_CheckExact(subexpr) ||
-                              PyString_CheckExact(subexpr))) {
+                if (token && PyUnicode_CheckExact(subexpr)) {
                     /* subexpr = SQLToken(subexpr) */
                     CATCH(NULL,
                           subexpr = PyObject_CallFunctionObjArgs(SQLToken,
@@ -1713,7 +1696,7 @@ Compile__call__(CompileObject *self, PyObject *args, PyObject *kwargs)
                                      &expr, &state, &join, &raw, &token)) {
         return NULL;
     }
-    if (join && (!PyString_Check(join) && !PyUnicode_Check(join))) {
+    if (join && !PyUnicode_Check(join)) {
         PyErr_Format(PyExc_TypeError,
                      "'join' argument must be a string, not %.80s",
                      Py_TYPE(join)->tp_name);
@@ -1949,7 +1932,7 @@ ObjectInfo_checkpoint(ObjectInfoObject *self, PyObject *args)
     PyObject *column, *variable, *tmp;
     Py_ssize_t i = 0;
 
-    /* for variable in six.itervalues(self.variables): */
+    /* for variable in self.variables.values(): */
     while (PyDict_Next(self->variables, &i, &column, &variable)) {
         /* variable.checkpoint() */
         CATCH(NULL, tmp = PyObject_CallMethod(variable, "checkpoint", NULL));
@@ -2180,16 +2163,6 @@ do_init(PyObject *module)
     return 0;
 }
 
-#if PY_VERSION_HEX < 0x03000000
-DL_EXPORT(void)
-initcextensions(void)
-{
-    PyObject *module;
-
-    module = Py_InitModule3("cextensions", cextensions_methods, "");
-    do_init(module);
-}
-#else
 static struct PyModuleDef cextensionsmodule = {
     PyModuleDef_HEAD_INIT,
     "cextensions",
@@ -2211,7 +2184,6 @@ PyInit_cextensions(void)
     do_init(module);
     return module;
 }
-#endif
 
 
 /* vim:ts=4:sw=4:et

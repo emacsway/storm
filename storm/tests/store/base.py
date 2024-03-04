@@ -20,16 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-
 import decimal
 import gc
+from io import StringIO
 import operator
+import pickle
 from uuid import uuid4
 import weakref
-
-import six
-from six.moves import cPickle as pickle, cStringIO as StringIO
 
 from storm.references import Reference, ReferenceSet, Proxy
 from storm.database import Result, STATE_DISCONNECTED
@@ -1053,7 +1050,7 @@ class StoreTest(object):
     def test_find_max_unicode(self):
         title = self.store.find(Foo).max(Foo.title)
         self.assertEqual(title, "Title 30")
-        self.assertTrue(isinstance(title, six.text_type))
+        self.assertTrue(isinstance(title, str))
 
     def test_find_max_with_empty_result_and_disallow_none(self):
         class Bar(object):
@@ -1074,7 +1071,7 @@ class StoreTest(object):
     def test_find_min_unicode(self):
         title = self.store.find(Foo).min(Foo.title)
         self.assertEqual(title, "Title 10")
-        self.assertTrue(isinstance(title, six.text_type))
+        self.assertTrue(isinstance(title, str))
 
     def test_find_min_with_empty_result_and_disallow_none(self):
         class Bar(object):
@@ -1157,8 +1154,7 @@ class StoreTest(object):
         values = self.store.find(Foo).order_by(Foo.id).values(Foo.title)
         values = list(values)
         self.assertEqual(values, ["Title 30", "Title 20", "Title 10"])
-        self.assertEqual([type(value) for value in values],
-                         [six.text_type, six.text_type, six.text_type])
+        self.assertEqual([type(value) for value in values], [str, str, str])
 
     def test_find_multiple_values(self):
         result = self.store.find(Foo).order_by(Foo.id)
@@ -4532,7 +4528,7 @@ class StoreTest(object):
         self.assertRaises(NoStoreError, foo2.bars.remove, object())
 
     def test_string_reference(self):
-        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+        class Base(metaclass=PropertyPublisherMeta):
             pass
 
         class MyBar(Base):
@@ -4559,7 +4555,7 @@ class StoreTest(object):
         metaclass.  This makes it possible to work around problems with
         circular dependencies by delaying property resolution.
         """
-        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+        class Base(metaclass=PropertyPublisherMeta):
             pass
 
         class MyFoo(Base):
@@ -4599,7 +4595,7 @@ class StoreTest(object):
         metaclass.  This makes it possible to work around problems with
         circular dependencies by delaying resolution of the order by column.
         """
-        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+        class Base(metaclass=PropertyPublisherMeta):
             pass
 
         class MyFoo(Base):
@@ -5024,7 +5020,7 @@ class StoreTest(object):
         foo = self.store.get(DictFoo, 20)
         foo["a"] = 1
 
-        self.assertEqual(list(six.iteritems(foo)), [("a", 1)])
+        self.assertEqual(list(foo.items()), [("a", 1)])
 
         new_obj = DictFoo()
         new_obj.id = 40
@@ -5358,7 +5354,7 @@ class StoreTest(object):
         self.store.add(foo)
         foo.id = AutoReload
         foo.title = u"New Title"
-        self.assertTrue(isinstance(foo.id, six.integer_types))
+        self.assertTrue(isinstance(foo.id, int))
         self.assertEqual(foo.title, "New Title")
 
     def test_autoreload_primary_key_doesnt_reload_everything_else(self):
@@ -5868,7 +5864,7 @@ class StoreTest(object):
         self.assertEqual(foo.title, "New Title")
 
     def get_bar_proxy_with_string(self):
-        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+        class Base(metaclass=PropertyPublisherMeta):
             pass
 
         class MyBarProxy(Base):
@@ -6037,7 +6033,7 @@ class StoreTest(object):
             try:
                 self.assertEqual(myfoo.title, title)
             except AssertionError as e:
-                raise AssertionError(six.text_type(e, 'replace') +
+                raise AssertionError(str(e, 'replace') +
                     " (ensure your database was created with CREATE DATABASE"
                     " ... CHARACTER SET utf8mb3)")
 

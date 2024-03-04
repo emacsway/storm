@@ -18,14 +18,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import date, time, timedelta
 import os
 import json
-
-import six
-from six.moves.urllib.parse import urlunsplit
+from urllib.parse import urlunsplit
 
 from storm.databases.postgres import (
     Postgres, compile, currval, Returning, Case, PostgresTimeoutTracer,
@@ -171,7 +167,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         result = connection.execute("SELECT title FROM test WHERE id=1")
         title = result.get_one()[0]
 
-        self.assertTrue(isinstance(title, six.text_type))
+        self.assertTrue(isinstance(title, str))
         self.assertEqual(title, uni_str)
 
     def test_unicode_array(self):
@@ -695,11 +691,8 @@ class PostgresTest(DatabaseTest, TestHelper):
 
         connection = self.database.connect()
         value = {"a": 3, "b": "foo", "c": None}
-        db_value = json.dumps(value)
-        if six.PY2:
-            db_value = db_value.decode("utf-8")
         connection.execute(
-            "INSERT INTO json_test (json) VALUES (?)", (db_value,))
+            "INSERT INTO json_test (json) VALUES (?)", (json.dumps(value),))
         connection.commit()
 
         store = Store(self.database)

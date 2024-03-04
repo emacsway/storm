@@ -3,8 +3,7 @@ Copyright (c) 2007  Gustavo Niemeyer <gustavo@niemeyer.net>
 
 Graceful platform for test doubles in Python (mocks, stubs, fakes, and dummies).
 """
-from __future__ import print_function
-
+import builtins
 import tempfile
 import unittest
 import inspect
@@ -12,9 +11,6 @@ import shutil
 import sys
 import os
 import gc
-
-import six
-from six.moves import builtins
 
 
 __all__ = ["Mocker", "expect", "IS", "CONTAINS", "IN", "MATCH",
@@ -336,7 +332,7 @@ class MockerMeta(type):
         self._recorders = list(getattr(self, "_recorders", ()))
 
 
-class MockerBase(six.with_metaclass(MockerMeta, object)):
+class MockerBase(metaclass=MockerMeta):
     """Controller of mock objects.
 
     A mocker instance is used to command recording and replay of
@@ -563,7 +559,7 @@ class MockerBase(six.with_metaclass(MockerMeta, object)):
                             explicitly requested via the L{passthrough()}
                             method.
         """
-        if isinstance(object, six.string_types):
+        if isinstance(object, str):
             if name is None:
                 name = object
             import_stack = object.split(".")
@@ -1096,9 +1092,6 @@ class Mock(object):
         except MatchError as e:
             return True
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
     def __iter__(self):
         # XXX On py3k, when next() becomes __next__(), we'll be able
         #     to return the mock itself because it will be considered
@@ -1119,13 +1112,13 @@ def find_object_name(obj, depth=0):
         frame = sys._getframe(depth+1)
     except:
         return None
-    for name, frame_obj in six.iteritems(frame.f_locals):
+    for name, frame_obj in frame.f_locals.items():
         if frame_obj is obj:
             return name
     self = frame.f_locals.get("self")
     if self is not None:
         try:
-            items = list(six.iteritems(self.__dict__))
+            items = list(self.__dict__.items())
         except:
             pass
         else:
@@ -1274,7 +1267,7 @@ class Path(object):
                 result = "del %s.%s" % (result, action.args[0])
             elif action.kind == "call":
                 args = [repr(x) for x in action.args]
-                items = list(six.iteritems(action.kwargs))
+                items = list(action.kwargs.items())
                 items.sort()
                 for pair in items:
                     args.append("%s=%r" % pair)
@@ -1394,7 +1387,7 @@ def match_params(args1, kwargs1, args2, kwargs2):
 
     # Either we have the same number of kwargs, or unknown keywords are
     # accepted (KWARGS was used), so check just the ones in kwargs1.
-    for key, arg1 in six.iteritems(kwargs1):
+    for key, arg1 in kwargs1.items():
         if key not in kwargs2:
             return False
         arg2 = kwargs2[key]
@@ -1834,45 +1827,30 @@ class SpecChecker(Task):
 
         if method:
             try:
-                if six.PY3:
-                    # On Python 3, inspect.getargspec includes the bound
-                    # first argument (self or similar) for bound methods,
-                    # which confuses matters.  The modern signature API
-                    # doesn't have this problem.
-                    self._signature = inspect.signature(method)
-                    # Method descriptors don't have the first argument
-                    # already bound, but we want to skip it anyway.
-                    if getattr(method, "__objclass__", None) is not None:
-                        parameters = list(self._signature.parameters.values())
-                        # This is positional-only for unbound methods that
-                        # are implemented in C.
-                        if (parameters[0].kind ==
-                                inspect.Parameter.POSITIONAL_ONLY):
-                            self._signature = self._signature.replace(
-                                parameters=parameters[1:])
-                else:
-                    (self._args, self._varargs, self._varkwargs,
-                     self._defaults) = inspect.getargspec(method)
+                # On Python 3, inspect.getargspec includes the bound first
+                # argument (self or similar) for bound methods, which
+                # confuses matters.  The modern signature API doesn't have
+                # this problem.
+                self._signature = inspect.signature(method)
+                # Method descriptors don't have the first argument already
+                # bound, but we want to skip it anyway.
+                if getattr(method, "__objclass__", None) is not None:
+                    parameters = list(self._signature.parameters.values())
+                    # This is positional-only for unbound methods that are
+                    # implemented in C.
+                    if (parameters[0].kind ==
+                            inspect.Parameter.POSITIONAL_ONLY):
+                        self._signature = self._signature.replace(
+                            parameters=parameters[1:])
             except TypeError:
                 self._unsupported = True
-            else:
-                if not six.PY3:
-                    if self._defaults is None:
-                        self._defaults = ()
-                    if type(method) is type(self.run):
-                        self._args = self._args[1:]
 
     def get_method(self):
         return self._method
 
     def _raise(self, message):
-        if six.PY3:
-            spec = str(self._signature)
-        else:
-            spec = inspect.formatargspec(self._args, self._varargs,
-                                         self._varkwargs, self._defaults)
         raise AssertionError("Specification is %s%s: %s" %
-                             (self._method.__name__, spec, message))
+                             (self._method.__name__, self._signature, message))
 
     def verify(self):
         if not self._method:
@@ -1891,26 +1869,10 @@ class SpecChecker(Task):
         if self._unsupported:
             return # Can't check it. Happens with builtin functions. :-(
         action = path.actions[-1]
-        if six.PY3:
-            try:
-                self._signature.bind(*action.args, **action.kwargs)
-            except TypeError as e:
-                self._raise(str(e))
-        else:
-            obtained_len = len(action.args)
-            obtained_kwargs = action.kwargs.copy()
-            nodefaults_len = len(self._args) - len(self._defaults)
-            for i, name in enumerate(self._args):
-                if i < obtained_len and name in action.kwargs:
-                    self._raise("%r provided twice" % name)
-                if (i >= obtained_len and i < nodefaults_len and
-                    name not in action.kwargs):
-                    self._raise("%r not provided" % name)
-                obtained_kwargs.pop(name, None)
-            if obtained_len > len(self._args) and not self._varargs:
-                self._raise("too many args provided")
-            if obtained_kwargs and not self._varkwargs:
-                self._raise("unknown kwargs: %s" % ", ".join(obtained_kwargs))
+        try:
+            self._signature.bind(*action.args, **action.kwargs)
+        except TypeError as e:
+            self._raise(str(e))
 
 def spec_checker_recorder(mocker, event):
     spec = event.path.root_mock.__mocker_spec__
@@ -1951,7 +1913,7 @@ def global_replace(remove, install):
     for referrer in gc.get_referrers(remove):
         if (type(referrer) is dict and
             referrer.get("__mocker_replace__", True)):
-            for key, value in list(six.iteritems(referrer)):
+            for key, value in list(referrer.items()):
                 if value is remove:
                     referrer[key] = install
 
@@ -2023,7 +1985,7 @@ class Patcher(Task):
         for kind in self._monitored:
             attr = self._get_kind_attr(kind)
             seen = set()
-            for obj in six.itervalues(self._monitored[kind]):
+            for obj in self._monitored[kind].values():
                 cls = type(obj)
                 if issubclass(cls, type):
                     cls = obj
@@ -2037,7 +1999,7 @@ class Patcher(Task):
                                     self.execute)
 
     def restore(self):
-        for obj, attr, original in six.itervalues(self._patched):
+        for obj, attr, original in self._patched.values():
             if original is Undefined:
                 delattr(obj, attr)
             else:

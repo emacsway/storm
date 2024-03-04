@@ -24,13 +24,9 @@
 This module contains the highest-level ORM interface in Storm.
 """
 
-from __future__ import print_function
-
 from copy import copy
 from weakref import WeakValueDictionary
 from operator import itemgetter
-
-import six
 
 from storm.info import get_cls_info, get_obj_info, set_obj_info
 from storm.variables import Variable, LazyValue
@@ -479,7 +475,7 @@ class Store(object):
         self._dirty = flushing
 
         predecessors = {}
-        for (before_info, after_info), n in six.iteritems(self._order):
+        for (before_info, after_info), n in self._order.items():
             if n > 0:
                 before_set = predecessors.get(after_info)
                 if before_set is None:
@@ -858,7 +854,7 @@ class Store(object):
             del obj_info["primary_vars"]
 
     def _iter_alive(self):
-        return list(six.itervalues(self._alive))
+        return list(self._alive.values())
 
     def _enable_change_notification(self, obj_info):
         obj_info.event.emit("start-tracking-changes", self._event)
@@ -1012,7 +1008,7 @@ class ResultSet(object):
             L{ResultSet} will be returned appropriately modified with
             C{OFFSET} and C{LIMIT} clauses.
         """
-        if isinstance(index, six.integer_types):
+        if isinstance(index, int):
             if index == 0:
                 result_set = self
             else:
@@ -1411,7 +1407,7 @@ class ResultSet(object):
                     for column in changes:
                         obj_info.variables[column].set(AutoReload)
         else:
-            changes = list(six.iteritems(changes))
+            changes = list(changes.items())
             for obj in cached:
                 for column, value in changes:
                     variables = get_obj_info(obj).variables

@@ -19,10 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-
-import six
-
 
 class Dummy(object):
     """Magic "infectious" class.
@@ -42,8 +38,5 @@ class Dummy(object):
 
     def __bool__(self):
         return False
-
-    if six.PY2:
-        __nonzero__ = __bool__
 
 dummy = Dummy()

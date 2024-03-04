@@ -18,16 +18,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal as decimal
 import gc
+import json
 import uuid
 
-import six
-
-from storm.compat import json
 from storm.exceptions import NoneError, PropertyPathError
 from storm.properties import PropertyPublisherMeta
 from storm.properties import *
@@ -996,7 +992,7 @@ class PropertyPublisherMetaTest(TestHelper):
     def setUp(self):
         TestHelper.setUp(self)
 
-        class Base(six.with_metaclass(PropertyPublisherMeta, object)):
+        class Base(metaclass=PropertyPublisherMeta):
             pass
 
         class Class(Base):

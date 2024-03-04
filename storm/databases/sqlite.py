@@ -18,13 +18,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import datetime, date, time, timedelta
 from time import sleep, time as now
 import sys
-
-import six
 
 from storm.databases import dummy
 
@@ -85,25 +81,10 @@ class SQLiteResult(Result):
 
     @staticmethod
     def set_variable(variable, value):
-        if (isinstance(variable, BytesVariable) and
-                isinstance(value, six.text_type)):
+        if isinstance(variable, BytesVariable) and isinstance(value, str):
             # pysqlite2 may return unicode.
             value = value.encode("UTF-8")
         variable.set(value, from_db=True)
-
-    @staticmethod
-    def from_database(row):
-        """Convert SQLite-specific datatypes to "normal" Python types.
-
-        On Python 2, if there are any C{buffer} instances in the row,
-        convert them to bytes.  On Python 3, BLOB types are converted to
-        bytes, which is already what we want.
-        """
-        for value in row:
-            if six.PY2 and isinstance(value, buffer):
-                yield bytes(value)
-            else:
-                yield value
 
 
 class SQLiteConnection(Connection):
@@ -116,16 +97,13 @@ class SQLiteConnection(Connection):
     def to_database(params):
         """
         Like L{Connection.to_database}, but this also converts
-        instances of L{datetime} types to strings, and (on Python 2) bytes
-        instances to C{buffer} instances.
+        instances of L{datetime} types to strings.
         """
         for param in params:
             if isinstance(param, Variable):
                 param = param.get(to_db=True)
             if isinstance(param, (datetime, date, time, timedelta)):
                 yield str(param)
-            elif six.PY2 and isinstance(param, bytes):
-                yield buffer(param)
             else:
                 yield param
 

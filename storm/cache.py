@@ -1,8 +1,4 @@
-from __future__ import print_function
-
 import itertools
-
-import six
 
 
 class Cache(object):
@@ -145,8 +141,8 @@ class GenerationalCache(object):
         """
         self._size = size
         cache = itertools.islice(
-            itertools.chain(six.iteritems(self._new_cache),
-                            six.iteritems(self._old_cache)),
+            itertools.chain(self._new_cache.items(),
+                            self._old_cache.items()),
             0, size)
         self._new_cache = dict(cache)
         self._old_cache.clear()

@@ -23,18 +23,14 @@
 L{SQLObjectBase} is the central point of compatibility.
 """
 
-from __future__ import print_function
-
 import re
 import warnings
-
-import six
 
 from storm.properties import (
     Bytes, Int, Bool, Float, DateTime, Date, TimeDelta)
 from storm.references import Reference, ReferenceSet
 from storm.properties import SimpleProperty, PropertyPublisherMeta
-from storm.variables import Variable
+from storm.variables import UnicodeVariable
 from storm.exceptions import StormError, NotOneError
 from storm.info import get_cls_info, ClassAlias
 from storm.store import AutoReload, Store
@@ -166,7 +162,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
         dict["__storm_table__"] = table_name
 
         attr_to_prop = {}
-        for attr, prop in list(six.iteritems(dict)):
+        for attr, prop in list(dict.items()):
             if attr == "__classcell__":  # Python >= 3.6
                 continue
             attr_to_prop[attr] = attr
@@ -211,7 +207,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
 
 
         id_type = dict.setdefault("_idType", int)
-        id_cls = {int: Int, bytes: Bytes, six.text_type: AutoUnicode}[id_type]
+        id_cls = {int: Int, bytes: Bytes, str: AutoUnicode}[id_type]
         dict["id"] = id_cls(id_name, primary=True, default=AutoReload)
         attr_to_prop[id_name] = "id"
 
@@ -228,7 +224,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
         property_registry.add_property(obj, getattr(obj, "id"),
                                        "<table %s>" % table_name)
 
-        for fake_name, real_name in list(six.iteritems(attr_to_prop)):
+        for fake_name, real_name in list(attr_to_prop.items()):
             prop = getattr(obj, real_name)
             if fake_name != real_name:
                 property_registry.add_property(obj, prop, fake_name)
@@ -265,7 +261,7 @@ class BoundDotQ(object):
             return getattr(self._cls, attr)
 
 
-class SQLObjectBase(six.with_metaclass(SQLObjectMeta, Storm)):
+class SQLObjectBase(Storm, metaclass=SQLObjectMeta):
     """The root class of all SQLObject-emulating classes in your application.
 
     The general strategy for using Storm's SQLObject emulation layer
@@ -301,7 +297,7 @@ class SQLObjectBase(six.with_metaclass(SQLObjectMeta, Storm)):
         self._init(None)
 
     def set(self, **kwargs):
-        for attr, value in six.iteritems(kwargs):
+        for attr, value in kwargs.items():
             setattr(self, attr, value)
 
     def destroySelf(self):
@@ -334,7 +330,7 @@ class SQLObjectBase(six.with_metaclass(SQLObjectMeta, Storm)):
         if not isinstance(orderBy, (tuple, list)):
             orderBy = (orderBy,)
         for item in orderBy:
-            if isinstance(item, six.string_types):
+            if isinstance(item, str):
                 desc = item.startswith("-")
                 if desc:
                     item = item[1:]
@@ -409,7 +405,7 @@ class SQLObjectResultSet(object):
 
     def _copy(self, **kwargs):
         copy = self.__class__(self._cls, **kwargs)
-        for name, value in six.iteritems(self.__dict__):
+        for name, value in self.__dict__.items():
             if name[1:] not in kwargs and name != "_finished_result_set":
                 setattr(copy, name, value)
         return copy
@@ -562,9 +558,6 @@ class SQLObjectResultSet(object):
         """
         return not self.is_empty()
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
     def is_empty(self):
         """Return C{True} if this result set doesn't contain any results."""
         result_set = self._without_prejoins()._result_set
@@ -611,7 +604,7 @@ class SQLObjectResultSet(object):
         return self._copy(prejoinClauseTables=prejoinClauseTables)
 
     def sum(self, attribute):
-        if isinstance(attribute, six.string_types):
+        if isinstance(attribute, str):
             attribute = SQL(attribute)
         result_set = self._without_prejoins()._result_set
         return result_set.sum(attribute)
@@ -682,23 +675,13 @@ class PropertyAdapter(object):
                                               **self._kwargs)
 
 
-class AutoUnicodeVariable(Variable):
-    """A more relaxed version of UnicodeVariable that accepts native strings.
+# DEPRECATED: On Python 2, this used to be a more relaxed version of
+# UnicodeVariable that accepted both bytes and text.  On Python 3, it
+# accepts only text and is thus the same as UnicodeVariable.  It exists only
+# for compatibility.
+AutoUnicodeVariable = UnicodeVariable
 
-    On Python 2, this will try to convert bytes to text, to make it easier
-    to port code from SQLObject that expects to be able to set this variable
-    to a native string.
-
-    On Python 3, this behaves the same way as UnicodeVariable and only
-    accepts text, since native strings are already Unicode.
-    """
-    __slots__ = ()
-
-    def parse_set(self, value, from_db):
-        if not isinstance(value, six.string_types):
-            raise TypeError("Expected a string type, found %r" % type(value))
-        return six.text_type(value)
-
+# DEPRECATED: Use storm.properties.Unicode instead.
 class AutoUnicode(SimpleProperty):
     variable_class = AutoUnicodeVariable
 

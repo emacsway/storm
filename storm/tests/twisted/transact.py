@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from storm.tests import has_psycopg
 from storm.tests.helper import TestHelper
 from storm.tests.zope import has_transaction, has_zope_component

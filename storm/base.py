@@ -18,17 +18,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
-import six
-
 from storm.properties import PropertyPublisherMeta
 
 
 __all__ = ["Storm"]
 
 
-class Storm(six.with_metaclass(PropertyPublisherMeta, object)):
+class Storm(metaclass=PropertyPublisherMeta):
     """An optional base class for objects stored in a Storm Store.
 
     It causes your subclasses to be associated with a Storm

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from fixtures import Fixture
 
 from storm.tracer import BaseStatementTracer, install_tracer, remove_tracer

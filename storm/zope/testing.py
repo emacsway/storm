@@ -18,12 +18,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import os
 import shutil
 
-import six
 import transaction
 
 from testresources import TestResourceManager
@@ -102,7 +99,7 @@ class ZStormResourceManager(TestResourceManager):
             if isinstance(databases, dict):
                 databases = [
                     {"name": name, "uri": uri, "schema": schema}
-                    for name, (uri, schema) in six.iteritems(databases)]
+                    for name, (uri, schema) in databases.items()]
 
             # Provide the global IZStorm utility before applying patches, so
             # patch code can get the ztorm object if needed (e.g. looking up
