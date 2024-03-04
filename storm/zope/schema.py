@@ -19,8 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """ZStorm-aware schema manager."""
-from __future__ import print_function
-
 import transaction
 
 from storm.schema import Schema

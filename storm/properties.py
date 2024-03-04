@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from bisect import insort_left, bisect_left
 import weakref
 import sys
@@ -211,8 +209,8 @@ class Decimal(SimpleProperty):
 class Bytes(SimpleProperty):
     """Bytes property.
 
-    This accepts L{bytes}, L{buffer} (Python 2), or L{memoryview} (Python 3)
-    objects, and stores them as byte strings.
+    This accepts L{bytes} or L{memoryview} objects, and stores them as byte
+    strings.
 
     Deprecated aliases: L{Chars}, L{RawStr}.
     """
@@ -228,9 +226,7 @@ RawStr = Bytes
 class Unicode(SimpleProperty):
     """Unicode property.
 
-    This accepts L{unicode} (Python 2) or L{str} (Python 3) objects, and
-    stores them as text strings.  Note that it does not accept L{str}
-    objects on Python 2.
+    This accepts L{str} objects, and stores them as text strings.
     """
     variable_class = UnicodeVariable
 

@@ -1,10 +1,18 @@
-0.27
-====
+1.0
+===
 
 Improvements
 ------------
 
 - Fix several syntax warnings from recent Python versions.
+
+API changes
+-----------
+
+- Remove support for Python 2.
+- Remove the storm.compat module.
+- Deprecate storm.sqlobject.AutoUnicodeVariable and
+  storm.sqlobject.AutoUnicode.
 
 0.26 (2023-07-04)
 =================

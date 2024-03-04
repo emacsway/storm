@@ -1,10 +1,7 @@
-from __future__ import print_function
-
+import queue
 from unittest import TestCase
 import threading
 import time
-
-from six.moves import queue
 
 from storm.wsgi import make_app
 

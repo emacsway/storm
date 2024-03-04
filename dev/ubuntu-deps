@@ -12,17 +12,18 @@ apt_get install --no-install-recommends \
     mysql-server \
     pgbouncer \
     postgresql \
-    python-dev \
-    python-fixtures \
-    python-mysqldb \
-    python-psycopg2 \
-    python-setuptools \
-    python-six \
-    python-testresources \
-    python-transaction \
-    python-twisted \
-    python-zope.component \
-    python-zope.security \
+    python3-dev \
+    python3-fixtures \
+    python3-mysqldb \
+    python3-pgbouncer \
+    python3-psycopg2 \
+    python3-setuptools \
+    python3-testresources \
+    python3-timeline \
+    python3-transaction \
+    python3-twisted \
+    python3-zope.component \
+    python3-zope.security \
     tox
 
 

@@ -18,12 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from decimal import Decimal
-import unittest
-
-import six
 
 from storm.variables import *
 from storm.expr import *
@@ -622,14 +617,6 @@ class CompileTest(TestHelper):
     def test_int(self):
         state = State()
         statement = compile(1, state)
-        self.assertEqual(statement, "?")
-        self.assertVariablesEqual(state.parameters, [IntVariable(1)])
-
-    @unittest.skipUnless(six.PY2, "Python 3 has no separate long type")
-    def test_long(self):
-        state = State()
-        # 1L was more idiomatic in Python 2, but is a syntax error in Python 3.
-        statement = compile(long(1), state)
         self.assertEqual(statement, "?")
         self.assertVariablesEqual(state.parameters, [IntVariable(1)])
 
@@ -2254,21 +2241,15 @@ class CompilePythonTest(TestHelper):
 
     def test_bytes(self):
         py_expr = compile_python(b"str")
-        self.assertEqual(py_expr, "b'str'" if six.PY3 else "'str'")
+        self.assertEqual(py_expr, "b'str'")
 
     def test_unicode(self):
         py_expr = compile_python(u"str")
-        self.assertEqual(py_expr, "'str'" if six.PY3 else "u'str'")
+        self.assertEqual(py_expr, "'str'")
 
     def test_int(self):
         py_expr = compile_python(1)
         self.assertEqual(py_expr, "1")
-
-    @unittest.skipUnless(six.PY2, "Python 3 has no separate long type")
-    def test_long(self):
-        # 1L was more idiomatic in Python 2, but is a syntax error in Python 3.
-        py_expr = compile_python(long(1))
-        self.assertEqual(py_expr, "1L")
 
     def test_bool(self):
         state = State()

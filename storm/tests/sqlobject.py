@@ -18,12 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import datetime
 import operator
-
-import six
 
 from storm.database import create_database
 from storm.exceptions import NoneError
@@ -124,7 +120,7 @@ class SQLObjectTest(TestHelper):
             _defaultOrder = "-Person.name"
             _table = "person"
             _idName = "name"
-            _idType = six.text_type
+            _idType = str
             age = IntCol()
             ts = UtcDateTimeCol()
 
@@ -822,12 +818,8 @@ class SQLObjectTest(TestHelper):
         """
         result = self.Person.select()
         self.assertEqual(result.__bool__(), True)
-        if six.PY2:
-            self.assertEqual(result.__nonzero__(), True)
         result = self.Person.select(self.Person.q.name == "No Person")
         self.assertEqual(result.__bool__(), False)
-        if six.PY2:
-            self.assertEqual(result.__nonzero__(), False)
 
     def test_result_set_is_empty(self):
         """
@@ -1190,7 +1182,7 @@ class SQLObjectTest(TestHelper):
         # properties:
         class Person(self.SQLObject):
             _idName = "name"
-            _idType = six.text_type
+            _idType = str
             address = ForeignKey(foreignKey="Phone", dbName="address_id",
                                  notNull=True)
 

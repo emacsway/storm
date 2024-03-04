@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from storm.properties import Bool, Int, Float, Bytes, RawStr, Chars, Unicode
 from storm.properties import List, Decimal, DateTime, Date, Time, Enum, UUID
 from storm.properties import TimeDelta, Pickle, JSON

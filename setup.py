@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
+#!/usr/bin/env python3
 
 import os
 import re
@@ -26,17 +24,14 @@ with open("README") as readme:
 tests_require = [
     "fixtures >= 1.3.0",
     "mysqlclient",
-    "mysqlclient < 2.0.0; python_version < '3'",
     "pgbouncer >= 0.0.7",
     "postgresfixture",
     "psycopg2 >= 2.3.0",
-    "setuptools < 45; python_version < '3'",
     "testresources >= 0.2.4",
     "testtools >= 0.9.8",
     "timeline >= 0.0.2",
     "transaction >= 1.0.0",
     "Twisted >= 10.0.0",
-    "Twisted < 21.2.0; python_version < '3'",
     "zope.component >= 3.8.0",
     "zope.configuration",
     "zope.interface >= 4.0.0",
@@ -67,8 +62,6 @@ setup(
         ("License :: OSI Approved :: GNU Library or "
          "Lesser General Public License (LGPL)"),
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
@@ -87,7 +80,7 @@ setup(
     # warning) by distutils.
     include_package_data=True,
     zip_safe=False,
-    install_requires=["six"],
+    python_requires=">=3.5",
     test_suite="storm.tests.find_tests",
     tests_require=tests_require,
     extras_require={

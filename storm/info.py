@@ -18,11 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from weakref import ref
-
-import six
 
 from storm.exceptions import ClassInfoError
 from storm.expr import Column, Desc, TABLE
@@ -77,7 +73,7 @@ class ClassInfo(dict):
 
         self.cls = cls
 
-        if isinstance(self.table, six.string_types):
+        if isinstance(self.table, str):
             self.table = Table(self.table)
 
         pairs = []
@@ -135,7 +131,7 @@ class ClassInfo(dict):
                 __order__ = (__order__,)
             self.default_order = []
             for item in __order__:
-                if isinstance(item, six.string_types):
+                if isinstance(item, str):
                     if item.startswith("-"):
                         prop = Desc(getattr(cls, item[1:]))
                     else:
@@ -198,7 +194,7 @@ class ObjectInfo(dict):
         self.event.emit("object-deleted")
 
     def checkpoint(self):
-        for variable in six.itervalues(self.variables):
+        for variable in self.variables.values():
             variable.checkpoint()
 
 

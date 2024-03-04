@@ -18,12 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from contextlib import contextmanager
 import sys
-
-import six
 
 
 class StormError(Exception):
@@ -171,18 +167,12 @@ def wrap_exceptions(database):
         for wrapper_type in _wrapped_exception_types:
             dbapi_type = getattr(module, wrapper_type.__name__, None)
             if (dbapi_type is not None and
-                    isinstance(dbapi_type, six.class_types) and
+                    isinstance(dbapi_type, type) and
                     isinstance(e, dbapi_type)):
                 wrapped = database._wrap_exception(wrapper_type, e)
                 tb = sys.exc_info()[2]
-                # As close to "raise wrapped.with_traceback(tb) from e" as
-                # we can manage, but without causing syntax errors on
-                # various versions of Python.
                 try:
-                    if six.PY2:
-                        six.reraise(wrapped, None, tb)
-                    else:
-                        six.raise_from(wrapped.with_traceback(tb), e)
+                    raise wrapped.with_traceback(tb) from e
                 finally:
                     # Avoid traceback reference cycles.
                     del wrapped, tb

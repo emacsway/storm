@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from twisted.python.failure import Failure
 from twisted.internet.defer import execute
 

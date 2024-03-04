@@ -18,11 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import weakref
-
-import six
 
 from storm.exceptions import (
     ClassInfoError, FeatureError, NoStoreError, WrongStoreError)
@@ -985,7 +981,7 @@ class PropertyResolver(object):
     def resolve_one(self, property):
         if type(property) is tuple:
             return self.resolve(property)
-        elif isinstance(property, six.string_types):
+        elif isinstance(property, str):
             return self._resolve_string(property)
         elif isinstance(property, SuffixExpr):
             # XXX This covers cases like order_by=Desc("Bar.id"), see #620369.
@@ -1013,14 +1009,14 @@ class PropertyResolver(object):
 
 def _find_descriptor_class(used_cls, descr):
     for cls in used_cls.__mro__:
-        for attr, _descr in six.iteritems(cls.__dict__):
+        for attr, _descr in cls.__dict__.items():
             if _descr is descr:
                 return cls
     raise RuntimeError("Reference used in an unknown class")
 
 def _find_descriptor_obj(used_cls, descr):
     for cls in used_cls.__mro__:
-        for attr, _descr in six.iteritems(cls.__dict__):
+        for attr, _descr in cls.__dict__.items():
             if _descr is descr:
                 return getattr(cls, attr)
     raise RuntimeError("Reference used in an unknown class")

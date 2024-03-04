@@ -20,15 +20,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from datetime import datetime, date, time, timedelta
+import pickle
 import shutil
 import sys
 import os
-
-import six
-from six.moves import cPickle as pickle
 
 from storm.uri import URI
 from storm.expr import Select, Column, SQLToken, SQLRaw, Count, Alias
@@ -152,7 +148,7 @@ class DatabaseTest(object):
         self.assertTrue(isinstance(result, Result))
         row = result.get_one()
         self.assertEqual(row, ("Title 10",))
-        self.assertTrue(isinstance(row[0], six.text_type))
+        self.assertTrue(isinstance(row[0], str))
 
     def test_execute_params(self):
         result = self.connection.execute("SELECT one FROM number "

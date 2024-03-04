@@ -20,16 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-
 import errno
 import os
 import select
 import socket
+import socketserver
 import threading
-
-import six
-from six.moves import socketserver
 
 
 TIMEOUT = 0.1
@@ -44,7 +40,7 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
             self, request, client_address, server)
 
     def handle(self):
-        if isinstance(self.server.proxy_dest, (bytes, six.text_type)):
+        if isinstance(self.server.proxy_dest, (bytes, str)):
             dst = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         else:
             dst = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

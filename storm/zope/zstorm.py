@@ -24,14 +24,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import threading
 import weakref
 
 from uuid import uuid4
 
-import six
 from zope.interface import implementer
 
 import transaction
@@ -211,7 +208,7 @@ class ZStorm(object):
         # it to avoid the problem where a store is deallocated during
         # iteration causing RuntimeError: dictionary changed size
         # during iteration.
-        for store, name in list(six.iteritems(self._name_index)):
+        for store, name in list(self._name_index.items()):
             yield name, store
 
     def get_name(self, store):

@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
-import six
 from zope.interface import Interface
 
 from storm.expr import Undef
@@ -173,9 +170,6 @@ class ISQLObjectResultSet(Interface):
             new code, prefer L{is_empty}.  It's compatible with L{ResultSet}
             which doesn't have a C{__bool__} implementation.
         """
-
-    if six.PY2:
-        __nonzero__ = __bool__
 
     def __contains__(item):
        """Support C{if FooObject in Foo.select(query)}."""

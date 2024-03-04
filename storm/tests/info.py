@@ -18,12 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 from weakref import ref
 import gc
-
-import six
 
 from storm.exceptions import ClassInfoError
 from storm.properties import Property
@@ -572,7 +568,7 @@ class ClassAliasTest(TestHelper):
                 cls = type.__new__(meta_cls, name, bases, dict)
                 cls.__storm_table__ = "HAH! GOTCH YA!"
                 return cls
-        class Class(six.with_metaclass(MetaClass, object)):
+        class Class(metaclass=MetaClass):
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
         Alias = ClassAlias(Class, "USE_THIS")

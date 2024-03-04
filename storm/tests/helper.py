@@ -18,14 +18,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
-import tempfile
+from io import StringIO
 import logging
 import shutil
 import sys
-
-from six.moves import cStringIO as StringIO
+import tempfile
 
 from storm.tests import mocker
 

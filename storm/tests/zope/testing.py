@@ -18,12 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-
 import os
 import sys
-
-import six
 
 from storm.tests.helper import TestHelper
 from storm.tests.zope import (
@@ -245,7 +241,7 @@ class ZStormResourceManagerTest(TestHelper):
         real_invalidate = store.invalidate
 
         def invalidate_proxy():
-            self.assertEqual(0, len(list(six.itervalues(store._alive))))
+            self.assertEqual(0, len(list(store._alive.values())))
             real_invalidate()
         store.invalidate = invalidate_proxy
 
