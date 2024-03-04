@@ -22,17 +22,17 @@
 from datetime import datetime, date, time, timedelta
 import json
 
-from distutils.version import LooseVersion
+from packaging.version import parse as parse_version
 
 from storm.databases import dummy
 
 # PostgreSQL support in Storm requires psycopg2 2.3.0 or greater, in order
 # to support the two-phase commit protocol.
-REQUIRED_PSYCOPG2_VERSION = LooseVersion('2.3.0')
+REQUIRED_PSYCOPG2_VERSION = parse_version('2.3.0')
 PSYCOPG2_VERSION = None
 try:
     import psycopg2
-    PSYCOPG2_VERSION = LooseVersion(psycopg2.__version__.split(' ')[0])
+    PSYCOPG2_VERSION = parse_version(psycopg2.__version__.split(' ')[0])
     if PSYCOPG2_VERSION < REQUIRED_PSYCOPG2_VERSION:
         psycopg2 = dummy
     else:

@@ -5,6 +5,7 @@ Improvements
 ------------
 
 - Fix several syntax warnings from recent Python versions.
+- Support Python 3.12.
 
 API changes
 -----------
