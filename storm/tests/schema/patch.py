@@ -75,7 +75,7 @@ def apply(store):
 """
 
 
-class MockPatchStore(object):
+class MockPatchStore:
 
     def __init__(self, database, patches=[]):
         self.database = database
@@ -103,7 +103,7 @@ class MockPatchStore(object):
 class PatchApplierTest(MockerTestCase):
 
     def setUp(self):
-        super(PatchApplierTest, self).setUp()
+        super().setUp()
 
         self.patchdir = self.makeDir()
         self.pkgdir = os.path.join(self.patchdir, "mypackage")
@@ -143,7 +143,7 @@ class PatchApplierTest(MockerTestCase):
         self.another_store.commit()
         self.prepare_for_transaction_check()
 
-        class Committer(object):
+        class Committer:
 
             def commit(committer):
                 self.store.commit()
@@ -158,7 +158,7 @@ class PatchApplierTest(MockerTestCase):
                                           self.committer)
 
     def tearDown(self):
-        super(PatchApplierTest, self).tearDown()
+        super().tearDown()
         self.committer.rollback()
         sys.path.remove(self.patchdir)
         for name in list(sys.modules):
@@ -329,7 +329,7 @@ class PatchApplierTest(MockerTestCase):
         patches = [Patch(42), Patch(380), Patch(381)]
         my_store = MockPatchStore("database", patches=patches)
         patch_applier = PatchApplier(my_store, self.mypackage)
-        self.assertEqual(set([381]),
+        self.assertEqual({381},
                          patch_applier.get_unknown_patch_versions())
 
     def test_no_unknown_patch_versions(self):
@@ -410,7 +410,7 @@ class PatchApplierTest(MockerTestCase):
 class PatchSetTest(MockerTestCase):
 
     def setUp(self):
-        super(PatchSetTest, self).setUp()
+        super().setUp()
         self.sys_dir = self.makeDir()
         self.package_dir = os.path.join(self.sys_dir, "mypackage")
         os.makedirs(self.package_dir)
@@ -423,7 +423,7 @@ class PatchSetTest(MockerTestCase):
         self.patch_package = PatchSet(mypackage, sub_level="foo")
 
     def tearDown(self):
-        super(PatchSetTest, self).tearDown()
+        super().tearDown()
         for name in list(sys.modules):
             if name == "mypackage" or name.startswith("mypackage."):
                 del sys.modules[name]

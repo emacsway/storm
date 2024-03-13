@@ -26,7 +26,7 @@ from storm import has_cextensions
 __all__ = ["EventSystem"]
 
 
-class EventSystem(object):
+class EventSystem:
     """A system for managing hooks that are called when events are emitted.
 
     Hooks are callables that take the event system C{owner} as their first

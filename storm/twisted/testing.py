@@ -4,7 +4,7 @@ from twisted.internet.defer import execute
 from storm.twisted.transact import Transactor
 
 
-class FakeThreadPool(object):
+class FakeThreadPool:
     """
     A fake L{twisted.python.threadpool.ThreadPool}, running functions inside
     the main thread instead for easing tests.
@@ -21,7 +21,7 @@ class FakeThreadPool(object):
         onResult(success, result)
 
 
-class FakeTransaction(object):
+class FakeTransaction:
 
     def commit(self):
         pass

@@ -38,7 +38,7 @@ class TestHelper(mocker.MockerTestCase):
         return True
 
     def setUp(self):
-        super(TestHelper, self).setUp()
+        super().setUp()
         self._helper_instances = []
         for helper_factory in self.helpers:
             helper = helper_factory()
@@ -48,7 +48,7 @@ class TestHelper(mocker.MockerTestCase):
     def tearDown(self):
         for helper in reversed(self._helper_instances):
             helper.tear_down(self)
-        super(TestHelper, self).tearDown()
+        super().tearDown()
 
     @property
     def _testMethod(self):
@@ -61,7 +61,7 @@ class TestHelper(mocker.MockerTestCase):
                 result.startTest(self)
                 result.addSkip(self, "Test not supported")
             return
-        super(TestHelper, self).run(result)
+        super().run(result)
 
     def assertVariablesEqual(self, checked, expected):
         self.assertEqual(len(checked), len(expected))
@@ -70,7 +70,7 @@ class TestHelper(mocker.MockerTestCase):
             self.assertEqual(check.get(), expect.get())
 
 
-class MakePath(object):
+class MakePath:
 
     def set_up(self, test_case):
         self.dirname = tempfile.mkdtemp()
@@ -101,7 +101,7 @@ class MakePath(object):
         return path
 
 
-class LogKeeper(object):
+class LogKeeper:
     """Record logging information.
 
     Puts a 'logfile' attribute on your test case, which is a StringIO

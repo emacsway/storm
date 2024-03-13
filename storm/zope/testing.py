@@ -70,7 +70,7 @@ class ZStormResourceManager(TestResourceManager):
     vertical_patching = True
 
     def __init__(self, databases):
-        super(ZStormResourceManager, self).__init__()
+        super().__init__()
         self._databases = databases
         self._zstorm = None
         self._schema_zstorm = None

@@ -53,7 +53,7 @@ class ZStormResourceManagerTest(TestHelper):
         return has_transaction and has_zope_component and has_testresources
 
     def setUp(self):
-        super(ZStormResourceManagerTest, self).setUp()
+        super().setUp()
         package_dir = self.makeDir()
         sys.path.append(package_dir)
         self.patch_dir = os.path.join(package_dir, "patch_package")
@@ -77,7 +77,7 @@ class ZStormResourceManagerTest(TestHelper):
         global_zstorm._reset()
         del sys.modules["patch_package"]
         sys.modules.pop("patch_package.patch_1", None)
-        super(ZStormResourceManagerTest, self).tearDown()
+        super().tearDown()
 
     def test_make(self):
         """
@@ -182,7 +182,7 @@ class ZStormResourceManagerTest(TestHelper):
         L{ZStormResourceManager.clean} tries to flush the stores to make sure
         that they are all in a consistent state.
         """
-        class Test(object):
+        class Test:
             __storm_table__ = "test"
             foo = Unicode()
             bar = Int(primary=True)
@@ -193,8 +193,8 @@ class ZStormResourceManagerTest(TestHelper):
 
         zstorm = self.resource.make([])
         store = zstorm.get("test")
-        store.add(Test(u"data", 1))
-        store.add(Test(u"data", 2))
+        store.add(Test("data", 1))
+        store.add(Test("data", 2))
         self.assertRaises(IntegrityError, self.resource.clean, zstorm)
 
     def test_clean_delete(self):
@@ -227,7 +227,7 @@ class ZStormResourceManagerTest(TestHelper):
         L{ZStormResourceManager.clean} clears the alive cache before
         aborting the transaction.
         """
-        class Test(object):
+        class Test:
             __storm_table__ = "test"
             bar = Int(primary=True)
 
@@ -405,7 +405,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.makeFile(path=os.path.join(self.patch_dir, "patch_2.py"),
                       content="def apply(store): pass")
 
-        class FakeStat(object):
+        class FakeStat:
             st_mtime = os.stat(self.patch_dir).st_mtime + 1
 
         stat_mock = self.mocker.replace(os.stat)

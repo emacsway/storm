@@ -149,7 +149,7 @@ class tzlocal(datetime.tzinfo):
 
     __reduce__ = object.__reduce__
 
-class _ttinfo(object):
+class _ttinfo:
     __slots__ = ["offset", "delta", "isdst", "abbr", "isstd", "isgmt"]
 
     def __init__(self):
@@ -889,7 +889,7 @@ def gettz(name=None):
                 try:
                     tz = tzfile(filepath)
                     break
-                except (IOError, OSError, ValueError):
+                except (OSError, ValueError):
                     pass
         else:
             tz = tzlocal()
@@ -911,7 +911,7 @@ def gettz(name=None):
                 try:
                     tz = tzfile(filepath)
                     break
-                except (IOError, OSError, ValueError):
+                except (OSError, ValueError):
                     pass
             else:
                 tz = None

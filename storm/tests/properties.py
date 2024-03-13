@@ -45,7 +45,7 @@ class PropertyTest(TestHelper):
 
     def setUp(self):
         TestHelper.setUp(self)
-        class Class(object):
+        class Class:
             __storm_table__ = "mytable"
             prop1 = Custom("column1", primary=True)
             prop2 = Custom()
@@ -108,10 +108,10 @@ class PropertyTest(TestHelper):
     def test_variable_factory_validator_attribute(self):
         # Should work even if we make things harder by reusing properties.
         prop = Custom()
-        class Class1(object):
+        class Class1:
             __storm_table__ = "table1"
             prop1 = prop
-        class Class2(object):
+        class Class2:
             __storm_table__ = "table2"
             prop2 = prop
         args = []
@@ -152,7 +152,7 @@ class PropertyTest(TestHelper):
             args[:] = obj, attr, value
             return 42
 
-        class Class(object):
+        class Class:
             __storm_table__ = "mytable"
             prop = Custom("column", primary=True, validator=validator)
 
@@ -299,10 +299,10 @@ class PropertyTest(TestHelper):
         right now it works, and we should try not to break it.
         """
         prop = Custom()
-        class Class1(object):
+        class Class1:
             __storm_table__ = "table1"
             prop1 = prop
-        class Class2(object):
+        class Class2:
             __storm_table__ = "table2"
             prop2 = prop
         self.assertEqual(Class1.prop1.name, "prop1")
@@ -316,7 +316,7 @@ class PropertyKindsTest(TestHelper):
     def setup(self, property, *args, **kwargs):
         prop2_kwargs = kwargs.pop("prop2_kwargs", {})
         kwargs["primary"] = True
-        class Class(object):
+        class Class:
             __storm_table__ = "mytable"
             prop1 = property("column1", *args, **kwargs)
             prop2 = property(**prop2_kwargs)
@@ -432,10 +432,10 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop2 = None
         self.assertEqual(self.obj.prop2, None)
 
-        self.assertRaises(TypeError, setattr, self.obj, "prop1", u"unicode")
+        self.assertRaises(TypeError, setattr, self.obj, "prop1", "unicode")
 
     def test_unicode(self):
-        self.setup(Unicode, default=u"def", allow_none=False)
+        self.setup(Unicode, default="def", allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -446,7 +446,7 @@ class PropertyKindsTest(TestHelper):
         self.assertTrue(isinstance(self.variable1, UnicodeVariable))
         self.assertTrue(isinstance(self.variable2, UnicodeVariable))
 
-        self.assertEqual(self.obj.prop1, u"def")
+        self.assertEqual(self.obj.prop1, "def")
         self.assertRaises(NoneError, setattr, self.obj, "prop1", None)
         self.obj.prop2 = None
         self.assertEqual(self.obj.prop2, None)
@@ -798,7 +798,7 @@ class PropertyKindsTest(TestHelper):
         self.assertEqual(changes, [(self.variable1, None, ["a"], False)])
 
     def test_variable_factory_arguments(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "test"
             id = Int(primary=True)
 
@@ -812,7 +812,7 @@ class PropertyKindsTest(TestHelper):
                                (Int, IntVariable, 1),
                                (Float, FloatVariable, 1.1),
                                (Bytes, BytesVariable, b"str"),
-                               (Unicode, UnicodeVariable, u"unicode"),
+                               (Unicode, UnicodeVariable, "unicode"),
                                (DateTime, DateTimeVariable, datetime.now()),
                                (Date, DateVariable, date.today()),
                                (Time, TimeVariable, datetime.now().time()),
@@ -881,7 +881,7 @@ class PropertyRegistryTest(TestHelper):
     def setUp(self):
         TestHelper.setUp(self)
 
-        class Class(object):
+        class Class:
             __storm_table__ = "mytable"
             prop1 = Property("column1", primary=True)
             prop2 = Property()

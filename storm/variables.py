@@ -54,7 +54,7 @@ __all__ = [
 ]
 
 
-class LazyValue(object):
+class LazyValue:
     """Marker to be used as a base class on lazily evaluated values."""
     __slots__ = ()
 
@@ -79,7 +79,7 @@ def raise_none_error(column, default=False):
 VariableFactory = partial
 
 
-class Variable(object):
+class Variable:
     """Basic representation of a database value in Python.
 
     @type column: L{storm.expr.Column}
@@ -394,7 +394,7 @@ class DateTimeVariable(Variable):
 
     def __init__(self, *args, **kwargs):
         self._tzinfo = kwargs.pop("tzinfo", None)
-        super(DateTimeVariable, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def parse_set(self, value, from_db):
         if from_db:
@@ -579,7 +579,7 @@ class MutableValueVariable(Variable):
     def get(self, default=None, to_db=False):
         if self._event_system is not None:
             self._event_system.hook("flush", self._detect_changes)
-        return super(MutableValueVariable, self).get(default, to_db)
+        return super().get(default, to_db)
 
     def set(self, value, from_db=False):
         if self._event_system is not None:
@@ -587,7 +587,7 @@ class MutableValueVariable(Variable):
                 self._event_system.unhook("flush", self._detect_changes)
             else:
                 self._event_system.hook("flush", self._detect_changes)
-        super(MutableValueVariable, self).set(value, from_db)
+        super().set(value, from_db)
 
 
 class EncodedValueVariable(MutableValueVariable):

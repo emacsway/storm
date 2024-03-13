@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # Copyright (c) 2006, 2007 Canonical
 #
@@ -59,7 +58,7 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
                 chunk = os.read(self.request.fileno(), 1024)
                 try:
                     dst.send(chunk)
-                except socket.error as e:
+                except OSError as e:
                     if e.errno == errno.EPIPE:
                         return
                     raise

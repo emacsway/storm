@@ -6,7 +6,7 @@ from storm.cache import Cache, GenerationalCache
 from storm.tests.helper import TestHelper
 
 
-class StubObjectInfo(object):
+class StubObjectInfo:
 
     def __init__(self, id):
         self.id = id
@@ -26,7 +26,7 @@ class StubObjectInfo(object):
         return self.id < other.id
 
 
-class StubClass(object):
+class StubClass:
 
     __storm_table__ = "stub_class"
 
@@ -38,7 +38,7 @@ class BaseCacheTest(TestHelper):
     Cache = Cache
 
     def setUp(self):
-        super(BaseCacheTest, self).setUp()
+        super().setUp()
         self.obj_infos = [StubObjectInfo(i) for i in range(10)]
         for i in range(len(self.obj_infos)):
             setattr(self, "obj%d" % (i+1), self.obj_infos[i])
@@ -194,7 +194,7 @@ class TestGenerationalCache(BaseCacheTest):
     Cache = GenerationalCache
 
     def setUp(self):
-        super(TestGenerationalCache, self).setUp()
+        super().setUp()
         self.obj1 = StubObjectInfo(1)
         self.obj2 = StubObjectInfo(2)
         self.obj3 = StubObjectInfo(3)

@@ -32,7 +32,7 @@ from storm.tests.helper import TestHelper
 class TracerTest(TestHelper):
 
     def tearDown(self):
-        super(TracerTest, self).tearDown()
+        super().tearDown()
         del _tracers[:]
 
     def test_install_tracer(self):
@@ -63,7 +63,7 @@ class TracerTest(TestHelper):
         self.assertEqual(get_tracers(), [])
 
     def test_remove_tracer_type(self):
-        class C(object):
+        class C:
             pass
 
         class D(C):
@@ -100,7 +100,7 @@ class TracerTest(TestHelper):
     def test_trace(self):
         stash = []
 
-        class Tracer(object):
+        class Tracer:
             def m1(_, *args, **kwargs):
                 stash.extend(["m1", args, kwargs])
 
@@ -126,7 +126,7 @@ class MockVariable(Variable):
 class DebugTracerTest(TestHelper):
 
     def setUp(self):
-        super(DebugTracerTest, self).setUp()
+        super().setUp()
         self.stream = self.mocker.mock(type(sys.stderr))
         self.tracer = DebugTracer(self.stream)
 
@@ -139,7 +139,7 @@ class DebugTracerTest(TestHelper):
 
     def tearDown(self):
         del _tracers[:]
-        super(DebugTracerTest, self).tearDown()
+        super().tearDown()
 
     def test_wb_debug_tracer_uses_stderr_by_default(self):
         self.mocker.replay()
@@ -233,7 +233,7 @@ class TimeoutTracerTestBase(TestHelper):
     tracer_class = TimeoutTracer
 
     def setUp(self):
-        super(TimeoutTracerTestBase, self).setUp()
+        super().setUp()
         self.tracer = self.tracer_class()
         self.raw_cursor = self.mocker.mock()
         self.statement = self.mocker.mock()
@@ -241,13 +241,13 @@ class TimeoutTracerTestBase(TestHelper):
 
         # Some data is kept in the connection, so we use a proxy to
         # allow things we don't care about here to happen.
-        class Connection(object):
+        class Connection:
             pass
 
         self.connection = self.mocker.proxy(Connection())
 
     def tearDown(self):
-        super(TimeoutTracerTestBase, self).tearDown()
+        super().tearDown()
         del _tracers[:]
 
     def execute(self):
@@ -384,14 +384,14 @@ class TimeoutTracerTest(TimeoutTracerTestBase):
 class TimeoutTracerWithDBTest(TestHelper):
 
     def setUp(self):
-        super(TimeoutTracerWithDBTest, self).setUp()
+        super().setUp()
         self.tracer = StuckInTimeTimeoutTracer(10)
         install_tracer(self.tracer)
         database = create_database(os.environ["STORM_POSTGRES_URI"])
         self.connection = database.connect()
 
     def tearDown(self):
-        super(TimeoutTracerWithDBTest, self).tearDown()
+        super().tearDown()
         remove_tracer(self.tracer)
         self.connection.close()
 
@@ -430,7 +430,7 @@ class TimeoutTracerWithDBTest(TestHelper):
 class StuckInTimeTimeoutTracer(TimeoutTracer):
 
     def __init__(self, fixed_remaining_time):
-        super(StuckInTimeTimeoutTracer, self).__init__()
+        super().__init__()
         self.set_statement_timeout_calls = []
         self.fixed_remaining_time = fixed_remaining_time
 
@@ -467,7 +467,7 @@ class BaseStatementTracerTest(TestCase):
         tracer = self.LoggingBaseStatementTracer()
         conn = StubConnection()
         conn.param_mark = '%s'
-        var1 = MockVariable(u'VAR1')
+        var1 = MockVariable('VAR1')
         tracer.connection_raw_execute(
             conn, 'cursor', 'SELECT * FROM person where name = %s', [var1])
         self.assertEqual(
@@ -478,7 +478,7 @@ class BaseStatementTracerTest(TestCase):
         """String parameters are formatted as a single quoted string."""
         tracer = self.LoggingBaseStatementTracer()
         conn = StubConnection()
-        var1 = MockVariable(u'VAR1')
+        var1 = MockVariable('VAR1')
         tracer.connection_raw_execute(
             conn, 'cursor', 'SELECT * FROM person where name = ?', [var1])
         self.assertEqual(
@@ -513,7 +513,7 @@ class BaseStatementTracerTest(TestCase):
         """% operators in LIKE statements are preserved."""
         tracer = self.LoggingBaseStatementTracer()
         conn = StubConnection()
-        var1 = MockVariable(u'substring')
+        var1 = MockVariable('substring')
         tracer.connection_raw_execute(
             conn, 'cursor',
             "SELECT * FROM person WHERE name LIKE '%%' || ? || '-suffix%%'",
@@ -526,14 +526,14 @@ class BaseStatementTracerTest(TestCase):
     def test_unformattable_statements_are_handled(self):
         tracer = self.LoggingBaseStatementTracer()
         conn = StubConnection()
-        var1 = MockVariable(u'substring')
+        var1 = MockVariable('substring')
         tracer.connection_raw_execute(
             conn, 'cursor', "%s %s",
             [var1])
         self.assertEqual(
             [(conn, 'cursor',
               "Unformattable query: '%%s %%s' with params [%r]." %
-              u'substring')],
+              'substring')],
             tracer.calls)
 
 
@@ -605,7 +605,7 @@ class CaptureTracerTest(TestHelper, TestWithFixtures):
         return has_fixtures
 
     def tearDown(self):
-        super(CaptureTracerTest, self).tearDown()
+        super().tearDown()
         del _tracers[:]
 
     def test_capture(self):
@@ -617,7 +617,7 @@ class CaptureTracerTest(TestHelper, TestWithFixtures):
         self.assertEqual([tracer], get_tracers())
         conn = StubConnection()
         conn.param_mark = '%s'
-        var = MockVariable(u"var")
+        var = MockVariable("var")
         tracer.connection_raw_execute(conn, "cursor", "select %s", [var])
         self.assertEqual(["select 'var'"], tracer.queries)
 

@@ -49,7 +49,7 @@ STATE_DISCONNECTED = 2
 STATE_RECONNECT = 3
 
 
-class Result(object):
+class Result:
     """A representation of the results from a single SQL statement."""
 
     _closed = False
@@ -164,12 +164,12 @@ class Result(object):
         return row
 
 
-class CursorWrapper(object):
+class CursorWrapper:
     """A DB-API cursor, wrapping exceptions as StormError instances."""
 
     def __init__(self, cursor, database):
-        super(CursorWrapper, self).__setattr__('_cursor', cursor)
-        super(CursorWrapper, self).__setattr__('_database', database)
+        super().__setattr__('_cursor', cursor)
+        super().__setattr__('_database', database)
 
     def __getattr__(self, name):
         attr = getattr(self._cursor, name)
@@ -188,8 +188,7 @@ class CursorWrapper(object):
 
     def __iter__(self):
         with wrap_exceptions(self._database):
-            for item in self._cursor:
-                yield item
+            yield from self._cursor
 
     def __enter__(self):
         return self
@@ -199,7 +198,7 @@ class CursorWrapper(object):
             self.close()
 
 
-class ConnectionWrapper(object):
+class ConnectionWrapper:
     """A DB-API connection, wrapping exceptions as StormError instances."""
 
     def __init__(self, connection, database):
@@ -236,7 +235,7 @@ class ConnectionWrapper(object):
             return CursorWrapper(self._connection.cursor(), self._database)
 
 
-class Connection(object):
+class Connection:
     """A connection to a database.
 
     @cvar result_factory: A callable which takes this L{Connection}
@@ -544,7 +543,7 @@ class Connection(object):
         """
 
 
-class Database(object):
+class Database:
     """A database that can be connected to.
 
     This should be subclassed for individual database backends.

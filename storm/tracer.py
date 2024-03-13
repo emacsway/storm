@@ -9,7 +9,7 @@ from storm.exceptions import TimeoutError
 from storm.expr import Variable
 
 
-class DebugTracer(object):
+class DebugTracer:
 
     def __init__(self, stream=None):
         if stream is None:
@@ -53,7 +53,7 @@ class DebugTracer(object):
         self._stream.flush()
 
 
-class TimeoutTracer(object):
+class TimeoutTracer:
     """Provide a timeout facility for connections to prevent rogue operations.
 
     This tracer must be subclassed by backend-specific implementations that
@@ -141,7 +141,7 @@ class TimeoutTracer(object):
                                   % self.__class__.__name__)
 
 
-class BaseStatementTracer(object):
+class BaseStatementTracer:
     """Storm tracer base class that does query interpolation."""
 
     def connection_raw_execute(self, connection, raw_cursor,
@@ -207,7 +207,7 @@ class TimelineTracer(BaseStatementTracer):
             on the connection object. If no name has been assigned, '<unknown>'
             is used instead.
         """
-        super(TimelineTracer, self).__init__()
+        super().__init__()
         self.timeline_factory = timeline_factory
         self.prefix = prefix
         # Stores the action in progress in a given thread.

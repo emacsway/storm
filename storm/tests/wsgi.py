@@ -105,7 +105,7 @@ class TestMakeApp(TestCase):
             self.assertEqual(timeline, found_timeline)
 
 
-class FakeTimeline(object):
+class FakeTimeline:
     """A fake Timeline.
 
     We need this because we can't use plain object instances as they can't be

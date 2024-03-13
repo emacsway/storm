@@ -48,7 +48,7 @@ class PatchLevelMismatchError(Exception):
     """Raised when stores don't have all the same patch level."""
 
 
-class Sharding(object):
+class Sharding:
     """Manage L{Shema}s over a collection of L{Store}s."""
 
     def __init__(self):

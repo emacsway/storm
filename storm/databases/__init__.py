@@ -20,7 +20,7 @@
 #
 
 
-class Dummy(object):
+class Dummy:
     """Magic "infectious" class.
 
     This class simplifies nice errors on the creation of

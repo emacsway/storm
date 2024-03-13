@@ -63,7 +63,7 @@ class UnappliedPatchesError(Exception):
         self.unapplied_versions = unapplied_versions
 
 
-class Schema(object):
+class Schema:
     """Create, drop, clean and patch table schemas.
 
     @param creates: A list of C{CREATE TABLE} statements.
@@ -194,7 +194,7 @@ class Schema(object):
         return PatchApplier(store, self._patch_set, committer)
 
 
-class _NoopCommitter(object):
+class _NoopCommitter:
     """Dummy committer that does nothing."""
 
     def commit(self):

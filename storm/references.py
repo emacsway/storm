@@ -33,7 +33,7 @@ from storm.info import get_cls_info, get_obj_info
 __all__ = ["Reference", "ReferenceSet", "Proxy"]
 
 
-class LazyAttribute(object):
+class LazyAttribute:
     """
     This descriptor will call the named attribute builder to
     initialize the given attribute on first access.  It avoids
@@ -63,7 +63,7 @@ class PendingReferenceValue(LazyValue):
 PendingReferenceValue = PendingReferenceValue()
 
 
-class Reference(object):
+class Reference:
     """Descriptor for one-to-one relationships.
 
     This is typically used when the class that it is being defined on
@@ -212,7 +212,7 @@ class Reference(object):
     __hash__ = object.__hash__
 
 
-class ReferenceSet(object):
+class ReferenceSet:
     """Descriptor for many-to-one and many-to-many reference sets.
 
     This is typically used when another class has a foreign key onto the
@@ -335,7 +335,7 @@ class ReferenceSet(object):
             self._relation2 = None
 
 
-class BoundReferenceSetBase(object):
+class BoundReferenceSetBase:
 
     def find(self, *args, **kwargs):
         store = Store.of(self._local)
@@ -471,7 +471,7 @@ class Proxy(ComparableExpr):
     a native property of C{Foo}.
     """
 
-    class RemoteProp(object):
+    class RemoteProp:
         """
         This descriptor will resolve and set the _remote_prop attribute
         when it's first used. It avoids having a test at every single
@@ -517,7 +517,7 @@ def compile_proxy(compile, proxy, state):
     return compile(proxy._remote_prop, state)
 
 
-class Relation(object):
+class Relation:
 
     def __init__(self, local_key, remote_key, many, on_remote):
         assert type(local_key) is tuple and type(remote_key) is tuple
@@ -963,7 +963,7 @@ class Relation(object):
             return self._r_to_l.setdefault(local_cls, map).get(remote_column)
 
 
-class PropertyResolver(object):
+class PropertyResolver:
     """Transform strings and pure properties (non-columns) into columns."""
 
     def __init__(self, reference, used_cls):

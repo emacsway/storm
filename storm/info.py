@@ -114,12 +114,10 @@ class ClassInfo(dict):
 
         # columns have __eq__ implementations that do things we don't want - we
         # want to look these up in a dict and use identity semantics
-        id_positions = dict((id(column), i)
-                             for i, column in enumerate(self.columns))
+        id_positions = {id(column): i for i, column in enumerate(self.columns)}
 
-        self.primary_key_idx = dict((id(column), i)
-                                    for i, column in
-                                    enumerate(self.primary_key))
+        self.primary_key_idx = {id(column): i
+                                for i, column in enumerate(self.primary_key)}
         self.primary_key_pos = tuple(id_positions[id(column)]
                                      for column in self.primary_key)
 
@@ -202,7 +200,7 @@ if has_cextensions:
     from storm.cextensions import ObjectInfo, get_obj_info
 
 
-class ClassAlias(object):
+class ClassAlias:
     """Create a named alias for a Storm class for use in queries.
 
     This is useful basically when the SQL 'AS' feature is desired in code using

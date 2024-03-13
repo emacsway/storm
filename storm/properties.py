@@ -39,7 +39,7 @@ __all__ = ["Property", "SimpleProperty",
            "Pickle", "JSON", "List", "PropertyRegistry"]
 
 
-class Property(object):
+class Property:
     """A property representing a database column.
 
     Properties can be set as attributes of classes that have a
@@ -363,7 +363,7 @@ class Enum(SimpleProperty):
 
     def __init__(self, name=None, primary=False, **kwargs):
         set_map = dict(kwargs.pop("map"))
-        get_map = dict((value, key) for key, value in set_map.items())
+        get_map = {value: key for key, value in set_map.items()}
         if "set_map" in kwargs:
             set_map = dict(kwargs.pop("set_map"))
 
@@ -372,7 +372,7 @@ class Enum(SimpleProperty):
         SimpleProperty.__init__(self, name, primary, **kwargs)
 
 
-class PropertyRegistry(object):
+class PropertyRegistry:
     """
     An object which remembers the Storm properties specified on
     classes, and is able to translate names to these properties.

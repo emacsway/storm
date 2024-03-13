@@ -99,7 +99,7 @@ class MySQLTest(DatabaseTest, TestHelper):
         id_column = Column("id", "test")
         id_variable = IntVariable()
         title_column = Column("title", "test")
-        title_variable = UnicodeVariable(u"testing")
+        title_variable = UnicodeVariable("testing")
 
         # This is not part of the table.  It is just used to show that
         # only one primary key variable is set from the insert ID.
@@ -161,4 +161,4 @@ class MySQLDisconnectionTest(DatabaseDisconnectionTest, TestHelper):
         if "unix_socket" in uri.options:
             return create_proxy_and_uri(uri)[0]
         else:
-            return super(MySQLDisconnectionTest, self).create_proxy(uri)
+            return super().create_proxy(uri)

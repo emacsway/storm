@@ -116,7 +116,7 @@ class PostgresTest(DatabaseTest, TestHelper):
                                 " json JSON)")
 
     def drop_tables(self):
-        super(PostgresTest, self).drop_tables()
+        super().drop_tables()
         tables = ("like_case_insensitive_test", "returning_test", "json_test")
         for table in tables:
             try:
@@ -126,7 +126,7 @@ class PostgresTest(DatabaseTest, TestHelper):
                 self.connection.rollback()
 
     def create_sample_data(self):
-        super(PostgresTest, self).create_sample_data()
+        super().create_sample_data()
         self.connection.execute("INSERT INTO like_case_insensitive_test "
                                 "(description) VALUES ('hullah')")
         self.connection.execute("INSERT INTO like_case_insensitive_test "
@@ -318,35 +318,35 @@ class PostgresTest(DatabaseTest, TestHelper):
 
     def test_case_default_like(self):
 
-        like = Like(SQLRaw("description"), u"%hullah%")
+        like = Like(SQLRaw("description"), "%hullah%")
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(1,)])
 
-        like = Like(SQLRaw("description"), u"%HULLAH%")
+        like = Like(SQLRaw("description"), "%HULLAH%")
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(2,)])
 
     def test_case_sensitive_like(self):
 
-        like = Like(SQLRaw("description"), u"%hullah%", case_sensitive=True)
+        like = Like(SQLRaw("description"), "%hullah%", case_sensitive=True)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(1,)])
 
-        like = Like(SQLRaw("description"), u"%HULLAH%", case_sensitive=True)
+        like = Like(SQLRaw("description"), "%HULLAH%", case_sensitive=True)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(2,)])
 
     def test_case_insensitive_like(self):
 
-        like = Like(SQLRaw("description"), u"%hullah%", case_sensitive=False)
+        like = Like(SQLRaw("description"), "%hullah%", case_sensitive=False)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(1,), (2,)])
-        like = Like(SQLRaw("description"), u"%HULLAH%", case_sensitive=False)
+        like = Like(SQLRaw("description"), "%HULLAH%", case_sensitive=False)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
         result = self.connection.execute(expr)
         self.assertEqual(result.get_all(), [(1,), (2,)])
@@ -361,7 +361,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEqual(result.get_one(), (None,))
 
     def test_compile_table_with_schema(self):
-        class Foo(object):
+        class Foo:
             __storm_table__ = "my schema.my table"
             id = Int("my.column", primary=True)
         self.assertEqual(compile(Select(Foo.id)),
@@ -371,7 +371,7 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_compile_case(self):
         """The Case expr is compiled in a Postgres' CASE expression."""
         cases = [
-            (Column("foo") > 3, u"big"), (Column("bar") == None, 4)]
+            (Column("foo") > 3, "big"), (Column("bar") == None, 4)]
         state = State()
         statement = compile(Case(cases), state)
         self.assertEqual(
@@ -385,7 +385,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         If a default is provided, the resulting CASE expression includes
         an ELSE clause.
         """
-        cases = [(Column("foo") > 3, u"big")]
+        cases = [(Column("foo") > 3, "big")]
         state = State()
         statement = compile(Case(cases, default=9), state)
         self.assertEqual(
@@ -398,7 +398,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         If an expression is provided, the resulting CASE expression uses the
         simple syntax.
         """
-        cases = [(1, u"one"), (2, u"two")]
+        cases = [(1, "one"), (2, "two")]
         state = State()
         statement = compile(Case(cases, expression=Column("foo")), state)
         self.assertEqual(
@@ -554,7 +554,7 @@ class PostgresTest(DatabaseTest, TestHelper):
 
         result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
         # It matches read committed in Postgres internel
-        self.assertEqual(result.get_one()[0], u"read committed")
+        self.assertEqual(result.get_one()[0], "read committed")
 
         connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
 
@@ -571,7 +571,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.addCleanup(connection.close)
 
         result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        self.assertEqual(result.get_one()[0], u"read committed")
+        self.assertEqual(result.get_one()[0], "read committed")
 
         connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
 
@@ -600,7 +600,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.addCleanup(connection.close)
 
         result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        self.assertEqual(result.get_one()[0], u"serializable")
+        self.assertEqual(result.get_one()[0], "serializable")
 
         # Start a transaction
         result = connection.execute("SELECT 1")
@@ -623,9 +623,9 @@ class PostgresTest(DatabaseTest, TestHelper):
         import psycopg2
         psycopg2_version = psycopg2.__version__.split(None, 1)[0]
         if psycopg2_version < "2.4.2":
-            self.assertEqual(result.get_one()[0], u"serializable")
+            self.assertEqual(result.get_one()[0], "serializable")
         else:
-            self.assertEqual(result.get_one()[0], u"repeatable read")
+            self.assertEqual(result.get_one()[0], "repeatable read")
 
     def test_unknown_serialization(self):
         self.assertRaises(ValueError, create_database,
@@ -661,8 +661,8 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_json_element(self):
         "JSONElement returns an element from a json field."
         connection = self.database.connect()
-        json_value = Cast(u'{"a": 1}', "json")
-        expr = JSONElement(json_value, u"a")
+        json_value = Cast('{"a": 1}', "json")
+        expr = JSONElement(json_value, "a")
         # Need to cast as text since newer psycopg versions decode JSON
         # automatically.
         result = connection.execute(Select(Cast(expr, "text")))
@@ -673,8 +673,8 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_json_text_element(self):
         "JSONTextElement returns an element from a json field as text."
         connection = self.database.connect()
-        json_value = Cast(u'{"a": 1}', "json")
-        expr = JSONTextElement(json_value, u"a")
+        json_value = Cast('{"a": 1}', "json")
+        expr = JSONTextElement(json_value, "a")
         result = connection.execute(Select(expr))
         self.assertEqual("1", result.get_one()[0])
         result = connection.execute(Select(Func("pg_typeof", expr)))
@@ -683,7 +683,7 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_json_property(self):
         """The JSON property is encoded as JSON"""
 
-        class TestModel(object):
+        class TestModel:
             __storm_table__ = "json_test"
 
             id = Int(primary=True)
@@ -747,7 +747,7 @@ class PostgresDisconnectionTest(DatabaseDisconnectionTest, TwoPhaseCommitDisconn
         if uri.host.startswith("/"):
             return create_proxy_and_uri(uri)[0]
         else:
-            return super(PostgresDisconnectionTest, self).create_proxy(uri)
+            return super().create_proxy(uri)
 
     def test_rollback_swallows_InterfaceError(self):
         """Test that InterfaceErrors get caught on rollback().
@@ -765,18 +765,17 @@ class PostgresDisconnectionTest(DatabaseDisconnectionTest, TwoPhaseCommitDisconn
             self.fail('Exception should have been swallowed: %s' % repr(exc))
 
 
-class PostgresDisconnectionTestWithoutProxyBase(object):
+class PostgresDisconnectionTestWithoutProxyBase:
     # DatabaseDisconnectionTest uses a socket proxy to simulate broken
     # connections. This class tests some other causes of disconnection.
 
     database_uri = None
 
     def is_supported(self):
-        return bool(self.database_uri) and super(
-            PostgresDisconnectionTestWithoutProxyBase, self).is_supported()
+        return bool(self.database_uri) and super().is_supported()
 
     def setUp(self):
-        super(PostgresDisconnectionTestWithoutProxyBase, self).setUp()
+        super().setUp()
         self.database = create_database(self.database_uri)
 
     def test_terminated_backend(self):
@@ -816,14 +815,14 @@ class PostgresDisconnectionTestWithoutProxyTCPSockets(
     database_uri = os.environ.get("STORM_POSTGRES_HOST_URI")
 
     def setUp(self):
-        super(PostgresDisconnectionTestWithoutProxyTCPSockets, self).setUp()
+        super().setUp()
         if self.database.get_uri().host.startswith("/"):
             proxy, proxy_uri = create_proxy_and_uri(self.database.get_uri())
             self.addCleanup(proxy.close)
             self.database = create_database(proxy_uri)
 
 
-class PostgresDisconnectionTestWithPGBouncerBase(object):
+class PostgresDisconnectionTestWithPGBouncerBase:
     # Connecting via pgbouncer <http://pgfoundry.org/projects/pgbouncer>
     # introduces new possible causes of disconnections.
 
@@ -833,7 +832,7 @@ class PostgresDisconnectionTestWithPGBouncerBase(object):
             bool(os.environ.get("STORM_POSTGRES_HOST_URI")))
 
     def setUp(self):
-        super(PostgresDisconnectionTestWithPGBouncerBase, self).setUp()
+        super().setUp()
         database_uri = URI(os.environ["STORM_POSTGRES_HOST_URI"])
         if database_uri.host.startswith("/"):
             proxy, database_uri = create_proxy_and_uri(database_uri)
@@ -889,7 +888,7 @@ class PostgresTimeoutTracerTest(TimeoutTracerTestBase):
         return bool(os.environ.get("STORM_POSTGRES_URI"))
 
     def setUp(self):
-        super(PostgresTimeoutTracerTest, self).setUp()
+        super().setUp()
         self.database = create_database(os.environ["STORM_POSTGRES_URI"])
         self.connection = self.database.connect()
         install_tracer(self.tracer)
@@ -898,7 +897,7 @@ class PostgresTimeoutTracerTest(TimeoutTracerTestBase):
 
     def tearDown(self):
         self.connection.close()
-        super(PostgresTimeoutTracerTest, self).tearDown()
+        super().tearDown()
 
     def test_set_statement_timeout(self):
         result = self.connection.execute("SHOW statement_timeout")

@@ -136,8 +136,7 @@ class ZStormTest(TestHelper):
             stores.append((name, store))
         self.assertEqual(len(stores), 3)
         self.assertEqual(set(stores),
-                         set([(None, store1), (None, store2),
-                              ("name", store3)]))
+                         {(None, store1), (None, store2), ("name", store3)})
 
     def test_get_name(self):
         store = self.zstorm.create("name", "sqlite:")
