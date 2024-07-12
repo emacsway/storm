@@ -306,10 +306,6 @@ class MockerTestCase(unittest.TestCase):
     failUnlessIdentical = failUnlessIs
     failIfIdentical = failIfIs
 
-    if sys.version_info < (3, 2):
-        def assertRaisesRegex(self, *args, **kwargs):
-            return self.assertRaisesRegex(*args, **kwargs)
-
 
 # --------------------------------------------------------------------
 # Mocker.

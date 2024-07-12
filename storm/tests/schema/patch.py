@@ -352,10 +352,7 @@ class PatchApplierTest(MockerTestCase):
             self.patch_applier.apply_all()
         except BadPatchError as e:
             self.assertTrue("mypackage/patch_999.py" in str(e))
-            if sys.version_info >= (3, 3):
-                self.assertTrue("takes 0 positional arguments" in str(e))
-            else:
-                self.assertTrue("takes no arguments" in str(e))
+            self.assertTrue("takes 0 positional arguments" in str(e))
             self.assertTrue("TypeError" in str(e))
         else:
             self.fail("BadPatchError not raised")
