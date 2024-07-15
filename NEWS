@@ -10,7 +10,7 @@ Improvements
 API changes
 -----------
 
-- Remove support for Python 2.
+- Remove support for Python < 3.6 (including Python 2).
 - Remove the storm.compat module.
 - Deprecate storm.sqlobject.AutoUnicodeVariable and
   storm.sqlobject.AutoUnicode.
