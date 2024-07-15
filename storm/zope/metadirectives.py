@@ -24,5 +24,5 @@ from zope.schema import TextLine
 
 class IStoreDirective(Interface):
 
-    name = TextLine(title=u"Name", description=u"Store name")
-    uri = TextLine(title=u"URI", description=u"Database URI")
+    name = TextLine(title="Name", description="Store name")
+    uri = TextLine(title="URI", description="Database URI")

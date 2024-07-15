@@ -45,7 +45,7 @@ def _when(self, types):
     return decorator
 
 
-class Compile(object):
+class Compile:
     """Compiler based on the concept of generic functions."""
 
     def __init__(self, parent=None):
@@ -145,7 +145,7 @@ class Compile(object):
             return "(%s)" % statement
         return statement
 
-    def __call__(self, expr, state=None, join=u", ", raw=False, token=False):
+    def __call__(self, expr, state=None, join=", ", raw=False, token=False):
         """Compile the given expression into a SQL statement.
 
         @param expr: The expression to compile.
@@ -217,7 +217,7 @@ class CompilePython(Compile):
         return namespace['closure'](state.parameters, bool)
 
 
-class State(object):
+class State:
     """All the data necessary during compilation of an expression.
 
     @ivar aliases: Dict of L{Column} instances to L{Alias} instances,
@@ -276,7 +276,7 @@ compile_python = CompilePython()
 # --------------------------------------------------------------------
 # Expression contexts
 
-class Context(object):
+class Context:
     """
     An object used to specify the nature of expected SQL expressions
     being compiled in a given context.
@@ -395,13 +395,13 @@ def compile_python_unsupported(compile, expr, state):
 # A translation table that can escape a unicode string for use in a
 # Like() expression that uses "!" as the escape character.
 like_escape = {
-    ord(u"!"): u"!!",
-    ord(u"_"): u"!_",
-    ord(u"%"): u"!%"
+    ord("!"): "!!",
+    ord("_"): "!_",
+    ord("%"): "!%"
     }
 
 
-class Comparable(object):
+class Comparable:
     __slots__ = ()
     __hash__ = object.__hash__
 
@@ -511,20 +511,20 @@ class Comparable(object):
     def startswith(self, prefix, case_sensitive=None):
         if not isinstance(prefix, str):
             raise ExprError("Expected text argument, got %r" % type(prefix))
-        pattern = prefix.translate(like_escape) + u"%"
-        return Like(self, pattern, u"!", case_sensitive)
+        pattern = prefix.translate(like_escape) + "%"
+        return Like(self, pattern, "!", case_sensitive)
 
     def endswith(self, suffix, case_sensitive=None):
         if not isinstance(suffix, str):
             raise ExprError("Expected text argument, got %r" % type(suffix))
-        pattern = u"%" + suffix.translate(like_escape)
-        return Like(self, pattern, u"!", case_sensitive)
+        pattern = "%" + suffix.translate(like_escape)
+        return Like(self, pattern, "!", case_sensitive)
 
     def contains_string(self, substring, case_sensitive=None):
         if not isinstance(substring, str):
             raise ExprError("Expected text argument, got %r" % type(substring))
-        pattern = u"%" + substring.translate(like_escape) + u"%"
-        return Like(self, pattern, u"!", case_sensitive)
+        pattern = "%" + substring.translate(like_escape) + "%"
+        return Like(self, pattern, "!", case_sensitive)
 
 
 class ComparableExpr(Expr, Comparable):
@@ -584,7 +584,7 @@ def build_tables(compile, tables, default_tables, state):
             break
     else:
         if tables is state.auto_tables:
-            tables = set(compile(table, state, token=True) for table in tables)
+            tables = {compile(table, state, token=True) for table in tables}
             return ", ".join(sorted(tables))
         else:
             return compile(tables, state, token=True)

@@ -35,7 +35,7 @@ class MatchError(AssertionError):
 # --------------------------------------------------------------------
 # Helper for chained-style calling.
 
-class expect(object):
+class expect:
     """This is a simple helper that allows a different call-style.
 
     With this class one can comfortably do chaining of calls to the
@@ -136,7 +136,7 @@ class MockerTestCase(unittest.TestCase):
         self.__cleanup_funcs = []
         self.__cleanup_paths = []
 
-        super(MockerTestCase, self).__init__(methodName)
+        super().__init__(methodName)
 
     def __cleanup(self):
         for path in self.__cleanup_paths:
@@ -308,13 +308,13 @@ class MockerTestCase(unittest.TestCase):
 
     if sys.version_info < (3, 2):
         def assertRaisesRegex(self, *args, **kwargs):
-            return self.assertRaisesRegexp(*args, **kwargs)
+            return self.assertRaisesRegex(*args, **kwargs)
 
 
 # --------------------------------------------------------------------
 # Mocker.
 
-class classinstancemethod(object):
+class classinstancemethod:
 
     def __init__(self, method):
         self.method = method
@@ -752,8 +752,7 @@ class MockerBase(metaclass=MockerMeta):
         @param sequence: Sequence of values to be generated.
         """
         def generate(*args, **kwargs):
-            for value in sequence:
-                yield value
+            yield from sequence
         self.call(generate)
 
     def throw(self, exception):
@@ -980,7 +979,7 @@ class MockerBase(metaclass=MockerMeta):
         return self._events[0]
 
 
-class OrderedContext(object):
+class OrderedContext:
 
     def __init__(self, mocker):
         self._mocker = mocker
@@ -1002,7 +1001,7 @@ recorder = Mocker.add_recorder
 # --------------------------------------------------------------------
 # Mock object.
 
-class Mock(object):
+class Mock:
 
     def __init__(self, mocker, path=None, name=None, spec=None, type=None,
                  object=None, passthrough=False, patcher=None, count=True):
@@ -1044,7 +1043,7 @@ class Mock(object):
 
     def __getattribute__(self, name):
         if name.startswith("__mocker_"):
-            return super(Mock, self).__getattribute__(name)
+            return super().__getattribute__(name)
         if name == "__class__":
             if self.__mocker__.is_recording() or self.__mocker_type__ is None:
                 return type(self)
@@ -1053,7 +1052,7 @@ class Mock(object):
 
     def __setattr__(self, name, value):
         if name.startswith("__mocker_"):
-            return super(Mock, self).__setattr__(name, value)
+            return super().__setattr__(name, value)
         return self.__mocker_act__("setattr", (name, value))
 
     def __delattr__(self, name):
@@ -1131,7 +1130,7 @@ def find_object_name(obj, depth=0):
 # --------------------------------------------------------------------
 # Action and path.
 
-class Action(object):
+class Action:
 
     def __init__(self, kind, args, kwargs, path=None):
         self.kind = kind
@@ -1200,7 +1199,7 @@ class Action(object):
         return result
 
 
-class Path(object):
+class Path:
 
     def __init__(self, root_mock, root_object=None, actions=()):
         self.root_mock = root_mock
@@ -1293,7 +1292,7 @@ class Path(object):
         return result
 
 
-class SpecialArgument(object):
+class SpecialArgument:
     """Base for special arguments for matching parameters."""
 
     def __init__(self, object=None):
@@ -1450,7 +1449,7 @@ def match_params(args1, kwargs1, args2, kwargs2):
 # --------------------------------------------------------------------
 # Event and task base.
 
-class Event(object):
+class Event:
     """Aggregation of tasks that keep track of a recorded action.
 
     An event represents something that may or may not happen while the
@@ -1591,7 +1590,7 @@ class ReplayRestoreEvent(Event):
         return False
 
 
-class Task(object):
+class Task:
     """Element used to track one specific aspect on an event.
 
     A task is responsible for adding any kind of logic to an event.
@@ -1918,7 +1917,7 @@ def global_replace(remove, install):
                     referrer[key] = install
 
 
-class Undefined(object):
+class Undefined:
 
     def __repr__(self):
         return "Undefined"
@@ -1929,7 +1928,7 @@ Undefined = Undefined()
 class Patcher(Task):
 
     def __init__(self):
-        super(Patcher, self).__init__()
+        super().__init__()
         self._monitored = {} # {kind: {id(object): object}}
         self._patched = {}
 
@@ -1941,7 +1940,7 @@ class Patcher(Task):
             cls = type(obj)
             if issubclass(cls, type):
                 cls = obj
-            bases = set([id(base) for base in cls.__mro__])
+            bases = {id(base) for base in cls.__mro__}
             bases.intersection_update(monitored)
             return bool(bases)
         return False
@@ -2026,7 +2025,7 @@ class Patcher(Task):
             raise
 
 
-class PatchedMethod(object):
+class PatchedMethod:
 
     def __init__(self, kind, unpatched, is_monitoring):
         self._kind = kind

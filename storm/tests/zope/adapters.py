@@ -31,7 +31,7 @@ if has_zope_component:
     from storm.zope.interfaces import IResultSet, ISQLObjectResultSet
 
     @implementer(ISQLObjectResultSet)
-    class TestSQLObjectResultSet(object):
+    class TestSQLObjectResultSet:
         _result_set = EmptyResultSet()
 
 

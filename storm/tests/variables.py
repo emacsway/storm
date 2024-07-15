@@ -35,7 +35,7 @@ from storm import Undef
 from storm.tests.helper import TestHelper
 
 
-class Marker(object):
+class Marker:
     pass
 
 marker = Marker()
@@ -461,15 +461,15 @@ class BytesVariableTest(TestHelper):
         self.assertEqual(variable.get(), b"str")
         variable.set(memoryview(b"buffer"))
         self.assertEqual(variable.get(), b"buffer")
-        self.assertRaises(TypeError, variable.set, u"unicode")
+        self.assertRaises(TypeError, variable.set, "unicode")
 
 
 class UnicodeVariableTest(TestHelper):
 
     def test_set_get(self):
         variable = UnicodeVariable()
-        variable.set(u"unicode")
-        self.assertEqual(variable.get(), u"unicode")
+        variable.set("unicode")
+        self.assertEqual(variable.get(), "unicode")
         self.assertRaises(TypeError, variable.set, b"str")
 
 
@@ -814,7 +814,7 @@ class UUIDVariableTest(TestHelper):
         self.assertRaises(TypeError, variable.set,
                           "0609f76b-878f-4546-baf5-c1b135e8de72")
         self.assertRaises(TypeError, variable.set,
-                          u"0609f76b-878f-4546-baf5-c1b135e8de72")
+                          "0609f76b-878f-4546-baf5-c1b135e8de72")
 
     def test_get_set_from_database(self):
         value = uuid.UUID("{0609f76b-878f-4546-baf5-c1b135e8de72}")
@@ -826,7 +826,7 @@ class UUIDVariableTest(TestHelper):
         self.assertEqual(variable.get(), value)
         variable.set("0609f76b-878f-4546-baf5-c1b135e8de72", from_db=True)
         self.assertEqual(variable.get(), value)
-        variable.set(u"0609f76b-878f-4546-baf5-c1b135e8de72", from_db=True)
+        variable.set("0609f76b-878f-4546-baf5-c1b135e8de72", from_db=True)
         self.assertEqual(variable.get(), value)
 
         # Some other representations for UUID values.
@@ -836,7 +836,7 @@ class UUIDVariableTest(TestHelper):
         self.assertEqual(variable.get(), value)
 
 
-class EncodedValueVariableTestMixin(object):
+class EncodedValueVariableTestMixin:
 
     encoding = None
     variable_type = None
@@ -925,7 +925,7 @@ class JSONVariableTest(EncodedValueVariableTestMixin, TestHelper):
         # JSONVariable._dumps() works around text/bytes handling issues in
         # json.
         variable = self.variable_type()
-        variable.set({u"a": 1})
+        variable.set({"a": 1})
         self.assertTrue(isinstance(variable.get(to_db=True), str))
 
 

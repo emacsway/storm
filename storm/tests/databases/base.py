@@ -1,5 +1,3 @@
-
-# -*- encoding: utf-8 -*-
 #
 # Copyright (c) 2006, 2007 Canonical
 #
@@ -41,18 +39,18 @@ from storm.tests.databases.proxy import ProxyTCPServer
 from storm.tests.helper import MakePath
 
 
-class Marker(object):
+class Marker:
     pass
 
 marker = Marker()
 
 
-class DatabaseTest(object):
+class DatabaseTest:
 
     supports_microseconds = True
 
     def setUp(self):
-        super(DatabaseTest, self).setUp()
+        super().setUp()
         self.create_database()
         self.create_connection()
         self.drop_tables()
@@ -64,7 +62,7 @@ class DatabaseTest(object):
         self.drop_tables()
         self.drop_connection()
         self.drop_database()
-        super(DatabaseTest, self).tearDown()
+        super().tearDown()
 
     def create_database(self):
         raise NotImplementedError
@@ -144,7 +142,7 @@ class DatabaseTest(object):
         self.assertTrue(result.get_one())
 
     def test_execute_unicode_result(self):
-        result = self.connection.execute(u"SELECT title FROM test")
+        result = self.connection.execute("SELECT title FROM test")
         self.assertTrue(isinstance(result, Result))
         row = result.get_one()
         self.assertEqual(row, ("Title 10",))
@@ -213,7 +211,7 @@ class DatabaseTest(object):
                                          "VALUES ('Title 30')")
         primary_key = (Column("id", SQLToken("test")),
                        Column("title", SQLToken("test")))
-        primary_variables = (Variable(), Variable(u"Title 30"))
+        primary_variables = (Variable(), Variable("Title 30"))
         expr = result.get_insert_identity(primary_key, primary_variables)
         select = Select(Column("title", SQLToken("test")), expr)
         result = self.connection.execute(select)
@@ -408,7 +406,7 @@ class DatabaseTest(object):
         self.connection.execute("INSERT INTO test VALUES (40, '!!blah')")
         id = Column("id", SQLToken("test"))
         title = Column("title", SQLToken("test"))
-        expr = Select(id, title.startswith(u"!!_%"))
+        expr = Select(id, title.startswith("!!_%"))
         result = list(self.connection.execute(expr))
         self.assertEqual(result, [(30,)])
 
@@ -417,7 +415,7 @@ class DatabaseTest(object):
         self.connection.execute("INSERT INTO test VALUES (40, 'blah!!')")
         id = Column("id", SQLToken("test"))
         title = Column("title", SQLToken("test"))
-        expr = Select(id, title.endswith(u"_%!!"))
+        expr = Select(id, title.endswith("_%!!"))
         result = list(self.connection.execute(expr))
         self.assertEqual(result, [(30,)])
 
@@ -426,7 +424,7 @@ class DatabaseTest(object):
         self.connection.execute("INSERT INTO test VALUES (40, 'blah!!x')")
         id = Column("id", SQLToken("test"))
         title = Column("title", SQLToken("test"))
-        expr = Select(id, title.contains_string(u"_%!!"))
+        expr = Select(id, title.contains_string("_%!!"))
         result = list(self.connection.execute(expr))
         self.assertEqual(result, [(30,)])
 
@@ -459,10 +457,10 @@ class DatabaseTest(object):
             self.assertEqual(('error message',), wrapped.args)
 
 
-class TwoPhaseCommitTest(object):
+class TwoPhaseCommitTest:
 
     def setUp(self):
-        super(TwoPhaseCommitTest, self).setUp()
+        super().setUp()
         self.create_database()
         self.create_connection()
         self.drop_tables()
@@ -471,7 +469,7 @@ class TwoPhaseCommitTest(object):
     def tearDown(self):
         self.drop_tables()
         self.drop_connection()
-        super(TwoPhaseCommitTest, self).tearDown()
+        super().tearDown()
 
     def create_database(self):
         raise NotImplementedError
@@ -630,7 +628,7 @@ class TwoPhaseCommitTest(object):
         self.assertFalse(result.get_one())
 
 
-class UnsupportedDatabaseTest(object):
+class UnsupportedDatabaseTest:
 
     helpers = [MakePath]
 
@@ -686,14 +684,14 @@ class UnsupportedDatabaseTest(object):
             sys.modules.update(dbapi_modules)
 
 
-class DatabaseDisconnectionMixin(object):
+class DatabaseDisconnectionMixin:
 
     environment_variable = ""
     host_environment_variable = ""
     default_port = None
 
     def setUp(self):
-        super(DatabaseDisconnectionMixin, self).setUp()
+        super().setUp()
         self.create_database_and_proxy()
         self.create_connection()
 
@@ -701,7 +699,7 @@ class DatabaseDisconnectionMixin(object):
         self.drop_connection()
         self.drop_database()
         self.proxy.close()
-        super(DatabaseDisconnectionMixin, self).tearDown()
+        super().tearDown()
 
     def is_supported(self):
         return bool(self.get_uri())
@@ -884,7 +882,7 @@ class DatabaseDisconnectionTest(DatabaseDisconnectionMixin):
         self.connection.close()
 
 
-class TwoPhaseCommitDisconnectionTest(object):
+class TwoPhaseCommitDisconnectionTest:
 
     def test_begin_after_rollback_with_disconnection_error(self):
         """

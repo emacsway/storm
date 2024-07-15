@@ -32,7 +32,7 @@ version = "0.26"
 version_info = tuple([int(x) for x in version.split(".")])
 
 
-class UndefType(object):
+class UndefType:
 
     def __repr__(self):
         return "Undef"

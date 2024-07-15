@@ -22,7 +22,7 @@ from storm.event import EventSystem
 from storm.tests.helper import TestHelper
 
 
-class Marker(object):
+class Marker:
     def __eq__(self, other):
         return self is other
 

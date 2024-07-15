@@ -61,7 +61,7 @@ class SQLObjectNotFound(StormError):
     pass
 
 
-class SQLObjectStyle(object):
+class SQLObjectStyle:
 
     longID = False
 
@@ -212,7 +212,7 @@ class SQLObjectMeta(PropertyPublisherMeta):
         attr_to_prop[id_name] = "id"
 
         # Notice that obj is the class since this is the metaclass.
-        obj = super(SQLObjectMeta, cls).__new__(cls, name, bases, dict)
+        obj = super().__new__(cls, name, bases, dict)
 
         property_registry = obj._storm_property_registry
 
@@ -239,14 +239,14 @@ class SQLObjectMeta(PropertyPublisherMeta):
         return obj
 
 
-class DotQ(object):
+class DotQ:
     """A descriptor that mimics the SQLObject 'Table.q' syntax"""
 
     def __get__(self, obj, cls=None):
         return BoundDotQ(cls)
 
 
-class BoundDotQ(object):
+class BoundDotQ:
 
     def __init__(self, cls):
         self._cls = cls
@@ -374,7 +374,7 @@ class SQLObjectBase(Storm, metaclass=SQLObjectMeta):
         store.autoreload(self)
 
 
-class SQLObjectResultSet(object):
+class SQLObjectResultSet:
     """SQLObject-equivalent of the ResultSet class in Storm.
 
     Storm handles joins in the Store interface, while SQLObject
@@ -638,7 +638,7 @@ def join_aliased_relation(local_cls, remote_cls, relation):
 
 
 
-class PropertyAdapter(object):
+class PropertyAdapter:
 
     _kwargs = {}
 
@@ -668,11 +668,11 @@ class PropertyAdapter(object):
             default = Undef
         else:
             default_factory = Undef
-        super(PropertyAdapter, self).__init__(dbName, allow_none=not notNull,
-                                              default_factory=default_factory,
-                                              default=default,
-                                              validator=storm_validator,
-                                              **self._kwargs)
+        super().__init__(dbName, allow_none=not notNull,
+                         default_factory=default_factory,
+                         default=default,
+                         validator=storm_validator,
+                         **self._kwargs)
 
 
 # DEPRECATED: On Python 2, this used to be a more relaxed version of
@@ -708,7 +708,7 @@ class IntervalCol(PropertyAdapter, TimeDelta):
     pass
 
 
-class ForeignKey(object):
+class ForeignKey:
 
     def __init__(self, foreignKey, **kwargs):
         self.foreignKey = foreignKey
@@ -753,7 +753,7 @@ SQLRelatedJoin = SQLMultipleJoin
 class SingleJoin(Reference):
 
     def __init__(self, otherClass, joinColumn, prejoins=_IGNORED):
-        super(SingleJoin, self).__init__(
+        super().__init__(
             "<primary key>", "%s.%s" % (otherClass, joinColumn),
             on_remote=True)
 

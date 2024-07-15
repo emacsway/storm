@@ -36,7 +36,7 @@ from storm.tests.mocker import ARGS
 marker = object()
 
 
-class RawConnection(object):
+class RawConnection:
 
     closed = False
 
@@ -56,7 +56,7 @@ class RawConnection(object):
         self.executed.append("CCLOSE")
 
 
-class RawCursor(object):
+class RawCursor:
 
     def __init__(self, arraysize=1, executed=None):
         self.arraysize = arraysize
@@ -91,7 +91,7 @@ class RawCursor(object):
         return result
 
 
-class FakeConnection(object):
+class FakeConnection:
 
     def __init__(self):
         self._database = Database()
@@ -100,7 +100,7 @@ class FakeConnection(object):
         return _function(*args, **kwargs)
 
 
-class FakeTracer(object):
+class FakeTracer:
 
     def __init__(self, stream=None):
         self.seen = []
@@ -538,7 +538,7 @@ class CreateDatabaseTest(TestHelper):
         self.assertEqual(self.uri.database, "db")
 
     def test_create_database_with_unicode(self):
-        create_database(u"db_module:db")
+        create_database("db_module:db")
         self.assertTrue(self.uri)
         self.assertEqual(self.uri.scheme, "db_module")
         self.assertEqual(self.uri.database, "db")

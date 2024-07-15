@@ -343,7 +343,7 @@ class SQLObjectTest(TestHelper):
         self.assertEqual(nobody, None)
 
         # SQLBuilder style expression:
-        person = self.Person.selectFirst(LIKE(self.Person.q.name, u"John%"),
+        person = self.Person.selectFirst(LIKE(self.Person.q.name, "John%"),
                                          orderBy="name")
         self.assertNotEqual(person, None)
         self.assertEqual(person.name, "John Doe")
@@ -463,8 +463,8 @@ class SQLObjectTest(TestHelper):
         class Person(self.SQLObject):
             name = StringCol(storm_validator=validator)
         person = Person.get(2)
-        person.name = u'foo'
-        self.assertEqual(calls, [(person, 'name', u'foo')])
+        person.name = 'foo'
+        self.assertEqual(calls, [(person, 'name', 'foo')])
 
     def test_string_col(self):
         class Person(self.SQLObject):
@@ -1200,21 +1200,21 @@ class SQLObjectTest(TestHelper):
         class Person(self.Person):
             def set(self, **kw):
                 kw["id"] += 1
-                super(Person, self).set(**kw)
+                super().set(**kw)
         person = Person(id=3, name="John Moe")
         self.assertEqual(person.id, 4)
         self.assertEqual(person.name, "John Moe")
 
     def test_CONTAINSSTRING(self):
-        expr = CONTAINSSTRING(self.Person.q.name, u"Do")
+        expr = CONTAINSSTRING(self.Person.q.name, "Do")
         result = self.Person.select(expr)
         self.assertEqual([person.name for person in result],
-                         [u"John Doe"])
+                         ["John Doe"])
 
-        result[0].name = u"Funny !%_ Name"
+        result[0].name = "Funny !%_ Name"
 
-        expr = NOT(CONTAINSSTRING(self.Person.q.name, u"!%_"))
+        expr = NOT(CONTAINSSTRING(self.Person.q.name, "!%_"))
         result = self.Person.select(expr)
         self.assertEqual([person.name for person in result],
-                         [u"John Joe"])
+                         ["John Joe"])
 

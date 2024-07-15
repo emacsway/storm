@@ -30,7 +30,7 @@ class BlockAccessTest(TestHelper):
     helpers = [MakePath]
 
     def setUp(self):
-        super(BlockAccessTest, self).setUp()
+        super().setUp()
         database = SQLite(URI("sqlite:"))
         self.store = Store(database)
 

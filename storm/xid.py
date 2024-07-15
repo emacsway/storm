@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-class Xid(object):
+class Xid:
     """
     Represent a transaction identifier compliant with the XA specification.
     """

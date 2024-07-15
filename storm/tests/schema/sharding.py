@@ -23,7 +23,7 @@ from storm.schema.sharding import Sharding, PatchLevelMismatchError
 from storm.tests.mocker import MockerTestCase
 
 
-class FakeSchema(object):
+class FakeSchema:
 
     patches = 2
 
@@ -50,7 +50,7 @@ class FakeSchema(object):
         self.applied.append((store, store.patch))
 
 
-class FakeStore(object):
+class FakeStore:
 
     pristine = True  # If no schema was ever applied
     patch = 0  # Current patch level of the store
@@ -59,7 +59,7 @@ class FakeStore(object):
 class ShardingTest(MockerTestCase):
 
     def setUp(self):
-        super(ShardingTest, self).setUp()
+        super().setUp()
         self.store = FakeStore()
         self.schema = FakeSchema()
         self.sharding = Sharding()

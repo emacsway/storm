@@ -28,17 +28,17 @@ from storm.tests.store.base import StoreTest, EmptyResultSetTest, Foo
 from storm.tests.helper import TestHelper
 
 
-class Lst1(object):
+class Lst1:
     __storm_table__ = "lst1"
     id = Int(primary=True)
     ints = List(type=Int())
 
-class LstEnum(object):
+class LstEnum:
     __storm_table__ = "lst1"
     id = Int(primary=True)
     ints = List(type=Enum(map={"one": 1, "two": 2, "three": 3}))
 
-class Lst2(object):
+class Lst2:
     __storm_table__ = "lst2"
     id = Int(primary=True)
     ints = List(type=List(type=Int()))
@@ -170,7 +170,7 @@ class PostgresStoreTest(TestHelper, StoreTest):
 
     def test_add_find_with_schema(self):
         foo = FooWithSchema()
-        foo.title = u"Title"
+        foo.title = "Title"
         self.store.add(foo)
         self.store.flush()
         # We use find() here to actually exercise the backend code.

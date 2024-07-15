@@ -61,7 +61,7 @@ class BadPatchError(Exception):
     """Raised when a patch failing with a random exception is found."""
 
 
-class Patch(object):
+class Patch:
     """Database object representing an applied patch.
 
     @version: The version of the patch associated with this object.
@@ -75,7 +75,7 @@ class Patch(object):
         self.version = version
 
 
-class PatchApplier(object):
+class PatchApplier:
     """Apply to a L{Store} the database patches from a given Python package.
 
     @param store: The L{Store} to apply the patches to.
@@ -189,7 +189,7 @@ class PatchApplier(object):
         return applied
 
 
-class PatchSet(object):
+class PatchSet:
     """A collection of patch modules.
 
     Each patch module lives in a regular Python module file, contained in a
@@ -269,7 +269,7 @@ class PatchSet(object):
         return os.path.dirname(self._package.__file__)
 
 
-class _EmptyPatchModule(object):
+class _EmptyPatchModule:
     """Fake module object with a no-op C{apply} function."""
 
     def apply(self, store):

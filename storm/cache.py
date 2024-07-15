@@ -1,7 +1,7 @@
 import itertools
 
 
-class Cache(object):
+class Cache:
     """Prevents recently used objects from being deallocated.
 
     This prevents recently used objects from being deallocated by Python
@@ -69,7 +69,7 @@ class Cache(object):
         return list(self._order)
 
 
-class GenerationalCache(object):
+class GenerationalCache:
     """Generational replacement for Storm's LRU cache.
 
     This cache approximates LRU without keeping exact track.  Instead,

@@ -184,9 +184,9 @@ class SQLiteFileTest(SQLiteMemoryTest):
                          [(1,), (2,)])
 
     def test_journal(self):
-        journal_values = {"DELETE": u'delete', "TRUNCATE": u'truncate',
-                          "PERSIST": u'persist', "MEMORY": u'memory',
-                          "WAL": u'wal', "OFF": u'off'}
+        journal_values = {"DELETE": 'delete', "TRUNCATE": 'truncate',
+                          "PERSIST": 'persist', "MEMORY": 'memory',
+                          "WAL": 'wal', "OFF": 'off'}
         for value in journal_values:
             database = SQLite(URI("sqlite:%s?journal_mode=%s" %
                                   (self.get_path(), value)))
@@ -196,9 +196,9 @@ class SQLiteFileTest(SQLiteMemoryTest):
                              journal_values[value])
 
     def test_journal_persistency_to_rollback(self):
-        journal_values = {"DELETE": u'delete', "TRUNCATE": u'truncate',
-                          "PERSIST": u'persist', "MEMORY": u'memory',
-                          "WAL": u'wal', "OFF": u'off'}
+        journal_values = {"DELETE": 'delete', "TRUNCATE": 'truncate',
+                          "PERSIST": 'persist', "MEMORY": 'memory',
+                          "WAL": 'wal', "OFF": 'off'}
         for value in journal_values:
             database = SQLite(URI("sqlite:%s?journal_mode=%s" %
                                   (self.get_path(), value)))

@@ -20,7 +20,7 @@ except ImportError:
     pass
 
 
-class Transactor(object):
+class Transactor:
     """Run in a thread code that needs to interact with the database.
 
     This class makes sure that code interacting with the database is run
@@ -105,7 +105,7 @@ class Transactor(object):
                 return result
 
 
-class RetryContext(object):
+class RetryContext:
     """Hold details about a function that is going to be retried.
 
     @ivar function: The function that is going to be retried.

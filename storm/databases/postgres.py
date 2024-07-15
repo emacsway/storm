@@ -369,7 +369,7 @@ class Postgres(Database):
     _version = None
 
     def __init__(self, uri):
-        super(Postgres, self).__init__(uri)
+        super().__init__(uri)
         if psycopg2 is dummy:
             raise DatabaseModuleError(
                 "'psycopg2' >= %s not found. Found %s."
@@ -400,15 +400,14 @@ class Postgres(Database):
     _psycopg_error_attributes = tuple(_psycopg_error_attributes)
 
     def _make_combined_exception_type(self, wrapper_type, dbapi_type):
-        combined_type = super(Postgres, self)._make_combined_exception_type(
+        combined_type = super()._make_combined_exception_type(
             wrapper_type, dbapi_type)
         for name in self._psycopg_error_attributes:
             setattr(combined_type, name, lambda err: getattr(err, "_" + name))
         return combined_type
 
     def _wrap_exception(self, wrapper_type, exception):
-        wrapped = super(Postgres, self)._wrap_exception(
-            wrapper_type, exception)
+        wrapped = super()._wrap_exception(wrapper_type, exception)
         for name in self._psycopg_error_attributes:
             setattr(wrapped, "_" + name, getattr(exception, name))
         return wrapped

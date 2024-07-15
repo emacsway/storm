@@ -45,7 +45,7 @@ from storm.xid import Xid
 
 
 @implementer(IZStorm)
-class ZStorm(object):
+class ZStorm:
     """A utility which integrates Storm with Zope.
 
     Typically, applications will register stores using ZCML similar
@@ -255,7 +255,7 @@ def register_store_with_transaction(store, zstorm_ref):
 
 
 @implementer(IDataManager)
-class StoreDataManager(object):
+class StoreDataManager:
     """An L{IDataManager} implementation for C{ZStorm}."""
 
     def __init__(self, store, zstorm):

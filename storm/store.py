@@ -55,7 +55,7 @@ PENDING_ADD = 1
 PENDING_REMOVE = 2
 
 
-class Store(object):
+class Store:
     """The Storm Store.
 
     This is the highest-level interface to a database. It manages
@@ -479,7 +479,7 @@ class Store(object):
             if n > 0:
                 before_set = predecessors.get(after_info)
                 if before_set is None:
-                    predecessors[after_info] = set((before_info,))
+                    predecessors[after_info] = {before_info}
                 else:
                     before_set.add(before_info)
 
@@ -918,7 +918,7 @@ class Store(object):
                              result, result.get_one())
 
 
-class ResultSet(object):
+class ResultSet:
     """The representation of the results of a query.
 
     Note that having an instance of this class does not indicate that
@@ -1518,7 +1518,7 @@ class ResultSet(object):
         return self._set_expr(Intersect, other, all)
 
 
-class EmptyResultSet(object):
+class EmptyResultSet:
     """An object that looks like a L{ResultSet} but represents no rows.
 
     This is convenient for application developers who want to provide
@@ -1645,7 +1645,7 @@ class EmptyResultSet(object):
         return self
 
 
-class TableSet(object):
+class TableSet:
     """The representation of a set of tables which can be queried at once.
 
     This will typically be constructed by a call to L{Store.using}.
@@ -1675,7 +1675,7 @@ Store._result_set_factory = ResultSet
 Store._table_set = TableSet
 
 
-class FindSpec(object):
+class FindSpec:
     """The set of tables or expressions in the result of L{Store.find}."""
 
     def __init__(self, cls_spec):
@@ -1859,7 +1859,7 @@ class AutoReload(LazyValue):
 AutoReload = AutoReload()
 
 
-class block_access(object):
+class block_access:
     """
     Context manager blocks database access by one or more L{Store}\\ s in the
     managed scope.

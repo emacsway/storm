@@ -23,7 +23,7 @@ from urllib.parse import quote
 from storm.exceptions import URIError
 
 
-class URI(object):
+class URI:
     """A representation of a Uniform Resource Identifier (URI).
 
     This is intended exclusively for database connection URIs.

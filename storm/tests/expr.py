@@ -188,38 +188,38 @@ class ExprTest(TestHelper):
         expr = Func1()
         self.assertRaises(ExprError, expr.startswith, b"not a unicode string")
 
-        like_expr = expr.startswith(u"abc!!_%")
+        like_expr = expr.startswith("abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
         self.assertIs(like_expr.expr1, expr)
-        self.assertEqual(like_expr.expr2, u"abc!!!!!_!%%")
-        self.assertEqual(like_expr.escape, u"!")
+        self.assertEqual(like_expr.expr2, "abc!!!!!_!%%")
+        self.assertEqual(like_expr.escape, "!")
 
     def test_startswith_case(self):
         expr = Func1()
-        like_expr = expr.startswith(u"abc!!_%")
+        like_expr = expr.startswith("abc!!_%")
         self.assertIsNone(like_expr.case_sensitive)
-        like_expr = expr.startswith(u"abc!!_%", case_sensitive=True)
+        like_expr = expr.startswith("abc!!_%", case_sensitive=True)
         self.assertIs(True, like_expr.case_sensitive)
-        like_expr = expr.startswith(u"abc!!_%", case_sensitive=False)
+        like_expr = expr.startswith("abc!!_%", case_sensitive=False)
         self.assertIs(False, like_expr.case_sensitive)
 
     def test_endswith(self):
         expr = Func1()
         self.assertRaises(ExprError, expr.startswith, b"not a unicode string")
 
-        like_expr = expr.endswith(u"abc!!_%")
+        like_expr = expr.endswith("abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
         self.assertIs(like_expr.expr1, expr)
-        self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%")
-        self.assertEqual(like_expr.escape, u"!")
+        self.assertEqual(like_expr.expr2, "%abc!!!!!_!%")
+        self.assertEqual(like_expr.escape, "!")
 
     def test_endswith_case(self):
         expr = Func1()
-        like_expr = expr.endswith(u"abc!!_%")
+        like_expr = expr.endswith("abc!!_%")
         self.assertIsNone(like_expr.case_sensitive)
-        like_expr = expr.endswith(u"abc!!_%", case_sensitive=True)
+        like_expr = expr.endswith("abc!!_%", case_sensitive=True)
         self.assertIs(True, like_expr.case_sensitive)
-        like_expr = expr.endswith(u"abc!!_%", case_sensitive=False)
+        like_expr = expr.endswith("abc!!_%", case_sensitive=False)
         self.assertIs(False, like_expr.case_sensitive)
 
     def test_contains_string(self):
@@ -227,19 +227,19 @@ class ExprTest(TestHelper):
         self.assertRaises(
             ExprError, expr.contains_string, b"not a unicode string")
 
-        like_expr = expr.contains_string(u"abc!!_%")
+        like_expr = expr.contains_string("abc!!_%")
         self.assertTrue(isinstance(like_expr, Like))
         self.assertIs(like_expr.expr1, expr)
-        self.assertEqual(like_expr.expr2, u"%abc!!!!!_!%%")
-        self.assertEqual(like_expr.escape, u"!")
+        self.assertEqual(like_expr.expr2, "%abc!!!!!_!%%")
+        self.assertEqual(like_expr.escape, "!")
 
     def test_contains_string_case(self):
         expr = Func1()
-        like_expr = expr.contains_string(u"abc!!_%")
+        like_expr = expr.contains_string("abc!!_%")
         self.assertIsNone(like_expr.case_sensitive)
-        like_expr = expr.contains_string(u"abc!!_%", case_sensitive=True)
+        like_expr = expr.contains_string("abc!!_%", case_sensitive=True)
         self.assertIs(True, like_expr.case_sensitive)
-        like_expr = expr.contains_string(u"abc!!_%", case_sensitive=False)
+        like_expr = expr.contains_string("abc!!_%", case_sensitive=False)
         self.assertIs(False, like_expr.case_sensitive)
 
     def test_is(self):
@@ -513,7 +513,7 @@ class CompileTest(TestHelper):
         self.assertEqual(statement, "func1(None)")
 
     def test_customize_inheritance(self):
-        class C(object): pass
+        class C: pass
         compile_parent = Compile()
         compile_child = compile_parent.create_child()
 
@@ -610,9 +610,9 @@ class CompileTest(TestHelper):
 
     def test_unicode(self):
         state = State()
-        statement = compile(u"str", state)
+        statement = compile("str", state)
         self.assertEqual(statement, "?")
-        self.assertVariablesEqual(state.parameters, [UnicodeVariable(u"str")])
+        self.assertVariablesEqual(state.parameters, [UnicodeVariable("str")])
 
     def test_int(self):
         state = State()
@@ -812,8 +812,8 @@ class CompileTest(TestHelper):
         self.assertEqual(state.parameters, [])
 
     def test_select_with_unicode(self):
-        expr = Select(column1, u"1 = 2", table1, order_by=u"column1",
-                      group_by=[u"column2"])
+        expr = Select(column1, "1 = 2", table1, order_by="column1",
+                      group_by=["column2"])
         state = State()
         statement = compile(expr, state)
         self.assertEqual(statement, 'SELECT column1 FROM "table 1" '
@@ -822,8 +822,8 @@ class CompileTest(TestHelper):
         self.assertEqual(state.parameters, [])
 
     def test_select_having(self):
-        expr = Select(column1, tables=table1, order_by=u"column1",
-                      group_by=[u"column2"], having=u"1 = 2")
+        expr = Select(column1, tables=table1, order_by="column1",
+                      group_by=["column2"], having="1 = 2")
         state = State()
         statement = compile(expr, state)
         self.assertEqual(statement, 'SELECT column1 FROM "table 1" '
@@ -2244,7 +2244,7 @@ class CompilePythonTest(TestHelper):
         self.assertEqual(py_expr, "b'str'")
 
     def test_unicode(self):
-        py_expr = compile_python(u"str")
+        py_expr = compile_python("str")
         self.assertEqual(py_expr, "'str'")
 
     def test_int(self):
@@ -2483,7 +2483,7 @@ class CompilePythonTest(TestHelper):
     def test_match_bad_repr(self):
         """The get_matcher() works for expressions containing values
         whose repr is not valid Python syntax."""
-        class BadRepr(object):
+        class BadRepr:
             def __repr__(self):
                 return "$Not a valid Python expression$"
 

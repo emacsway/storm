@@ -27,7 +27,7 @@ from storm.schema.schema import (
 from storm.tests.mocker import MockerTestCase
 
 
-class Package(object):
+class Package:
 
     def __init__(self, package_dir, name):
         self.name = name
@@ -43,7 +43,7 @@ class Package(object):
 class SchemaTest(MockerTestCase):
 
     def setUp(self):
-        super(SchemaTest, self).setUp()
+        super().setUp()
         self.database = create_database("sqlite:///%s" % self.makeFile())
         self.store = Store(self.database)
 
@@ -68,7 +68,7 @@ class SchemaTest(MockerTestCase):
             elif any(name.startswith("%s." % x) for x in self._package_names):
                 del sys.modules[name]
 
-        super(SchemaTest, self).tearDown()
+        super().tearDown()
 
     def create_package(self, base_dir, name, init_module=None):
         """Create a Python package.
@@ -169,7 +169,7 @@ def apply(store):
         self.schema.create(self.store)
         self.store.execute("INSERT INTO person (id, name) VALUES (1, 'Jane')")
         self.assertEqual(list(self.store.execute("SELECT * FROM person")),
-                         [(1, u"Jane")])
+                         [(1, "Jane")])
         self.schema.delete(self.store)
         self.assertEqual(list(self.store.execute("SELECT * FROM person")), [])
 
@@ -214,7 +214,7 @@ def apply(store):
         self.store.execute(
             "INSERT INTO person (id, name, phone) VALUES (1, 'Jane', '123')")
         self.assertEqual(list(self.store.execute("SELECT * FROM person")),
-                         [(1, u"Jane", u"123")])
+                         [(1, "Jane", "123")])
 
     def test_advance(self):
         """
@@ -235,4 +235,4 @@ def apply(store):
         self.store.execute(
             "INSERT INTO person (id, name, phone) VALUES (1, 'Jane', '123')")
         self.assertEqual(list(self.store.execute("SELECT * FROM person")),
-                         [(1, u"Jane", u"123")])
+                         [(1, "Jane", "123")])

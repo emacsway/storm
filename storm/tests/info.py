@@ -29,7 +29,7 @@ from storm.info import *
 from storm.tests.helper import TestHelper
 
 
-class Wrapper(object):
+class Wrapper:
 
     def __init__(self, obj):
         self.obj = obj
@@ -42,7 +42,7 @@ class GetTest(TestHelper):
 
     def setUp(self):
         TestHelper.setUp(self)
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
         self.Class = Class
@@ -74,7 +74,7 @@ class ClassInfoTest(TestHelper):
 
     def setUp(self):
         TestHelper.setUp(self)
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
             prop2 = Property("column2")
@@ -82,7 +82,7 @@ class ClassInfoTest(TestHelper):
         self.cls_info = get_cls_info(Class)
 
     def test_invalid_class(self):
-        class Class(object): pass
+        class Class: pass
         self.assertRaises(ClassInfoError, ClassInfo, Class)
 
     def test_cls(self):
@@ -110,7 +110,7 @@ class ClassInfoTest(TestHelper):
         self.assertEqual(len(self.cls_info.primary_key), 1)
 
     def test_primary_key_composed(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=2)
             prop2 = Property("column2", primary=1)
@@ -122,7 +122,7 @@ class ClassInfoTest(TestHelper):
         self.assertEqual(len(cls_info.primary_key), 2)
 
     def test_primary_key_composed_with_attribute(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             __storm_primary__ = "prop2", "prop1"
             # Define primary=True to ensure that the attribute
@@ -137,21 +137,21 @@ class ClassInfoTest(TestHelper):
         self.assertEqual(len(cls_info.primary_key), 2)
 
     def test_primary_key_composed_duplicated(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
             prop2 = Property("column2", primary=True)
         self.assertRaises(ClassInfoError, ClassInfo, Class)
 
     def test_primary_key_missing(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1")
             prop2 = Property("column2")
         self.assertRaises(ClassInfoError, ClassInfo, Class)
 
     def test_primary_key_attribute_missing(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             __storm_primary__ = ()
             prop1 = Property("column1", primary=True)
@@ -159,7 +159,7 @@ class ClassInfoTest(TestHelper):
         self.assertRaises(ClassInfoError, ClassInfo, Class)
 
     def test_primary_key_pos(self):
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=2)
             prop2 = Property("column2")
@@ -172,7 +172,7 @@ class ObjectInfoTest(TestHelper):
 
     def setUp(self):
         TestHelper.setUp(self)
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
             prop2 = Property("column2")
@@ -214,7 +214,7 @@ class ObjectInfoTest(TestHelper):
         args = []
         def validator(obj, attr, value):
             args.append((obj, attr, value))
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop = Property(primary=True,
                             variable_kwargs={"validator": validator})
@@ -522,7 +522,7 @@ class ClassAliasTest(TestHelper):
 
     def setUp(self):
         TestHelper.setUp(self)
-        class Class(object):
+        class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
         self.Class = Class
@@ -624,10 +624,10 @@ class TypeCompilerTest(TestHelper):
 
     def test_nested_classes(self):
         """Convoluted case checking that the model is right."""
-        class Class1(object):
+        class Class1:
             __storm_table__ = "class1"
             id = Property(primary=True)
-        class Class2(object):
+        class Class2:
             __storm_table__ = Class1
             id = Property(primary=True)
         statement = compile(Class2)
