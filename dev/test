@@ -30,7 +30,7 @@ import sys
 import time
 import unittest
 
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 
 def add_eggs_to_path():
