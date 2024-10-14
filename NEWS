@@ -1,3 +1,11 @@
+1.1
+===
+
+Improvements
+------------
+
+- Remove test dependency on pkg_resources.
+
 1.0 (2024-07-16)
 ================
 
