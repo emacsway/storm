@@ -5,6 +5,7 @@ Improvements
 ------------
 
 - Remove test dependency on pkg_resources.
+- Declare support for Python 3.13.
 
 1.0 (2024-07-16)
 ================
