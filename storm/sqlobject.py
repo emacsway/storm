@@ -165,6 +165,8 @@ class SQLObjectMeta(PropertyPublisherMeta):
         for attr, prop in list(dict.items()):
             if attr == "__classcell__":  # Python >= 3.6
                 continue
+            elif attr == "__classdictcell__":  # Python >= 3.14
+                continue
             attr_to_prop[attr] = attr
             if isinstance(prop, ForeignKey):
                 db_name = prop.kwargs.get("dbName", attr)
