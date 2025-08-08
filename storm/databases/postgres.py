@@ -374,7 +374,6 @@ class Postgres(Database):
             raise DatabaseModuleError(
                 "'psycopg2' >= %s not found. Found %s."
                 % (REQUIRED_PSYCOPG2_VERSION, PSYCOPG2_VERSION))
-        self._dsn = make_dsn(uri)
         isolation = uri.options.get("isolation", "repeatable-read")
         isolation_mapping = {
             "autocommit": psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT,
@@ -393,6 +392,9 @@ class Postgres(Database):
                 "'autocommit', 'serializable', 'read-committed'" %
                 (isolation,))
 
+        # isolation is not a valid psycopg2 parameter key word
+        uri.options.pop("isolation", None)
+        self._dsn = psycopg2.extensions.parse_dsn(str(uri))
     _psycopg_error_attributes = ["pgerror", "pgcode", "cursor"]
     # Added in psycopg2 2.5.
     if hasattr(psycopg2.Error, "diag"):
@@ -413,7 +415,7 @@ class Postgres(Database):
         return wrapped
 
     def _raw_connect(self):
-        raw_connection = ConnectionWrapper(psycopg2.connect(self._dsn), self)
+        raw_connection = ConnectionWrapper(psycopg2.connect(**self._dsn), self)
 
         if self._version is None:
             cursor = raw_connection.cursor()

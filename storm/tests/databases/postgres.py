@@ -136,8 +136,12 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_wb_create_database(self):
         database = create_database("postgres://un:pw@ht:12/db")
         self.assertTrue(isinstance(database, Postgres))
-        self.assertEqual(database._dsn,
-                         "dbname=db host=ht port=12 user=un password=pw")
+        self.assertDictEqual(database._dsn,
+                             {"dbname": "db",
+                              "host": "ht",
+                              "port": "12",
+                              "user": "un",
+                              "password": "pw"})
 
     def test_wb_version(self):
         version = self.database._version
