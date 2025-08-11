@@ -392,9 +392,9 @@ class Postgres(Database):
                 "'autocommit', 'serializable', 'read-committed'" %
                 (isolation,))
 
-        # isolation is not a valid psycopg2 parameter key word
+        # isolation is not a valid postgres parameter key word
         uri.options.pop("isolation", None)
-        self._dsn = psycopg2.extensions.parse_dsn(str(uri))
+        self._dsn = make_dsn(uri)
     _psycopg_error_attributes = ["pgerror", "pgcode", "cursor"]
     # Added in psycopg2 2.5.
     if hasattr(psycopg2.Error, "diag"):
@@ -415,7 +415,7 @@ class Postgres(Database):
         return wrapped
 
     def _raw_connect(self):
-        raw_connection = ConnectionWrapper(psycopg2.connect(**self._dsn), self)
+        raw_connection = ConnectionWrapper(psycopg2.connect(self._dsn), self)
 
         if self._version is None:
             cursor = raw_connection.cursor()
@@ -456,6 +456,11 @@ def make_dsn(uri):
         dsn += " user=%s" % uri.username
     if uri.password is not None:
         dsn += " password=%s" % uri.password
+
+    if uri.options:
+        for key, value in uri.options.items():
+            dsn += " %s=%s" % (key, value)
+
     return dsn
 
 

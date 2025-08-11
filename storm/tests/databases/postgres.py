@@ -136,12 +136,11 @@ class PostgresTest(DatabaseTest, TestHelper):
     def test_wb_create_database(self):
         database = create_database("postgres://un:pw@ht:12/db")
         self.assertTrue(isinstance(database, Postgres))
-        self.assertDictEqual(database._dsn,
-                             {"dbname": "db",
-                              "host": "ht",
-                              "port": "12",
-                              "user": "un",
-                              "password": "pw"})
+        self.assertEqual(database._dsn,
+                         "dbname=db host=ht port=12 user=un password=pw")
+
+        database = create_database("postgres:postgres")
+        self.assertEqual(database._dsn, "dbname=postgres")
 
     def test_wb_version(self):
         version = self.database._version
@@ -564,7 +563,9 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEqual(result.get_one()[0], "test_name")
 
         dsn = database._dsn
-        self.assertEqual(dsn["sslmode"], "verify-full")
+        self.assertIn("sslmode=verify-full", dsn)
+        self.assertIn("application_name=test_name", dsn)
+        self.assertNotIn("isolation=autocommit", dsn)
 
     def test_isolation_autocommit(self):
         database = create_database(
