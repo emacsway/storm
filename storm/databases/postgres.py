@@ -374,7 +374,6 @@ class Postgres(Database):
             raise DatabaseModuleError(
                 "'psycopg2' >= %s not found. Found %s."
                 % (REQUIRED_PSYCOPG2_VERSION, PSYCOPG2_VERSION))
-        self._dsn = make_dsn(uri)
         isolation = uri.options.get("isolation", "repeatable-read")
         isolation_mapping = {
             "autocommit": psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT,
@@ -393,6 +392,9 @@ class Postgres(Database):
                 "'autocommit', 'serializable', 'read-committed'" %
                 (isolation,))
 
+        # isolation is not a valid postgres parameter key word
+        uri.options.pop("isolation", None)
+        self._dsn = make_dsn(uri)
     _psycopg_error_attributes = ["pgerror", "pgcode", "cursor"]
     # Added in psycopg2 2.5.
     if hasattr(psycopg2.Error, "diag"):
@@ -454,6 +456,11 @@ def make_dsn(uri):
         dsn += " user=%s" % uri.username
     if uri.password is not None:
         dsn += " password=%s" % uri.password
+
+    if uri.options:
+        for key, value in uri.options.items():
+            dsn += " %s=%s" % (key, value)
+
     return dsn
 
 

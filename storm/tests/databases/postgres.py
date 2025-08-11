@@ -139,6 +139,9 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEqual(database._dsn,
                          "dbname=db host=ht port=12 user=un password=pw")
 
+        database = create_database("postgres:postgres")
+        self.assertEqual(database._dsn, "dbname=postgres")
+
     def test_wb_version(self):
         version = self.database._version
         self.assertEqual(type(version), int)
@@ -544,6 +547,25 @@ class PostgresTest(DatabaseTest, TestHelper):
                         primary_columns=(column1, column2))
         result = self.connection.execute(Returning(update))
         self.assertEqual(result.get_one(), (1, 3))
+
+    def test_uri_parameters(self):
+        database = create_database(
+            os.environ["STORM_POSTGRES_URI"] + "?isolation=autocommit&application_name=test_name&sslmode=verify-full")
+
+        connection = database.connect()
+        self.addCleanup(connection.close)
+
+        result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+        # It matches read committed in Postgres internel
+        self.assertEqual(result.get_one()[0], "read committed")
+
+        result = connection.execute("SHOW APPLICATION_NAME")
+        self.assertEqual(result.get_one()[0], "test_name")
+
+        dsn = database._dsn
+        self.assertIn("sslmode=verify-full", dsn)
+        self.assertIn("application_name=test_name", dsn)
+        self.assertNotIn("isolation=autocommit", dsn)
 
     def test_isolation_autocommit(self):
         database = create_database(
