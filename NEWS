@@ -1,5 +1,5 @@
-1.1
-===
+1.1 (2025-12-05)
+================
 
 Improvements
 ------------
@@ -7,6 +7,7 @@ Improvements
 - Remove test dependency on pkg_resources.
 - Declare support for Python 3.13.
 - Add support for Python 3.14.
+- Add support for additional PostgreSQL parameter keywords.
 
 1.0 (2024-07-16)
 ================
