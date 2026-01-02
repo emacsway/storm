@@ -3,7 +3,7 @@ from unittest import defaultTestLoader
 from storm.properties import Int
 from storm.info import get_obj_info
 from storm.cache import Cache, GenerationalCache
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 class StubObjectInfo:
@@ -33,12 +33,12 @@ class StubClass:
     id = Int(primary=True)
 
 
-class BaseCacheTest(TestHelper):
+class BaseCacheTest(AsyncTestHelper):
 
     Cache = Cache
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.obj_infos = [StubObjectInfo(i) for i in range(10)]
         for i in range(len(self.obj_infos)):
             setattr(self, "obj%d" % (i+1), self.obj_infos[i])
@@ -193,8 +193,8 @@ class TestGenerationalCache(BaseCacheTest):
 
     Cache = GenerationalCache
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.obj1 = StubObjectInfo(1)
         self.obj2 = StubObjectInfo(2)
         self.obj3 = StubObjectInfo(3)

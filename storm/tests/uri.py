@@ -19,10 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from storm.uri import URI, URIError
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
-class URITest(TestHelper):
+class URITest(AsyncTestHelper):
 
     def test_parse_defaults(self):
         uri = URI("scheme:")

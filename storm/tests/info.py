@@ -26,7 +26,7 @@ from storm.properties import Property
 from storm.variables import Variable
 from storm.expr import Undef, Select, compile
 from storm.info import *
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 class Wrapper:
@@ -38,10 +38,10 @@ class Wrapper:
                                      self.obj.__storm_object_info__)
 
 
-class GetTest(TestHelper):
+class GetTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
@@ -70,10 +70,10 @@ class GetTest(TestHelper):
         self.assertEqual(get_obj_info(self.obj), obj_info2)
 
 
-class ClassInfoTest(TestHelper):
+class ClassInfoTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
@@ -168,10 +168,10 @@ class ClassInfoTest(TestHelper):
         self.assertEqual(cls_info.primary_key_pos, (2, 0))
 
 
-class ObjectInfoTest(TestHelper):
+class ObjectInfoTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
@@ -518,10 +518,10 @@ class ObjectInfoTest(TestHelper):
         self.assertTrue("tainted" in deleted[0])
 
 
-class ClassAliasTest(TestHelper):
+class ClassAliasTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         class Class:
             __storm_table__ = "table"
             prop1 = Property("column1", primary=True)
@@ -620,7 +620,7 @@ class ClassAliasTest(TestHelper):
         self.assertIdentical(alias_ref(), None)
 
 
-class TypeCompilerTest(TestHelper):
+class TypeCompilerTest(AsyncTestHelper):
 
     def test_nested_classes(self):
         """Convoluted case checking that the model is right."""

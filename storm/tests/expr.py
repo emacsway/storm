@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from storm.variables import *
 from storm.expr import *
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 class Func1(NamedFunc):
@@ -51,7 +51,7 @@ def track_contexts(n):
     return [TrackContext() for i in range(n)]
 
 
-class ExprTest(TestHelper):
+class ExprTest(AsyncTestHelper):
 
     def test_select_default(self):
         expr = Select(())
@@ -465,10 +465,10 @@ class ExprTest(TestHelper):
         self.assertEqual(expr.name, elem1)
 
 
-class StateTest(TestHelper):
+class StateTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.state = State()
 
     def test_attrs(self):
@@ -497,7 +497,7 @@ class StateTest(TestHelper):
         self.assertEqual(self.state.nonexistent, None)
 
 
-class CompileTest(TestHelper):
+class CompileTest(AsyncTestHelper):
 
     def test_simple_inheritance(self):
         custom_compile = compile.create_child()
@@ -2206,7 +2206,7 @@ class CompileTest(TestHelper):
             self.assertEqual(compile.is_reserved_word(word), True)
 
 
-class CompilePythonTest(TestHelper):
+class CompilePythonTest(AsyncTestHelper):
 
     def test_precedence(self):
         e = [SQLRaw('%d' % i) for i in range(10)]
@@ -2493,7 +2493,7 @@ class CompilePythonTest(TestHelper):
         self.assertTrue(match({col1: value}.get))
 
 
-class LazyValueExprTest(TestHelper):
+class LazyValueExprTest(AsyncTestHelper):
 
     def test_expr_is_lazy_value(self):
         marker = object()

@@ -26,10 +26,15 @@ import sys
 from storm.databases import dummy
 
 try:
-    import MySQLdb
-    import MySQLdb.converters
+    import aiomysql
+    # For compatibility with code that references MySQLdb
+    MySQLdb = aiomysql
+    # Import converters from pymysql (aiomysql's underlying library)
+    from pymysql import converters as mysql_converters
 except ImportError:
+    aiomysql = dummy
     MySQLdb = dummy
+    mysql_converters = None
 
 from storm.database import (
     Connection,
@@ -39,6 +44,7 @@ from storm.database import (
     )
 from storm.exceptions import (
     DatabaseModuleError,
+    InterfaceError,
     OperationalError,
     wrap_exceptions,
     )
@@ -92,11 +98,11 @@ class MySQLConnection(Connection):
     param_mark = "%s"
     compile = compile
 
-    def execute(self, statement, params=None, noresult=False):
+    async def execute(self, statement, params=None, noresult=False):
         if (isinstance(statement, Insert) and
             statement.primary_variables is not Undef):
 
-            result = Connection.execute(self, statement, params)
+            result = await Connection.execute(self, statement, params)
 
             # The lastrowid value will be set if:
             #  - the table had an AUTO INCREMENT column, and
@@ -114,7 +120,7 @@ class MySQLConnection(Connection):
             if noresult:
                 result = None
             return result
-        return Connection.execute(self, statement, params, noresult)
+        return await Connection.execute(self, statement, params, noresult)
 
     def to_database(self, params):
         for param in params:
@@ -127,9 +133,20 @@ class MySQLConnection(Connection):
 
     def is_disconnection_error(self, exc, extra_disconnection_errors=()):
         # http://dev.mysql.com/doc/refman/5.0/en/gone-away.html
-        return (isinstance(exc, (OperationalError,
-                                 extra_disconnection_errors)) and
-                exc.args[0] in (2006, 2013)) # (SERVER_GONE_ERROR, SERVER_LOST)
+        # aiomysql also raises InterfaceError with code 0 for "Not connected"
+        if isinstance(exc, extra_disconnection_errors):
+            return True
+        if len(exc.args) > 0:
+            # SERVER_GONE_ERROR (2006), SERVER_LOST (2013)
+            if isinstance(exc, OperationalError) and exc.args[0] in (2006, 2013):
+                return True
+            # aiomysql InterfaceError for disconnection
+            # The wrapped exception has the message as a string: "(0, 'Not connected')"
+            if isinstance(exc, InterfaceError):
+                msg = str(exc.args[0])
+                if "Not connected" in msg or "(0," in msg:
+                    return True
+        return False
 
 
 class MySQL(Database):
@@ -140,8 +157,8 @@ class MySQL(Database):
 
     def __init__(self, uri):
         super().__init__(uri)
-        if MySQLdb is dummy:
-            raise DatabaseModuleError("'MySQLdb' module not found")
+        if aiomysql is dummy:
+            raise DatabaseModuleError("'aiomysql' module not found")
         self._connect_kwargs = {}
         if uri.database is not None:
             self._connect_kwargs["db"] = uri.database
@@ -152,27 +169,27 @@ class MySQL(Database):
         if uri.username is not None:
             self._connect_kwargs["user"] = uri.username
         if uri.password is not None:
-            self._connect_kwargs["passwd"] = uri.password
+            self._connect_kwargs["password"] = uri.password  # aiomysql uses "password" not "passwd"
         for option in ["unix_socket"]:
             if option in uri.options:
                 self._connect_kwargs[option] = uri.options.get(option)
 
-        if self._converters is None:
-            # MySQLdb returns a timedelta by default on TIME fields.
-            converters = MySQLdb.converters.conversions.copy()
-            converters[MySQLdb.converters.FIELD_TYPE.TIME] = _convert_time
+        if self._converters is None and mysql_converters:
+            # aiomysql/pymysql returns a timedelta by default on TIME fields.
+            converters = mysql_converters.conversions.copy()
+            from pymysql.constants import FIELD_TYPE
+            converters[FIELD_TYPE.TIME] = _convert_time
             self.__class__._converters = converters
 
-        self._connect_kwargs["conv"] = self._converters
-        self._connect_kwargs["use_unicode"] = True
-        # utf8mb3 (a.k.a. utf8) is deprecated, but it's not clear that we
-        # can change it without breaking applications.  Default to utf8mb3
-        # for now.
-        self._connect_kwargs["charset"] = uri.options.get("charset", "utf8mb3")
+        if self._converters:
+            self._connect_kwargs["conv"] = self._converters
+        # aiomysql uses UTF-8 by default
+        self._connect_kwargs["charset"] = uri.options.get("charset", "utf8mb4")
 
-    def _raw_connect(self):
+    async def _raw_connect(self):
+        # aiomysql.connect() is async
         raw_connection = ConnectionWrapper(
-            MySQLdb.connect(**self._connect_kwargs), self)
+            await aiomysql.connect(**self._connect_kwargs), self)
 
         # Here is another sad story about bad transactional behavior.  MySQL
         # offers a feature to automatically reconnect dropped connections.
@@ -181,30 +198,27 @@ class MySQL(Database):
         # currently running transaction is transparently rolled back, and
         # everything that was being done is lost, without notice.  Not only
         # that, but the connection may be put back in AUTOCOMMIT mode, even
-        # when that's not the default MySQLdb behavior.  The MySQL developers
+        # when that's not the default aiomysql behavior.  The MySQL developers
         # quickly understood that this is a terrible idea, and removed the
-        # behavior in MySQL 5.0.3.  Unfortunately, Debian and Ubuntu still
-        # have a patch for the MySQLdb module which *reenables* that
-        # behavior by default even past version 5.0.3 of MySQL.
+        # behavior in MySQL 5.0.3.
         #
         # Some links:
         #   http://dev.mysql.com/doc/refman/5.0/en/auto-reconnect.html
         #   http://dev.mysql.com/doc/refman/5.0/en/mysql-reconnect.html
         #   http://dev.mysql.com/doc/refman/5.0/en/gone-away.html
         #
-        # What we do here is to explore something that is a very weird
-        # side-effect, discovered by reading the code.  When we call the
-        # ping() with a False argument, the automatic reconnection is
-        # disabled in a *permanent* way for this connection.  The argument
-        # to ping() is new in 1.2.2, though.
-        if MySQLdb.version_info >= (1, 2, 2):
-            raw_connection.ping(False)
+        # aiomysql handles reconnection differently, but we still disable
+        # automatic reconnection to maintain transactional consistency.
+        # aiomysql.connect() accepts autocommit parameter
+        # The ping() method in aiomysql is async
+        if hasattr(raw_connection, 'ping'):
+            await raw_connection.ping(False)
 
         return raw_connection
 
-    def raw_connect(self):
+    async def raw_connect(self):
         with wrap_exceptions(self):
-            return self._raw_connect()
+            return await self._raw_connect()
 
 
 create_from_uri = MySQL

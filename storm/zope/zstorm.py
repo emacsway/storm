@@ -24,7 +24,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import threading
+from contextvars import ContextVar
 import weakref
 
 from uuid import uuid4
@@ -67,7 +67,10 @@ class ZStorm:
     _databases = {}
 
     def __init__(self):
-        self._local = threading.local()
+        self._context_stores = ContextVar('zstorm_stores', default=None)
+        self._context_named = ContextVar('zstorm_named', default=None)
+        self._context_name_index = ContextVar('zstorm_name_index', default=None)
+        self._context_txn_ids = ContextVar('zstorm_txn_ids', default=None)
         self._default_databases = {}
         self._default_uris = {}
         self._default_tpcs = {}
@@ -75,8 +78,11 @@ class ZStorm:
     def _reset(self):
         for name, store in list(self.iterstores()):
             self.remove(store)
-            store.close()
-        self._local = threading.local()
+            await store.close()
+        self._context_stores.set(None)
+        self._context_named.set(None)
+        self._context_name_index.set(None)
+        self._context_txn_ids.set(None)
         self._databases.clear()
         self._default_databases.clear()
         self._default_uris.clear()
@@ -84,37 +90,38 @@ class ZStorm:
 
     @property
     def _stores(self):
-        try:
-            return self._local.stores
-        except AttributeError:
+        stores = self._context_stores.get()
+        if stores is None:
             stores = weakref.WeakValueDictionary()
-            return self._local.__dict__.setdefault("stores", stores)
+            self._context_stores.set(stores)
+        return stores
 
     @property
     def _named(self):
-        try:
-            return self._local.named
-        except AttributeError:
-            return self._local.__dict__.setdefault("named", {})
+        named = self._context_named.get()
+        if named is None:
+            named = {}
+            self._context_named.set(named)
+        return named
 
     @property
     def _name_index(self):
-        try:
-            return self._local.name_index
-        except AttributeError:
-            return self._local.__dict__.setdefault(
-                "name_index", weakref.WeakKeyDictionary())
+        name_index = self._context_name_index.get()
+        if name_index is None:
+            name_index = weakref.WeakKeyDictionary()
+            self._context_name_index.set(name_index)
+        return name_index
 
     @property
     def _txn_ids(self):
         """
-        A thread-local weak-key dict used to keep track of transaction IDs.
+        A context-local weak-key dict used to keep track of transaction IDs.
         """
-        try:
-            return self._local.txn_ids
-        except AttributeError:
+        txn_ids = self._context_txn_ids.get()
+        if txn_ids is None:
             txn_ids = weakref.WeakKeyDictionary()
-            return self._local.__dict__.setdefault("txn_ids", txn_ids)
+            self._context_txn_ids.set(txn_ids)
+        return txn_ids
 
     def _get_database(self, uri):
         database = self._databases.get(uri)

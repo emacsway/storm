@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 import sys
-import threading
+from contextvars import ContextVar
 
 # Circular import: imported at the end of the module.
 # from storm.database import convert_param_marks
@@ -210,8 +210,8 @@ class TimelineTracer(BaseStatementTracer):
         super().__init__()
         self.timeline_factory = timeline_factory
         self.prefix = prefix
-        # Stores the action in progress in a given thread.
-        self.threadinfo = threading.local()
+        # Stores the action in progress in the current context.
+        self._action_context = ContextVar('timeline_action', default=None)
 
     def _expanded_raw_execute(self, connection, raw_cursor, statement):
         timeline = self.timeline_factory()
@@ -219,14 +219,14 @@ class TimelineTracer(BaseStatementTracer):
             return
         connection_name = getattr(connection, 'name', '<unknown>')
         action = timeline.start(self.prefix + connection_name, statement)
-        self.threadinfo.action = action
+        self._action_context.set(action)
 
     def connection_raw_execute_success(self, connection, raw_cursor,
                                        statement, params):
 
         # action may be None if the tracer was installed after the statement
         # was submitted.
-        action = getattr(self.threadinfo, 'action', None)
+        action = self._action_context.get()
         if action is not None:
             action.finish()
 

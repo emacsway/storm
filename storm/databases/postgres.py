@@ -26,19 +26,19 @@ from packaging.version import parse as parse_version
 
 from storm.databases import dummy
 
-# PostgreSQL support in Storm requires psycopg2 2.3.0 or greater, in order
-# to support the two-phase commit protocol.
-REQUIRED_PSYCOPG2_VERSION = parse_version('2.3.0')
-PSYCOPG2_VERSION = None
+# PostgreSQL support in Storm requires psycopg 3.0 or greater
+REQUIRED_PSYCOPG_VERSION = parse_version('3.0')
+PSYCOPG_VERSION = None
 try:
-    import psycopg2
-    PSYCOPG2_VERSION = parse_version(psycopg2.__version__.split(' ')[0])
-    if PSYCOPG2_VERSION < REQUIRED_PSYCOPG2_VERSION:
-        psycopg2 = dummy
+    import psycopg
+    PSYCOPG_VERSION = parse_version(psycopg.__version__.split(' ')[0])
+    if PSYCOPG_VERSION < REQUIRED_PSYCOPG_VERSION:
+        psycopg = dummy
     else:
-        import psycopg2.extensions
+        from psycopg import AsyncConnection, IsolationLevel
+        from psycopg.rows import tuple_row
 except ImportError:
-    psycopg2 = dummy
+    psycopg = dummy
 
 from storm.expr import (
     Undef, Expr, SetExpr, Select, Insert, Alias, And, Eq, FuncExpr, SQLRaw,
@@ -278,7 +278,7 @@ class PostgresConnection(Connection):
     param_mark = "%s"
     compile = compile
 
-    def execute(self, statement, params=None, noresult=False):
+    async def execute(self, statement, params=None, noresult=False):
         """Execute a statement with the given parameters.
 
         This extends the L{Connection.execute} method to add support
@@ -295,26 +295,24 @@ class PostgresConnection(Connection):
             # for the primary key just inserted.  This prevents a round
             # trip to the database for obtaining these values.
 
-            result = Connection.execute(self, Returning(statement), params)
+            result = await Connection.execute(self, Returning(statement), params)
             for variable, value in zip(statement.primary_variables,
-                                       result.get_one()):
+                                       await result.get_one()):
                 result.set_variable(variable, value)
             return result
 
-        return Connection.execute(self, statement, params, noresult)
+        return await Connection.execute(self, statement, params, noresult)
 
     def to_database(self, params):
         """
         Like L{Connection.to_database}, but this converts datetime
-        types to strings, and bytes to L{psycopg2.Binary} instances.
+        types to strings. Bytes are handled natively in psycopg v3.
         """
         for param in params:
             if isinstance(param, Variable):
                 param = param.get(to_db=True)
             if isinstance(param, (datetime, date, time, timedelta)):
                 yield str(param)
-            elif isinstance(param, bytes):
-                yield psycopg2.Binary(param)
             else:
                 yield param
 
@@ -360,7 +358,7 @@ class Postgres(Database):
 
     connection_factory = PostgresConnection
 
-    _exception_module = psycopg2
+    _exception_module = psycopg
 
     # An integer representing the server version.  If the server does
     # not support the server_version_num variable, this will be set to
@@ -370,79 +368,99 @@ class Postgres(Database):
 
     def __init__(self, uri):
         super().__init__(uri)
-        if psycopg2 is dummy:
+        if psycopg is dummy:
             raise DatabaseModuleError(
-                "'psycopg2' >= %s not found. Found %s."
-                % (REQUIRED_PSYCOPG2_VERSION, PSYCOPG2_VERSION))
-        isolation = uri.options.get("isolation", "repeatable-read")
+                "'psycopg' >= %s not found. Found %s."
+                % (REQUIRED_PSYCOPG_VERSION, PSYCOPG_VERSION))
+        isolation = uri.options.get("isolation", "repeatable read")
+        # psycopg v3 uses IsolationLevel enum
         isolation_mapping = {
-            "autocommit": psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT,
-            "serializable": psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE,
-            "read-committed":
-                psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED,
-            "repeatable-read":
-                psycopg2.extensions.ISOLATION_LEVEL_REPEATABLE_READ,
-            "read-uncommitted":
-                psycopg2.extensions.ISOLATION_LEVEL_READ_UNCOMMITTED}
+            "autocommit": None,  # None means autocommit in psycopg v3
+            "serializable": IsolationLevel.SERIALIZABLE,
+            "read-committed": IsolationLevel.READ_COMMITTED,
+            "read committed": IsolationLevel.READ_COMMITTED,
+            "repeatable-read": IsolationLevel.REPEATABLE_READ,
+            "repeatable read": IsolationLevel.REPEATABLE_READ,
+            "read-uncommitted": IsolationLevel.READ_UNCOMMITTED,
+            "read uncommitted": IsolationLevel.READ_UNCOMMITTED}
         try:
             self._isolation = isolation_mapping[isolation]
         except KeyError:
             raise ValueError(
                 "Unknown serialization level %r: expected one of "
-                "'autocommit', 'serializable', 'read-committed'" %
+                "'autocommit', 'serializable', 'read-committed', 'repeatable-read', 'read-uncommitted'" %
                 (isolation,))
 
         # isolation is not a valid postgres parameter key word
         uri.options.pop("isolation", None)
         self._dsn = make_dsn(uri)
-    _psycopg_error_attributes = ["pgerror", "pgcode", "cursor"]
-    # Added in psycopg2 2.5.
-    if hasattr(psycopg2.Error, "diag"):
+    # psycopg v3 uses different error attributes
+    # pgcode is in both v2 and v3, diag is v3-specific
+    _psycopg_error_attributes = []
+    if hasattr(psycopg.Error, "pgcode"):
+        _psycopg_error_attributes.append("pgcode")
+    if hasattr(psycopg.Error, "diag"):
         _psycopg_error_attributes.append("diag")
+    # pgerror exists in v2 but not v3
+    if hasattr(psycopg.Error, "pgerror"):
+        _psycopg_error_attributes.append("pgerror")
     _psycopg_error_attributes = tuple(_psycopg_error_attributes)
 
     def _make_combined_exception_type(self, wrapper_type, dbapi_type):
         combined_type = super()._make_combined_exception_type(
             wrapper_type, dbapi_type)
         for name in self._psycopg_error_attributes:
-            setattr(combined_type, name, lambda err: getattr(err, "_" + name))
+            setattr(combined_type, name, lambda err: getattr(err, "_" + name, None))
         return combined_type
 
     def _wrap_exception(self, wrapper_type, exception):
         wrapped = super()._wrap_exception(wrapper_type, exception)
         for name in self._psycopg_error_attributes:
-            setattr(wrapped, "_" + name, getattr(exception, name))
+            # Only set attribute if it exists on the exception
+            if hasattr(exception, name):
+                setattr(wrapped, "_" + name, getattr(exception, name))
         return wrapped
 
-    def _raw_connect(self):
-        raw_connection = ConnectionWrapper(psycopg2.connect(self._dsn), self)
+    async def _raw_connect(self):
+        # psycopg v3 AsyncConnection.connect() is async
+        # self._isolation is None for autocommit mode
+        raw_connection = ConnectionWrapper(
+            await AsyncConnection.connect(
+                self._dsn,
+                row_factory=tuple_row,
+                autocommit=(self._isolation is None)
+            ),
+            self
+        )
 
         if self._version is None:
-            cursor = raw_connection.cursor()
+            cursor = await raw_connection.cursor()
 
             try:
-                cursor.execute("SHOW server_version_num")
+                await cursor.execute("SHOW server_version_num")
             except ProgrammingError:
                 self._version = 0
             else:
-                self._version = int(cursor.fetchone()[0])
-            raw_connection.rollback()
+                result = await cursor.fetchone()
+                self._version = int(result[0])
+            await raw_connection.rollback()
 
-        raw_connection.set_client_encoding("UTF8")
-        raw_connection.set_isolation_level(self._isolation)
+        # psycopg v3 doesn't have set_client_encoding - UTF8 is default
+        # Set isolation level if not autocommit (i.e. if not None)
+        if self._isolation is not None:
+            await raw_connection.set_isolation_level(self._isolation)
         return raw_connection
 
-    def raw_connect(self):
+    async def raw_connect(self):
         with wrap_exceptions(self):
-            return self._raw_connect()
+            return await self._raw_connect()
 
 
 create_from_uri = Postgres
 
 
-if psycopg2 is not dummy:
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-    psycopg2.extensions.register_type(psycopg2._psycopg.UNICODEARRAY)
+# psycopg v3 handles Unicode natively, no registration needed
+# UNICODE and UNICODEARRAY registration is not required
 
 
 def make_dsn(uri):

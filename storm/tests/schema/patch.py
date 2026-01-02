@@ -26,7 +26,7 @@ import traceback
 from storm.locals import StormError, Store, create_database
 from storm.schema.patch import (
     Patch, PatchApplier, UnknownPatchError, BadPatchError, PatchSet)
-from storm.tests.mocker import MockerTestCase
+from storm.tests.mocker import AsyncMockerTestCase
 
 
 patch_test_0 = """
@@ -100,10 +100,10 @@ class MockPatchStore:
         self.committed += 1
 
 
-class PatchApplierTest(MockerTestCase):
+class PatchApplierTest(AsyncMockerTestCase):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
 
         self.patchdir = self.makeDir()
         self.pkgdir = os.path.join(self.patchdir, "mypackage")
@@ -157,8 +157,8 @@ class PatchApplierTest(MockerTestCase):
         self.patch_applier = PatchApplier(self.store, self.patch_set,
                                           self.committer)
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         self.committer.rollback()
         sys.path.remove(self.patchdir)
         for name in list(sys.modules):
@@ -195,7 +195,7 @@ class PatchApplierTest(MockerTestCase):
         self.assertEqual(result, None,
                          "Transaction manager wasn't aborted.")
 
-    def test_apply(self):
+    async def test_apply(self):
         """
         L{PatchApplier.apply} executes the patch with the given version.
         """
@@ -203,12 +203,12 @@ class PatchApplierTest(MockerTestCase):
 
         x = getattr(self.mypackage, "patch_42").x
         self.assertEqual(x, 42)
-        self.assertTrue(self.store.get(Patch, (42)))
+        self.assertTrue(await self.store.get(Patch, (42)))
         self.assertTrue("mypackage.patch_42" in sys.modules)
 
         self.assert_transaction_committed()
 
-    def test_apply_with_patch_directory(self):
+    async def test_apply_with_patch_directory(self):
         """
         If the given L{PatchSet} uses sub-level patches, then the
         L{PatchApplier.apply} method will look at the per-patch directory and
@@ -221,9 +221,9 @@ class PatchApplierTest(MockerTestCase):
         self.patch_set._sub_level = "foo"
         self.add_module("patch_99/foo.py", patch_test_0)
         self.patch_applier.apply(99)
-        self.assertTrue(self.store.get(Patch, (99)))
+        self.assertTrue(await self.store.get(Patch, (99)))
 
-    def test_apply_all(self):
+    async def test_apply_all(self):
         """
         L{PatchApplier.apply_all} executes all unapplied patches.
         """
@@ -240,7 +240,7 @@ class PatchApplierTest(MockerTestCase):
 
         self.assert_transaction_committed()
 
-    def test_apply_exploding_patch(self):
+    async def test_apply_exploding_patch(self):
         """
         L{PatchApplier.apply} aborts the transaction if the patch fails.
         """
@@ -250,7 +250,7 @@ class PatchApplierTest(MockerTestCase):
 
         self.assert_transaction_aborted()
 
-    def test_wb_apply_all_exploding_patch(self):
+    async def test_wb_apply_all_exploding_patch(self):
         """
         When a patch explodes the store is rolled back to make sure
         that any changes the patch made to the database are removed.
@@ -266,7 +266,7 @@ class PatchApplierTest(MockerTestCase):
         self.assertEqual(list(self.patch_applier.get_unapplied_versions()),
                          [666, 667])
 
-    def test_mark_applied(self):
+    async def test_mark_applied(self):
         """
         L{PatchApplier.mark} marks a patch has applied by inserting a new row
         in the patch table.
@@ -276,12 +276,12 @@ class PatchApplierTest(MockerTestCase):
         self.assertFalse("mypackage.patch_42" in sys.modules)
         self.assertFalse("mypackage.patch_380" in sys.modules)
 
-        self.assertTrue(self.store.get(Patch, 42))
-        self.assertFalse(self.store.get(Patch, 380))
+        self.assertTrue(await self.store.get(Patch, 42))
+        self.assertFalse(await self.store.get(Patch, 380))
 
         self.assert_transaction_committed()
 
-    def test_mark_applied_all(self):
+    async def test_mark_applied_all(self):
         """
         L{PatchApplier.mark_applied_all} marks all pending patches as applied.
         """
@@ -290,12 +290,12 @@ class PatchApplierTest(MockerTestCase):
         self.assertFalse("mypackage.patch_42" in sys.modules)
         self.assertFalse("mypackage.patch_380" in sys.modules)
 
-        self.assertTrue(self.store.get(Patch, 42))
-        self.assertTrue(self.store.get(Patch, 380))
+        self.assertTrue(await self.store.get(Patch, 42))
+        self.assertTrue(await self.store.get(Patch, 380))
 
         self.assert_transaction_committed()
 
-    def test_application_order(self):
+    async def test_application_order(self):
         """
         L{PatchApplier.apply_all} applies the patches in increasing version
         order.
@@ -304,7 +304,7 @@ class PatchApplierTest(MockerTestCase):
         self.assertEqual(self.mypackage.shared_data,
                          [42, 380])
 
-    def test_has_pending_patches(self):
+    async def test_has_pending_patches(self):
         """
         L{PatchApplier.has_pending_patches} returns C{True} if there are
         patches to be applied, C{False} otherwise.
@@ -313,7 +313,7 @@ class PatchApplierTest(MockerTestCase):
         self.patch_applier.apply_all()
         self.assertFalse(self.patch_applier.has_pending_patches())
 
-    def test_abort_if_unknown_patches(self):
+    async def test_abort_if_unknown_patches(self):
         """
         L{PatchApplier.mark_applied} raises and error if the patch table
         contains patches without a matching file in the patch module.
@@ -321,7 +321,7 @@ class PatchApplierTest(MockerTestCase):
         self.patch_applier.mark_applied(381)
         self.assertRaises(UnknownPatchError, self.patch_applier.apply_all)
 
-    def test_get_unknown_patch_versions(self):
+    async def test_get_unknown_patch_versions(self):
         """
         L{PatchApplier.get_unknown_patch_versions} returns the versions of all
         unapplied patches.
@@ -332,7 +332,7 @@ class PatchApplierTest(MockerTestCase):
         self.assertEqual({381},
                          patch_applier.get_unknown_patch_versions())
 
-    def test_no_unknown_patch_versions(self):
+    async def test_no_unknown_patch_versions(self):
         """
         L{PatchApplier.get_unknown_patch_versions} returns an empty set if
         no patches are unapplied.
@@ -342,7 +342,7 @@ class PatchApplierTest(MockerTestCase):
         patch_applier = PatchApplier(my_store, self.mypackage)
         self.assertEqual(set(), patch_applier.get_unknown_patch_versions())
 
-    def test_patch_with_incorrect_apply(self):
+    async def test_patch_with_incorrect_apply(self):
         """
         L{PatchApplier.apply_all} raises an error as soon as one of the patches
         to be applied fails.
@@ -357,7 +357,7 @@ class PatchApplierTest(MockerTestCase):
         else:
             self.fail("BadPatchError not raised")
 
-    def test_patch_with_missing_apply(self):
+    async def test_patch_with_missing_apply(self):
         """
         L{PatchApplier.apply_all} raises an error if one of the patches to
         to be applied has no 'apply' function defined.
@@ -372,7 +372,7 @@ class PatchApplierTest(MockerTestCase):
         else:
             self.fail("BadPatchError not raised")
 
-    def test_patch_with_syntax_error(self):
+    async def test_patch_with_syntax_error(self):
         """
         L{PatchApplier.apply_all} raises an error if one of the patches to
         to be applied contains a syntax error.
@@ -386,7 +386,7 @@ class PatchApplierTest(MockerTestCase):
         else:
             self.fail("BadPatchError not raised")
 
-    def test_patch_error_includes_traceback(self):
+    async def test_patch_error_includes_traceback(self):
         """
         The exception raised by L{PatchApplier.apply_all} when a patch fails
         include the relevant traceback from the patch.
@@ -404,10 +404,10 @@ class PatchApplierTest(MockerTestCase):
             self.fail("BadPatchError not raised")
 
 
-class PatchSetTest(MockerTestCase):
+class PatchSetTest(AsyncMockerTestCase):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.sys_dir = self.makeDir()
         self.package_dir = os.path.join(self.sys_dir, "mypackage")
         os.makedirs(self.package_dir)
@@ -419,13 +419,13 @@ class PatchSetTest(MockerTestCase):
         import mypackage
         self.patch_package = PatchSet(mypackage, sub_level="foo")
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         for name in list(sys.modules):
             if name == "mypackage" or name.startswith("mypackage."):
                 del sys.modules[name]
 
-    def test_get_patch_versions(self):
+    async def test_get_patch_versions(self):
         """
         The C{get_patch_versions} method returns the available patch versions,
         by looking at directories named like "patch_N".
@@ -434,7 +434,7 @@ class PatchSetTest(MockerTestCase):
         os.makedirs(patch_1_dir)
         self.assertEqual([1], self.patch_package.get_patch_versions())
 
-    def test_get_patch_versions_ignores_non_patch_directories(self):
+    async def test_get_patch_versions_ignores_non_patch_directories(self):
         """
         The C{get_patch_versions} method ignores files or directories not
         matching the required name pattern.
@@ -443,7 +443,7 @@ class PatchSetTest(MockerTestCase):
         os.makedirs(random_dir)
         self.assertEqual([], self.patch_package.get_patch_versions())
 
-    def test_get_patch_module(self):
+    async def test_get_patch_module(self):
         """
         The C{get_patch_module} method returns the Python module for the patch
         with the given version.
@@ -455,7 +455,7 @@ class PatchSetTest(MockerTestCase):
         patch_module = self.patch_package.get_patch_module(1)
         self.assertEqual("mypackage.patch_1.foo", patch_module.__name__)
 
-    def test_get_patch_module_no_sub_level(self):
+    async def test_get_patch_module_no_sub_level(self):
         """
         The C{get_patch_module} method returns a dummy patch module if no
         sub-level file exists in the patch directory for the given version.

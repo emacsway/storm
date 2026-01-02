@@ -103,47 +103,47 @@ class Store:
         except (AttributeError, ClassInfoError):
             return None
 
-    def execute(self, statement, params=None, noresult=False):
+    async def execute(self, statement, params=None, noresult=False):
         """Execute a basic query.
 
         This is just like L{storm.database.Connection.execute}, except
         that a flush is performed first.
         """
         if self._implicit_flush_block_count == 0:
-            self.flush()
-        return self._connection.execute(statement, params, noresult)
+            await self.flush()
+        return await self._connection.execute(statement, params, noresult)
 
-    def close(self):
+    async def close(self):
         """Close the connection."""
-        self._connection.close()
+        await self._connection.close()
 
-    def begin(self, xid):
+    async def begin(self, xid):
         """Start a new two-phase transaction.
 
         @param xid: A L{Xid <storm.xid.Xid>} instance holding identification
             data for the new transaction.
         """
-        self._connection.begin(xid)
+        await self._connection.begin(xid)
 
-    def prepare(self):
+    async def prepare(self):
         """Prepare a two-phase transaction for the final commit.
 
         @note: It must be called inside a two-phase transaction started
             with L{begin}.
         """
-        self._connection.prepare()
+        await self._connection.prepare()
 
-    def commit(self):
+    async def commit(self):
         """Commit all changes to the database.
 
         This invalidates the cache, so all live objects will have data
         reloaded next time they are touched.
         """
-        self.flush()
+        await self.flush()
         self.invalidate()
-        self._connection.commit()
+        await self._connection.commit()
 
-    def rollback(self):
+    async def rollback(self):
         """Roll back all outstanding changes, reverting to database state."""
         for obj_info in self._dirty:
             pending = obj_info.pop("pending", None)
@@ -157,9 +157,9 @@ class Store:
                 self._enable_lazy_resolving(obj_info)
         self._dirty.clear()
         self.invalidate()
-        self._connection.rollback()
+        await self._connection.rollback()
 
-    def get(self, cls, key):
+    async def get(self, cls, key):
         """Get object of type cls with the given primary key from the database.
 
         If the object is alive the database won't be touched.
@@ -172,7 +172,7 @@ class Store:
         """
 
         if self._implicit_flush_block_count == 0:
-            self.flush()
+            await self.flush()
 
         if type(key) != tuple:
             key = (key,)
@@ -197,13 +197,13 @@ class Store:
         select = Select(cls_info.columns, where,
                         default_tables=cls_info.table, limit=1)
 
-        result = self._connection.execute(select)
-        values = result.get_one()
+        result = await self._connection.execute(select)
+        values = await result.get_one()
         if values is None:
             return None
         return self._load_object(cls_info, result, values)
 
-    def find(self, cls_spec, *args, **kwargs):
+    async def find(self, cls_spec, *args, **kwargs):
         """Perform a query.
 
         Some examples::
@@ -224,7 +224,7 @@ class Store:
             was a tuple, then an iterator of tuples of such instances.
         """
         if self._implicit_flush_block_count == 0:
-            self.flush()
+            await self.flush()
         find_spec = FindSpec(cls_spec)
         where = get_where_for_args(args, kwargs, find_spec.default_cls)
         return self._result_set_factory(self, find_spec, where)
@@ -254,7 +254,7 @@ class Store:
         """
         return self._table_set(self, tables)
 
-    def add(self, obj):
+    async def add(self, obj):
         """Add the given object to the store.
 
         The object will be inserted into the database if it has not
@@ -276,7 +276,7 @@ class Store:
         elif pending is PENDING_REMOVE:
             del obj_info["pending"]
             self._enable_lazy_resolving(obj_info)
-            # obj_info.event.emit("added")
+            # await obj_info.event.emit("added")
         elif store is None:
             obj_info["store"] = self
             obj_info["pending"] = PENDING_ADD
@@ -286,7 +286,7 @@ class Store:
 
         return obj
 
-    def remove(self, obj):
+    async def remove(self, obj):
         """Remove the given object from the store.
 
         The associated row will be deleted from the database.
@@ -313,7 +313,7 @@ class Store:
             self._disable_lazy_resolving(obj_info)
             obj_info.event.emit("removed")
 
-    def reload(self, obj):
+    async def reload(self, obj):
         """Reload the given object.
 
         The object will immediately have all of its data reset from
@@ -329,8 +329,8 @@ class Store:
         where = compare_columns(cls_info.primary_key, obj_info["primary_vars"])
         select = Select(cls_info.columns, where,
                         default_tables=cls_info.table, limit=1)
-        result = self._connection.execute(select)
-        values = result.get_one()
+        result = await self._connection.execute(select)
+        values = await result.get_one()
         self._set_values(obj_info, cls_info.columns, result, values,
                          replace_unknown_lazy=True)
         self._set_clean(obj_info)
@@ -441,7 +441,7 @@ class Store:
         pair = (get_obj_info(before), get_obj_info(after))
         self._order[pair] -= 1
 
-    def flush(self):
+    async def flush(self):
         """Flush all dirty objects in cache to database.
 
         This method will first call the __storm_pre_flush__ hook of all dirty
@@ -504,14 +504,14 @@ class Store:
                     raise OrderLoopError("Can't flush due to ordering loop")
                 del sorted_dirty[i]
                 self._dirty.pop(obj_info, None)
-                self._flush_one(obj_info)
+                await self._flush_one(obj_info)
 
         self._order.clear()
 
         # That's not stricly necessary, but prevents getting into bigints.
         self._sequence = 0
 
-    def _flush_one(self, obj_info):
+    async def _flush_one(self, obj_info):
         cls_info = obj_info.cls_info
 
         pending = obj_info.pop("pending", None)
@@ -520,7 +520,7 @@ class Store:
             expr = Delete(compare_columns(cls_info.primary_key,
                                           obj_info["primary_vars"]),
                           cls_info.table)
-            self._connection.execute(expr, noresult=True)
+            await self._connection.execute(expr, noresult=True)
 
             # We're sure the cache is valid at this point.
             obj_info.pop("invalidated", None)
@@ -541,13 +541,13 @@ class Store:
                           primary_columns=cls_info.primary_key,
                           primary_variables=obj_info.primary_vars)
 
-            result = self._connection.execute(expr)
+            result = await self._connection.execute(expr)
 
             # We're sure the cache is valid at this point. We just added
             # the object.
             obj_info.pop("invalidated", None)
 
-            self._fill_missing_values(obj_info, obj_info.primary_vars, result)
+            await self._fill_missing_values(obj_info, obj_info.primary_vars, result)
 
             self._enable_change_notification(obj_info)
             self._add_to_alive(obj_info)
@@ -561,9 +561,9 @@ class Store:
                               compare_columns(cls_info.primary_key,
                                               cached_primary_vars),
                               cls_info.table)
-                self._connection.execute(expr, noresult=True)
+                await self._connection.execute(expr, noresult=True)
 
-                self._fill_missing_values(obj_info, obj_info.primary_vars)
+                await self._fill_missing_values(obj_info, obj_info.primary_vars)
 
                 self._add_to_alive(obj_info)
 
@@ -624,7 +624,7 @@ class Store:
 
         return changes
 
-    def _fill_missing_values(self, obj_info, primary_vars, result=None):
+    async def _fill_missing_values(self, obj_info, primary_vars, result=None):
         """Fill missing values in variables of the given obj_info.
 
         This method will verify which values are unset in obj_info,
@@ -668,16 +668,16 @@ class Store:
         if missing_columns:
             where = result.get_insert_identity(cls_info.primary_key,
                                                primary_vars)
-            result = self._connection.execute(Select(missing_columns, where))
+            result = await self._connection.execute(Select(missing_columns, where))
             self._set_values(obj_info, missing_columns,
-                             result, result.get_one())
+                             result, await result.get_one())
 
-    def _validate_alive(self, obj_info):
+    async def _validate_alive(self, obj_info):
         """Perform cache validation for the given obj_info."""
         where = compare_columns(obj_info.cls_info.primary_key,
                                 obj_info["primary_vars"])
-        result = self._connection.execute(Select(SQLRaw("1"), where))
-        if not result.get_one():
+        result = await self._connection.execute(Select(SQLRaw("1"), where))
+        if not await result.get_one():
             raise LostObjectError("Object is not in the database anymore")
         obj_info.pop("invalidated", None)
 
@@ -885,7 +885,7 @@ class Store:
     def _disable_lazy_resolving(self, obj_info):
         obj_info.event.unhook("resolve-lazy-value", self._resolve_lazy_value)
 
-    def _resolve_lazy_value(self, obj_info, variable, lazy_value):
+    async def _resolve_lazy_value(self, obj_info, variable, lazy_value):
         """Resolve a variable set to a lazy value when it's touched.
 
         This method is hooked into the obj_info to resolve variables
@@ -902,7 +902,7 @@ class Store:
         #     _flush_one() doesn't consider dependencies, so it may
         #     not be used directly.  Maybe allow flush(obj)?
         if self._implicit_flush_block_count == 0:
-            self.flush()
+            await self.flush()
 
         autoreload_columns = []
         for column in obj_info.cls_info.columns:
@@ -912,10 +912,10 @@ class Store:
         if autoreload_columns:
             where = compare_columns(obj_info.cls_info.primary_key,
                                     obj_info["primary_vars"])
-            result = self._connection.execute(
+            result = await self._connection.execute(
                 Select(autoreload_columns, where))
             self._set_values(obj_info, autoreload_columns,
-                             result, result.get_one())
+                             result, await result.get_one())
 
 
 class ResultSet:
@@ -994,11 +994,11 @@ class ResultSet:
     def _load_objects(self, result, values):
         return self._find_spec.load_objects(self._store, result, values)
 
-    def __iter__(self):
+    async def __aiter__(self):
         """Iterate the results of the query.
         """
-        result = self._store._connection.execute(self._get_select())
-        for values in result:
+        result = await self._store._connection.execute(self._get_select())
+        async for values in result:
             yield self._load_objects(result, values)
 
     def __getitem__(self, index):
@@ -1048,7 +1048,7 @@ class ResultSet:
 
         return self.copy().config(offset=offset, limit=limit)
 
-    def __contains__(self, item):
+    async def __contains__(self, item):
         """Check if an item is contained within the result set."""
         columns, values = self._find_spec.get_columns_and_values_for_item(item)
 
@@ -1068,19 +1068,19 @@ class ResultSet:
             where = [Eq(*pair) for pair in zip(aliased_columns, values)]
             select = Select(1, And(*where), Alias(subquery, "_tmp"))
 
-        result = self._store._connection.execute(select)
-        return result.get_one() is not None
+        result = await self._store._connection.execute(select)
+        return await result.get_one() is not None
 
-    def is_empty(self):
+    async def is_empty(self):
         """Return C{True} if this result set doesn't contain any results."""
         subselect = self._get_select()
         subselect.limit = 1
         subselect.order_by = Undef
         select = Select(1, tables=Alias(subselect, "_tmp"), limit=1)
-        result = self._store._connection.execute(select)
-        return (not result.get_one())
+        result = await self._store._connection.execute(select)
+        return (not await result.get_one())
 
-    def any(self):
+    async def any(self):
         """Return a single item from the result set.
 
         @return: An arbitrary object or C{None} if one isn't available.
@@ -1089,26 +1089,26 @@ class ResultSet:
         select = self._get_select()
         select.limit = 1
         select.order_by = Undef
-        result = self._store._connection.execute(select)
-        values = result.get_one()
+        result = await self._store._connection.execute(select)
+        values = await result.get_one()
         if values:
             return self._load_objects(result, values)
         return None
 
-    def _any(self):
+    async def _any(self):
         """Return a single item from the result without changing sort order.
 
         @return: An arbitrary object or C{None} if one isn't available.
         """
         select = self._get_select()
         select.limit = 1
-        result = self._store._connection.execute(select)
-        values = result.get_one()
+        result = await self._store._connection.execute(select)
+        values = await result.get_one()
         if values:
             return self._load_objects(result, values)
         return None
 
-    def first(self):
+    async def first(self):
         """Return the first item from an ordered result set.
 
         @raises UnorderedError: Raised if the result set isn't ordered.
@@ -1117,9 +1117,9 @@ class ResultSet:
         """
         if self._order_by is Undef:
             raise UnorderedError("Can't use first() on unordered result set")
-        return self._any()
+        return await self._any()
 
-    def last(self):
+    async def last(self):
         """Return the last item from an ordered result set.
 
         @raises FeatureError: Raised if the result set has a C{LIMIT} set.
@@ -1143,13 +1143,13 @@ class ResultSet:
                 select.order_by.append(Desc(expr.expr))
             else:
                 select.order_by.append(Desc(expr))
-        result = self._store._connection.execute(select)
-        values = result.get_one()
+        result = await self._store._connection.execute(select)
+        values = await result.get_one()
         if values:
             return self._load_objects(result, values)
         return None
 
-    def one(self):
+    async def one(self):
         """Return one item from a result set containing at most one item.
 
         @raises NotOneError: Raised if the result set contains more than one
@@ -1161,9 +1161,9 @@ class ResultSet:
         # limit could be 1 due to slicing, for instance.
         if select.limit is not Undef and select.limit > 2:
             select.limit = 2
-        result = self._store._connection.execute(select)
-        values = result.get_one()
-        if result.get_one():
+        result = await self._store._connection.execute(select)
+        values = await result.get_one()
+        if await result.get_one():
             raise NotOneError("one() used with more than one result available")
         if values:
             return self._load_objects(result, values)
@@ -1184,7 +1184,7 @@ class ResultSet:
         self._order_by = args or Undef
         return self
 
-    def remove(self):
+    async def remove(self):
         """Remove all rows represented by this ResultSet from the database.
 
         This is done efficiently with a DELETE statement, so objects
@@ -1201,7 +1201,7 @@ class ResultSet:
         if self._select is not Undef:
             raise FeatureError("Removing isn't supported with "
                                "set expressions (unions, etc)")
-        result = self._store._connection.execute(
+        result = await self._store._connection.execute(
             Delete(self._where, self._find_spec.default_cls_info.table))
         return result.rowcount
 
@@ -1234,7 +1234,7 @@ class ResultSet:
         self._having = And(*expr)
         return self
 
-    def _aggregate(self, aggregate_func, expr, column=None):
+    async def _aggregate(self, aggregate_func, expr, column=None):
         if self._group_by is not Undef:
             raise FeatureError("Single aggregates aren't supported after a "
                                " GROUP BY clause ")
@@ -1256,8 +1256,8 @@ class ResultSet:
             select.order_by = Undef
             subquery = replace_columns(select, columns)
             select = Select(aggregate, tables=Alias(subquery, "_tmp"))
-        result = self._store._connection.execute(select)
-        value = result.get_one()[0]
+        result = await self._store._connection.execute(select)
+        value = (await result.get_one())[0]
         variable_factory = getattr(column, "variable_factory", None)
         if variable_factory:
             variable = variable_factory(allow_none=True)
@@ -1265,28 +1265,28 @@ class ResultSet:
             return variable.get()
         return value
 
-    def count(self, expr=Undef, distinct=False):
+    async def count(self, expr=Undef, distinct=False):
         """Get the number of objects represented by this ResultSet."""
-        return int(self._aggregate(lambda expr: Count(expr, distinct), expr))
+        return int(await self._aggregate(lambda expr: Count(expr, distinct), expr))
 
-    def max(self, expr):
+    async def max(self, expr):
         """Get the highest value from an expression."""
-        return self._aggregate(Max, expr, expr)
+        return await self._aggregate(Max, expr, expr)
 
-    def min(self, expr):
+    async def min(self, expr):
         """Get the lowest value from an expression."""
-        return self._aggregate(Min, expr, expr)
+        return await self._aggregate(Min, expr, expr)
 
-    def avg(self, expr):
+    async def avg(self, expr):
         """Get the average value from an expression."""
-        value = self._aggregate(Avg, expr)
+        value = await self._aggregate(Avg, expr)
         if value is None:
             return value
         return float(value)
 
-    def sum(self, expr):
+    async def sum(self, expr):
         """Get the sum of all values in an expression."""
-        return self._aggregate(Sum, expr, expr)
+        return await self._aggregate(Sum, expr, expr)
 
     def get_select_expr(self, *columns):
         """Get a L{Select} expression to retrieve only the specified columns.
@@ -1309,7 +1309,7 @@ class ResultSet:
         select.columns = columns
         return select
 
-    def values(self, *columns):
+    async def values(self, *columns):
         """Retrieve only the specified columns.
 
         This does not load full objects from the database into Python.
@@ -1318,7 +1318,7 @@ class ResultSet:
             values will be fetched.
         @raises FeatureError: Raised if no columns are specified or if this
             result is a set expression such as a union.
-        @return: An iterator of tuples of the values for each column
+        @return: An async iterator of tuples of the values for each column
             from each matching row in the database.
         """
         if not columns:
@@ -1328,20 +1328,20 @@ class ResultSet:
             raise FeatureError("values() can't be used with set expressions")
         select = self._get_select()
         select.columns = columns
-        result = self._store._connection.execute(select)
+        result = await self._store._connection.execute(select)
         if len(columns) == 1:
             variable = columns[0].variable_factory()
-            for values in result:
+            async for values in result:
                 result.set_variable(variable, values[0])
                 yield variable.get()
         else:
             variables = [column.variable_factory() for column in columns]
-            for values in result:
+            async for values in result:
                 for variable, value in zip(variables, values):
                     result.set_variable(variable, value)
                 yield tuple(variable.get() for variable in variables)
 
-    def set(self, *args, **kwargs):
+    async def set(self, *args, **kwargs):
         """Update objects in the result set with the given arguments.
 
         This method will update all objects in the current result set
@@ -1393,7 +1393,7 @@ class ResultSet:
 
         expr = Update(changes, self._where,
                       self._find_spec.default_cls_info.table)
-        self._store.execute(expr, noresult=True)
+        await self._store.execute(expr, noresult=True)
 
         try:
             cached = self.cached()
@@ -1545,7 +1545,7 @@ class EmptyResultSet:
     def config(self, distinct=None, offset=None, limit=None):
         return self
 
-    def __iter__(self):
+    async def __aiter__(self):
         return
         yield None
 
@@ -1555,26 +1555,26 @@ class EmptyResultSet:
     def __getitem__(self, index):
         return self.copy()
 
-    def __contains__(self, item):
+    async def __contains__(self, item):
         return False
 
-    def is_empty(self):
+    async def is_empty(self):
         return True
 
-    def any(self):
+    async def any(self):
         return None
 
-    def first(self):
+    async def first(self):
         if self._order_by:
             return None
         raise UnorderedError("Can't use first() on unordered result set")
 
-    def last(self):
+    async def last(self):
         if self._order_by:
             return None
         raise UnorderedError("Can't use last() on unordered result set")
 
-    def one(self):
+    async def one(self):
         return None
 
     def order_by(self, *args):
@@ -1584,22 +1584,22 @@ class EmptyResultSet:
     def group_by(self, *expr):
         return self
 
-    def remove(self):
+    async def remove(self):
         return 0
 
-    def count(self, expr=Undef, distinct=False):
+    async def count(self, expr=Undef, distinct=False):
         return 0
 
-    def max(self, column):
+    async def max(self, column):
         return None
 
-    def min(self, column):
+    async def min(self, column):
         return None
 
-    def avg(self, column):
+    async def avg(self, column):
         return None
 
-    def sum(self, column):
+    async def sum(self, column):
         return None
 
     def get_select_expr(self, *columns):
@@ -1617,14 +1617,14 @@ class EmptyResultSet:
                                "as argument")
         return Select(columns, False)
 
-    def values(self, *columns):
+    async def values(self, *columns):
         if not columns:
             raise FeatureError("values() takes at least one column "
                                "as argument")
         return
         yield None
 
-    def set(self, *args, **kwargs):
+    async def set(self, *args, **kwargs):
         pass
 
     def cached(self):
@@ -1655,7 +1655,7 @@ class TableSet:
         self._store = store
         self._tables = tables
 
-    def find(self, cls_spec, *args, **kwargs):
+    async def find(self, cls_spec, *args, **kwargs):
         """Perform a query on the previously specified tables.
 
         This is identical to L{Store.find} except that the tables are
@@ -1664,7 +1664,7 @@ class TableSet:
         @return: A L{ResultSet}.
         """
         if self._store._implicit_flush_block_count == 0:
-            self._store.flush()
+            await self._store.flush()
         find_spec = FindSpec(cls_spec)
         where = get_where_for_args(args, kwargs, find_spec.default_cls)
         return self._store._result_set_factory(self._store, find_spec,

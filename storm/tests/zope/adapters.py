@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 from storm.tests.zope import has_zope_component
 
 
@@ -35,20 +35,20 @@ if has_zope_component:
         _result_set = EmptyResultSet()
 
 
-class AdaptersTest(TestHelper):
+class AdaptersTest(AsyncTestHelper):
 
     def is_supported(self):
         return has_zope_component
 
-    def setUp(self):
+    async def asyncSetUp(self):
         getGlobalSiteManager().registerAdapter(
             sqlobject_result_set_to_storm_result_set)
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         getGlobalSiteManager().unregisterAdapter(
             sqlobject_result_set_to_storm_result_set)
 
-    def test_adapt_sqlobject_to_storm(self):
+    async def test_adapt_sqlobject_to_storm(self):
         so_result_set = TestSQLObjectResultSet()
         self.assertTrue(
             ISQLObjectResultSet.providedBy(so_result_set))

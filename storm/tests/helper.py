@@ -27,7 +27,7 @@ import tempfile
 from storm.tests import mocker
 
 
-__all__ = ["TestHelper", "MakePath", "LogKeeper"]
+__all__ = ["TestHelper", "AsyncTestHelper", "MakePath", "LogKeeper"]
 
 
 class TestHelper(mocker.MockerTestCase):
@@ -49,6 +49,28 @@ class TestHelper(mocker.MockerTestCase):
         for helper in reversed(self._helper_instances):
             helper.tear_down(self)
         super().tearDown()
+
+
+class AsyncTestHelper(mocker.AsyncMockerTestCase):
+    """Async version of TestHelper for async/await tests."""
+
+    helpers = []
+
+    def is_supported(self):
+        return True
+
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+        self._helper_instances = []
+        for helper_factory in self.helpers:
+            helper = helper_factory()
+            helper.set_up(self)
+            self._helper_instances.append(helper)
+
+    async def asyncTearDown(self):
+        for helper in reversed(self._helper_instances):
+            helper.tear_down(self)
+        await super().asyncTearDown()
 
     @property
     def _testMethod(self):

@@ -26,13 +26,13 @@ from storm.tracer import (trace, install_tracer, get_tracers, remove_tracer,
                           TimelineTracer, TimeoutError, _tracers)
 from storm.database import Connection, create_database
 from storm.expr import Variable
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
-class TracerTest(TestHelper):
+class TracerTest(AsyncTestHelper):
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         del _tracers[:]
 
     def test_install_tracer(self):
@@ -123,10 +123,10 @@ class MockVariable(Variable):
         return self._value
 
 
-class DebugTracerTest(TestHelper):
+class DebugTracerTest(AsyncTestHelper):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.stream = self.mocker.mock(type(sys.stderr))
         self.tracer = DebugTracer(self.stream)
 
@@ -137,9 +137,9 @@ class DebugTracerTest(TestHelper):
 
         self.variable = MockVariable("PARAM")
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         del _tracers[:]
-        super().tearDown()
+        await super().asyncTearDown()
 
     def test_wb_debug_tracer_uses_stderr_by_default(self):
         self.mocker.replay()
@@ -228,12 +228,12 @@ class DebugTracerTest(TestHelper):
         self.tracer.connection_rollback(connection)
 
 
-class TimeoutTracerTestBase(TestHelper):
+class TimeoutTracerTestBase(AsyncTestHelper):
 
     tracer_class = TimeoutTracer
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.tracer = self.tracer_class()
         self.raw_cursor = self.mocker.mock()
         self.statement = self.mocker.mock()
@@ -246,8 +246,8 @@ class TimeoutTracerTestBase(TestHelper):
 
         self.connection = self.mocker.proxy(Connection())
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         del _tracers[:]
 
     def execute(self):
@@ -381,24 +381,24 @@ class TimeoutTracerTest(TimeoutTracerTestBase):
         self.execute()
 
 
-class TimeoutTracerWithDBTest(TestHelper):
+class TimeoutTracerWithDBTest(AsyncTestHelper):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.tracer = StuckInTimeTimeoutTracer(10)
         install_tracer(self.tracer)
         database = create_database(os.environ["STORM_POSTGRES_URI"])
         self.connection = database.connect()
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         remove_tracer(self.tracer)
-        self.connection.close()
+        await self.connection.close()
 
     def is_supported(self):
         return bool(os.environ.get("STORM_POSTGRES_URI"))
 
-    def test_timeout_set_on_beginning_of_new_transaction__commit(self):
+    async def test_timeout_set_on_beginning_of_new_transaction__commit(self):
         """Check that we set the statement timeout before the first query of a
         transaction regardless of the remaining time left by previous
         transactions.
@@ -408,22 +408,22 @@ class TimeoutTracerWithDBTest(TestHelper):
         could cause the first query in that transaction to run with no
         timeout. This test makes sure that doesn't happen.
         """
-        self.connection.execute('SELECT 1')
+        await self.connection.execute('SELECT 1')
         self.assertEqual([10], self.tracer.set_statement_timeout_calls)
 
-        self.connection.commit()
+        await self.connection.commit()
 
-        self.connection.execute('SELECT 1')
+        await self.connection.execute('SELECT 1')
         self.assertEqual([10, 10], self.tracer.set_statement_timeout_calls)
 
-    def test_timeout_set_on_beginning_of_new_transaction__rollback(self):
+    async def test_timeout_set_on_beginning_of_new_transaction__rollback(self):
         """Same as the test above, but here we rollback the first tx."""
-        self.connection.execute('SELECT 1')
+        await self.connection.execute('SELECT 1')
         self.assertEqual([10], self.tracer.set_statement_timeout_calls)
 
-        self.connection.rollback()
+        await self.connection.rollback()
 
-        self.connection.execute('SELECT 1')
+        await self.connection.execute('SELECT 1')
         self.assertEqual([10, 10], self.tracer.set_statement_timeout_calls)
 
 
@@ -537,7 +537,7 @@ class BaseStatementTracerTest(TestCase):
             tracer.calls)
 
 
-class TimelineTracerTest(TestHelper):
+class TimelineTracerTest(AsyncTestHelper):
 
     def is_supported(self):
         return has_timeline
@@ -599,13 +599,13 @@ class TimelineTracerTest(TestHelper):
         self.assertEqual('SQL-<unknown>', self.timeline.actions[-1].category)
 
 
-class CaptureTracerTest(TestHelper, TestWithFixtures):
+class CaptureTracerTest(AsyncTestHelper, TestWithFixtures):
 
     def is_supported(self):
         return has_fixtures
 
-    def tearDown(self):
-        super().tearDown()
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
         del _tracers[:]
 
     def test_capture(self):

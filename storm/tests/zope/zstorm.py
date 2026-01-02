@@ -22,7 +22,7 @@ import threading
 import weakref
 import gc
 
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 from storm.tests.zope import has_transaction, has_zope_component
 
 if has_transaction:
@@ -38,15 +38,15 @@ from storm.exceptions import OperationalError
 from storm.locals import Store
 
 
-class ZStormTest(TestHelper):
+class ZStormTest(AsyncTestHelper):
 
     def is_supported(self):
         return has_transaction
 
-    def setUp(self):
+    async def asyncSetUp(self):
         self.zstorm = ZStorm()
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         # Reset the utility to cleanup the StoreSynchronizer's from the
         # transaction.
         self.zstorm._reset()
@@ -66,11 +66,11 @@ class ZStormTest(TestHelper):
                 manager = manager.manager
         manager.free(transaction.get())
 
-    def test_create(self):
+    async def test_create(self):
         store = self.zstorm.create(None, "sqlite:")
         self.assertTrue(isinstance(store, Store))
 
-    def test_create_twice_unnamed(self):
+    async def test_create_twice_unnamed(self):
         store = self.zstorm.create(None, "sqlite:")
         store.execute("CREATE TABLE test (id INTEGER)")
         store.commit()
@@ -79,15 +79,15 @@ class ZStormTest(TestHelper):
         self.assertRaises(OperationalError,
                           store.execute, "SELECT * FROM test")
 
-    def test_create_twice_same_name(self):
+    async def test_create_twice_same_name(self):
         store = self.zstorm.create("name", "sqlite:")
         self.assertRaises(ZStormError, self.zstorm.create, "name", "sqlite:")
 
-    def test_create_and_get_named(self):
+    async def test_create_and_get_named(self):
         store = self.zstorm.create("name", "sqlite:")
         self.assertTrue(self.zstorm.get("name") is store)
 
-    def test_create_and_get_named_another_thread(self):
+    async def test_create_and_get_named_another_thread(self):
         store = self.zstorm.create("name", "sqlite:")
 
         raised = []
@@ -103,31 +103,31 @@ class ZStormTest(TestHelper):
 
         self.assertTrue(raised)
 
-    def test_get_unexistent(self):
+    async def test_get_unexistent(self):
         self.assertRaises(ZStormError, self.zstorm.get, "name")
 
-    def test_get_with_uri(self):
+    async def test_get_with_uri(self):
         store = self.zstorm.get("name", "sqlite:")
         self.assertTrue(isinstance(store, Store))
         self.assertTrue(self.zstorm.get("name") is store)
         self.assertTrue(self.zstorm.get("name", "sqlite:") is store)
 
-    def test_set_default_uri(self):
+    async def test_set_default_uri(self):
         self.zstorm.set_default_uri("name", "sqlite:")
         store = self.zstorm.get("name")
         self.assertTrue(isinstance(store, Store))
 
-    def test_create_default(self):
+    async def test_create_default(self):
         self.zstorm.set_default_uri("name", "sqlite:")
         store = self.zstorm.create("name")
         self.assertTrue(isinstance(store, Store))
 
-    def test_create_default_twice(self):
+    async def test_create_default_twice(self):
         self.zstorm.set_default_uri("name", "sqlite:")
         self.zstorm.create("name")
         self.assertRaises(ZStormError, self.zstorm.create, "name")
 
-    def test_iterstores(self):
+    async def test_iterstores(self):
         store1 = self.zstorm.create(None, "sqlite:")
         store2 = self.zstorm.create(None, "sqlite:")
         store3 = self.zstorm.create("name", "sqlite:")
@@ -138,17 +138,17 @@ class ZStormTest(TestHelper):
         self.assertEqual(set(stores),
                          {(None, store1), (None, store2), ("name", store3)})
 
-    def test_get_name(self):
+    async def test_get_name(self):
         store = self.zstorm.create("name", "sqlite:")
         self.assertEqual(self.zstorm.get_name(store), "name")
 
-    def test_get_name_with_removed_store(self):
+    async def test_get_name_with_removed_store(self):
         store = self.zstorm.create("name", "sqlite:")
         self.assertEqual(self.zstorm.get_name(store), "name")
         self.zstorm.remove(store)
         self.assertEqual(self.zstorm.get_name(store), None)
 
-    def test_default_databases(self):
+    async def test_default_databases(self):
         self.zstorm.set_default_uri("name1", "sqlite:1")
         self.zstorm.set_default_uri("name2", "sqlite:2")
         self.zstorm.set_default_uri("name3", "sqlite:3")
@@ -157,7 +157,7 @@ class ZStormTest(TestHelper):
                                         "name2": "sqlite:2",
                                         "name3": "sqlite:3"})
 
-    def test_register_store_for_tpc_transaction(self):
+    async def test_register_store_for_tpc_transaction(self):
         """
         Setting a store to use two-phase-commit mode, makes ZStorm
         call its begin() method when it joins the transaction.
@@ -173,7 +173,7 @@ class ZStormTest(TestHelper):
         self.assertEqual("_storm", xid.global_transaction_id[:6])
         self.assertEqual("name", xid.branch_qualifier)
 
-    def test_register_store_for_tpc_transaction_uses_per_transaction_id(self):
+    async def test_register_store_for_tpc_transaction_uses_per_transaction_id(self):
         """
         Two stores in two-phase-commit mode joining the same transaction share
         the same global transaction ID.
@@ -193,7 +193,7 @@ class ZStormTest(TestHelper):
         self.assertEqual(xid1.global_transaction_id,
                          xid2.global_transaction_id)
 
-    def test_register_store_for_tpc_transaction_uses_unique_global_ids(self):
+    async def test_register_store_for_tpc_transaction_uses_unique_global_ids(self):
         """
         Each global transaction gets assigned a unique ID.
         """
@@ -210,7 +210,7 @@ class ZStormTest(TestHelper):
         self.assertNotEqual(xid1.global_transaction_id,
                             xid2.global_transaction_id)
 
-    def test_transaction_with_two_phase_commit(self):
+    async def test_transaction_with_two_phase_commit(self):
         """
         If a store is set to use TPC, than the associated data manager will
         call its prepare() and commit() methods when committing.
@@ -226,7 +226,7 @@ class ZStormTest(TestHelper):
         transaction.commit()
         self.assertEqual(["begin", "prepare", "commit"], calls)
 
-    def test_transaction_with_single_and_two_phase_commit_stores(self):
+    async def test_transaction_with_single_and_two_phase_commit_stores(self):
         """
         When there are both stores in single-phase and two-phase mode, the
         ones in single-phase mode are committed first. This makes it possible
@@ -266,7 +266,7 @@ class ZStormTest(TestHelper):
         self.assertTrue(not self._isInTransaction(store),
                         "%r should not be joined to the transaction" % store)
 
-    def test_wb_store_joins_transaction_on_register_event(self):
+    async def test_wb_store_joins_transaction_on_register_event(self):
         """The Store joins the transaction when register-transaction
         is emitted.
 
@@ -278,7 +278,7 @@ class ZStormTest(TestHelper):
         store._event.emit("register-transaction")
         self.assertInTransaction(store)
 
-    def test_wb_store_joins_transaction_on_use_after_commit(self):
+    async def test_wb_store_joins_transaction_on_use_after_commit(self):
         store = self.zstorm.get("name", "sqlite:")
         store.execute("SELECT 1")
         transaction.commit()
@@ -286,7 +286,7 @@ class ZStormTest(TestHelper):
         store.execute("SELECT 1")
         self.assertInTransaction(store)
 
-    def test_wb_store_joins_transaction_on_use_after_abort(self):
+    async def test_wb_store_joins_transaction_on_use_after_abort(self):
         store = self.zstorm.get("name", "sqlite:")
         store.execute("SELECT 1")
         transaction.abort()
@@ -294,7 +294,7 @@ class ZStormTest(TestHelper):
         store.execute("SELECT 1")
         self.assertInTransaction(store)
 
-    def test_wb_store_joins_transaction_on_use_after_tpc_commit(self):
+    async def test_wb_store_joins_transaction_on_use_after_tpc_commit(self):
         """
         A store used after a two-phase commit re-joins the new transaction.
         """
@@ -310,7 +310,7 @@ class ZStormTest(TestHelper):
         store.execute("SELECT 1")
         self.assertInTransaction(store)
 
-    def test_wb_store_joins_transaction_on_use_after_tpc_abort(self):
+    async def test_wb_store_joins_transaction_on_use_after_tpc_abort(self):
         """
         A store used after a rollback during a two-phase commit re-joins the
         new transaction.
@@ -327,21 +327,21 @@ class ZStormTest(TestHelper):
         store.execute("SELECT 1")
         self.assertInTransaction(store)
 
-    def test_remove(self):
+    async def test_remove(self):
         removed_store = self.zstorm.get("name", "sqlite:")
         self.zstorm.remove(removed_store)
         for name, store in self.zstorm.iterstores():
             self.assertNotEqual(store, removed_store)
         self.assertRaises(ZStormError, self.zstorm.get, "name")
 
-    def test_wb_removed_store_does_not_join_transaction(self):
+    async def test_wb_removed_store_does_not_join_transaction(self):
         """If a store has been removed, it will not join the transaction."""
         store = self.zstorm.get("name", "sqlite:")
         self.zstorm.remove(store)
         store.execute("SELECT 1")
         self.assertNotInTransaction(store)
 
-    def test_wb_removed_store_does_not_join_future_transactions(self):
+    async def test_wb_removed_store_does_not_join_future_transactions(self):
         """If a store has been removed after joining a transaction, it
         will not join new transactions."""
         store = self.zstorm.get("name", "sqlite:")
@@ -353,7 +353,7 @@ class ZStormTest(TestHelper):
         store.execute("SELECT 1")
         self.assertNotInTransaction(store)
 
-    def test_wb_cross_thread_store_does_not_join_transaction(self):
+    async def test_wb_cross_thread_store_does_not_join_transaction(self):
         """If a zstorm registered thread crosses over to another thread,
         it will not be usable."""
         store = self.zstorm.get("name", "sqlite:")
@@ -378,14 +378,14 @@ class ZStormTest(TestHelper):
         thread.join()
         self.assertEqual(failures, ["ZStormError raised"] * 2)
 
-    def test_wb_reset(self):
+    async def test_wb_reset(self):
         """_reset is used to reset the zstorm utility between zope test runs.
         """
         store = self.zstorm.get("name", "sqlite:")
         self.zstorm._reset()
         self.assertEqual(list(self.zstorm.iterstores()), [])
 
-    def test_store_strong_reference(self):
+    async def test_store_strong_reference(self):
         """
         The zstorm utility should be a strong reference to named stores so that
         it doesn't recreate stores uselessly.
@@ -400,12 +400,12 @@ class ZStormTest(TestHelper):
         self.assertIdentical(store_ref(), store)
 
 
-class ZStormUtilityTest(TestHelper):
+class ZStormUtilityTest(AsyncTestHelper):
 
     def is_supported(self):
         return has_transaction and has_zope_component
 
-    def test_utility(self):
+    async def test_utility(self):
         provideUtility(ZStorm())
         self.assertTrue(isinstance(getUtility(IZStorm), ZStorm))
 

@@ -155,18 +155,39 @@ class Variable:
         return self._lazy_value
 
     def get(self, default=None, to_db=False):
-        """Get the value, resolving it from a L{LazyValue} if necessary.
+        """Get the value synchronously (does NOT resolve lazy values).
+
+        If there is a lazy value that needs resolution, this will raise
+        a RuntimeError. Use get_async() instead for lazy value resolution.
+
+        @param default: Returned if no value has been set.
+        @param to_db: A boolean flag indicating whether this value is
+            destined for the database.
+        """
+        if self._lazy_value is not Undef:
+            raise RuntimeError(
+                "Cannot get() a lazy value synchronously. "
+                "Use await get_async() to resolve lazy values.")
+        value = self._value
+        if value is Undef:
+            return default
+        if value is None:
+            return None
+        return self.parse_get(value, to_db)
+
+    async def get_async(self, default=None, to_db=False):
+        """Get the value asynchronously, resolving lazy values if necessary.
 
         If the current value is an instance of L{LazyValue}, then the
-        C{resolve-lazy-value} event will be emitted, to give third
-        parties the chance to resolve the lazy value to a real value.
+        C{resolve-lazy-value} event will be emitted asynchronously, to give
+        third parties the chance to resolve the lazy value to a real value.
 
         @param default: Returned if no value has been set.
         @param to_db: A boolean flag indicating whether this value is
             destined for the database.
         """
         if self._lazy_value is not Undef and self.event is not None:
-            self.event.emit("resolve-lazy-value", self, self._lazy_value)
+            await self.event.emit_async("resolve-lazy-value", self, self._lazy_value)
         value = self._value
         if value is Undef:
             return default
@@ -580,6 +601,11 @@ class MutableValueVariable(Variable):
         if self._event_system is not None:
             self._event_system.hook("flush", self._detect_changes)
         return super().get(default, to_db)
+
+    async def get_async(self, default=None, to_db=False):
+        if self._event_system is not None:
+            self._event_system.hook("flush", self._detect_changes)
+        return await super().get_async(default, to_db)
 
     def set(self, value, from_db=False):
         if self._event_system is not None:

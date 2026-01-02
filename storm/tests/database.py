@@ -29,7 +29,7 @@ from storm.database import *
 from storm.tracer import install_tracer, remove_all_tracers, DebugTracer
 from storm.uri import URI
 from storm.expr import *
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 from storm.tests.mocker import ARGS
 
 
@@ -46,13 +46,13 @@ class RawConnection:
     def cursor(self):
         return RawCursor(executed=self.executed)
 
-    def commit(self):
+    async def commit(self):
         self.executed.append("COMMIT")
 
-    def rollback(self):
+    async def rollback(self):
         self.executed.append("ROLLBACK")
 
-    def close(self):
+    async def close(self):
         self.executed.append("CCLOSE")
 
 
@@ -96,8 +96,13 @@ class FakeConnection:
     def __init__(self):
         self._database = Database()
 
-    def _check_disconnect(self, _function, *args, **kwargs):
-        return _function(*args, **kwargs)
+    async def _check_disconnect(self, _function, *args, **kwargs):
+        # Handle both sync and async functions like the real Connection does
+        import asyncio
+        if asyncio.iscoroutinefunction(_function):
+            return await _function(*args, **kwargs)
+        else:
+            return _function(*args, **kwargs)
 
 
 class FakeTracer:
@@ -127,50 +132,60 @@ class FakeTracer:
         self.seen.append(("ROLLBACK", connection, xid))
 
 
-class DatabaseTest(TestHelper):
+class DatabaseTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.database = Database()
 
-    def test_connect(self):
-        self.assertRaises(NotImplementedError, self.database.connect)
+    async def test_connect(self):
+        with self.assertRaises(NotImplementedError):
+            await self.database.raw_connect()
 
 
-class ConnectionTest(TestHelper):
+class ConnectionTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    def assertMethodsMatch(self, class1, class2):
+        """Assert that class1 has all the methods that class2 has."""
+        methods1 = set(name for name in dir(class1) if not name.startswith('_') and callable(getattr(class1, name, None)))
+        methods2 = set(name for name in dir(class2) if not name.startswith('_') and callable(getattr(class2, name, None)))
+        self.assertTrue(methods2.issubset(methods1),
+                       f"Missing methods in {class1.__name__}: {methods2 - methods1}")
+
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.executed = []
         self.database = Database()
         self.raw_connection = RawConnection(self.executed)
-        self.database.raw_connect = lambda: self.raw_connection
+        async def _raw_connect():
+            return self.raw_connection
+        self.database.raw_connect = _raw_connect
         self.connection = Connection(self.database)
 
-    def tearDown(self):
-        TestHelper.tearDown(self)
+    async def asyncTearDown(self):
+        await AsyncTestHelper.asyncTearDown(self)
         remove_all_tracers()
 
-    def test_execute(self):
-        result = self.connection.execute("something")
+    async def test_execute(self):
+        result = await self.connection.execute("something")
         self.assertTrue(isinstance(result, Result))
         self.assertEqual(self.executed, [("something", marker)])
 
-    def test_execute_params(self):
-        result = self.connection.execute("something", (1,2,3))
+    async def test_execute_params(self):
+        result = await self.connection.execute("something", (1,2,3))
         self.assertTrue(isinstance(result, Result))
         self.assertEqual(self.executed, [("something", (1,2,3))])
 
-    def test_execute_noresult(self):
-        result = self.connection.execute("something", noresult=True)
+    async def test_execute_noresult(self):
+        result = await self.connection.execute("something", noresult=True)
         self.assertEqual(result, None)
         self.assertEqual(self.executed, [("something", marker), "RCLOSE"])
 
-    def test_execute_convert_param_style(self):
+    async def test_execute_convert_param_style(self):
         class MyConnection(Connection):
             param_mark = "%s"
         connection = MyConnection(self.database)
-        result = connection.execute("'?' ? '?' ? '?'")
+        result = await connection.execute("'?' ? '?' ? '?'")
         self.assertEqual(self.executed, [("'?' %s '?' %s '?'", marker)])
 
         # TODO: Unsupported for now.
@@ -179,42 +194,43 @@ class ConnectionTest(TestHelper):
         #                 [("'?' %s '?' %s '?'", marker),
         #                  ("$$?$$ %s $asd'?$asd$ %s '?'", marker)])
 
-    def test_execute_select(self):
+    async def test_execute_select(self):
         select = Select([SQLToken("column1"), SQLToken("column2")],
                         tables=[SQLToken("table1"), SQLToken("table2")])
-        result = self.connection.execute(select)
+        result = await self.connection.execute(select)
         self.assertTrue(isinstance(result, Result))
         self.assertEqual(self.executed,
                          [("SELECT column1, column2 FROM table1, table2",
                            marker)])
 
-    def test_execute_select_and_params(self):
+    async def test_execute_select_and_params(self):
         select = Select(["column1", "column2"], tables=["table1", "table2"])
-        self.assertRaises(ValueError, self.connection.execute,
-                          select, ("something",))
+        with self.assertRaises(ValueError):
+            await self.connection.execute(select, ("something",))
 
-    def test_execute_closed(self):
-        self.connection.close()
-        self.assertRaises(ClosedError, self.connection.execute, "SELECT 1")
+    async def test_execute_closed(self):
+        await self.connection.close()
+        with self.assertRaises(ClosedError):
+            await self.connection.execute("SELECT 1")
 
-    def test_raw_execute_tracing(self):
+    async def test_raw_execute_tracing(self):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
         tracer = FakeTracer()
         install_tracer(tracer)
-        self.connection.execute("something")
+        await self.connection.execute("something")
         self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
                                         "something", ()),
                                        ("SUCCESS", self.connection, RawCursor,
                                         "something", ())])
 
         del tracer.seen[:]
-        self.connection.execute("something", (1, 2))
+        await self.connection.execute("something", (1, 2))
         self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
                                         "something", (1, 2)),
                                        ("SUCCESS", self.connection, RawCursor,
                                         "something", (1, 2))])
 
-    def test_raw_execute_error_tracing(self):
+    async def test_raw_execute_error_tracing(self):
         cursor_mock = self.mocker.patch(RawCursor)
         cursor_mock.execute(ARGS)
         error = ZeroDivisionError()
@@ -224,14 +240,14 @@ class ConnectionTest(TestHelper):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
         tracer = FakeTracer()
         install_tracer(tracer)
-        self.assertRaises(ZeroDivisionError,
-                          self.connection.execute, "something")
+        with self.assertRaises(ZeroDivisionError):
+            await self.connection.execute("something")
         self.assertEqual(tracer.seen, [("EXECUTE", self.connection, RawCursor,
                                         "something", ()),
                                        ("ERROR", self.connection, RawCursor,
                                         "something", (), error)])
 
-    def test_raw_execute_setup_error_tracing(self):
+    async def test_raw_execute_setup_error_tracing(self):
         """
         When an exception is raised in the connection_raw_execute hook of a
         tracer, the connection_raw_execute_error hook is called.
@@ -244,12 +260,12 @@ class ConnectionTest(TestHelper):
 
         tracer = FakeTracer()
         install_tracer(tracer)
-        self.assertRaises(ZeroDivisionError,
-                          self.connection.execute, "something")
+        with self.assertRaises(ZeroDivisionError):
+            await self.connection.execute("something")
         self.assertEqual(tracer.seen, [("ERROR", self.connection, RawCursor,
                                         "something", (), error)])
 
-    def test_tracing_check_disconnect(self):
+    async def test_tracing_check_disconnect(self):
         tracer = FakeTracer()
         tracer_mock = self.mocker.patch(tracer)
         tracer_mock.connection_raw_execute(ARGS)
@@ -261,10 +277,10 @@ class ConnectionTest(TestHelper):
             lambda exc, extra_disconnection_errors=():
                 'connection closed' in str(exc))
 
-        self.assertRaises(DisconnectionError,
-                          self.connection.execute, "something")
+        with self.assertRaises(DisconnectionError):
+            await self.connection.execute("something")
 
-    def test_tracing_success_check_disconnect(self):
+    async def test_tracing_success_check_disconnect(self):
         tracer = FakeTracer()
         tracer_mock = self.mocker.patch(tracer)
         tracer_mock.connection_raw_execute(ARGS)
@@ -277,10 +293,10 @@ class ConnectionTest(TestHelper):
             lambda exc, extra_disconnection_errors=():
                 'connection closed' in str(exc))
 
-        self.assertRaises(DisconnectionError,
-                          self.connection.execute, "something")
+        with self.assertRaises(DisconnectionError):
+            await self.connection.execute("something")
 
-    def test_tracing_error_check_disconnect(self):
+    async def test_tracing_error_check_disconnect(self):
         cursor_mock = self.mocker.patch(RawCursor)
         cursor_mock.execute(ARGS)
         error = ZeroDivisionError()
@@ -297,86 +313,107 @@ class ConnectionTest(TestHelper):
             lambda exc, extra_disconnection_errors=():
                 'connection closed' in str(exc))
 
-        self.assertRaises(DisconnectionError,
-                          self.connection.execute, "something")
+        with self.assertRaises(DisconnectionError):
+            await self.connection.execute("something")
 
-    def test_commit(self):
-        self.connection.commit()
+    async def test_commit(self):
+        await self.connection.commit()
         self.assertEqual(self.executed, ["COMMIT"])
 
-    def test_commit_tracing(self):
+    async def test_commit_tracing(self):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
         tracer = FakeTracer()
         install_tracer(tracer)
-        self.connection.commit()
+        await self.connection.commit()
         self.assertEqual(tracer.seen, [("COMMIT", self.connection, None)])
 
-    def test_rollback(self):
-        self.connection.rollback()
+    async def test_rollback(self):
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
+        self.executed.clear()  # Clear the execute entry
+        await self.connection.rollback()
         self.assertEqual(self.executed, ["ROLLBACK"])
 
-    def test_rollback_tracing(self):
+    async def test_rollback_tracing(self):
         self.assertMethodsMatch(FakeTracer, DebugTracer)
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
         tracer = FakeTracer()
         install_tracer(tracer)
-        self.connection.rollback()
+        await self.connection.rollback()
         self.assertEqual(tracer.seen, [("ROLLBACK", self.connection, None)])
 
-    def test_close(self):
-        self.connection.close()
+    async def test_close(self):
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
+        self.executed.clear()  # Clear the execute entry
+        await self.connection.close()
         self.assertEqual(self.executed, ["CCLOSE"])
 
-    def test_close_twice(self):
-        self.connection.close()
-        self.connection.close()
+    async def test_close_twice(self):
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
+        self.executed.clear()  # Clear the execute entry
+        await self.connection.close()
+        await self.connection.close()
         self.assertEqual(self.executed, ["CCLOSE"])
 
-    def test_close_deallocates_raw_connection(self):
+    async def test_close_deallocates_raw_connection(self):
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
         refs_before = len(gc.get_referrers(self.raw_connection))
-        self.connection.close()
+        await self.connection.close()
         refs_after = len(gc.get_referrers(self.raw_connection))
         self.assertEqual(refs_after, refs_before-1)
 
-    def test_del_deallocates_raw_connection(self):
+    async def test_del_deallocates_raw_connection(self):
+        # In async mode, __del__ does not close the connection.
+        # close() must be called explicitly.
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
         refs_before = len(gc.get_referrers(self.raw_connection))
+        # Call __del__ - it should do nothing in async mode
         self.connection.__del__()
         refs_after = len(gc.get_referrers(self.raw_connection))
-        self.assertEqual(refs_after, refs_before-1)
+        # Refs should remain the same since __del__ doesn't close
+        self.assertEqual(refs_after, refs_before)
 
-    def test_wb_del_with_previously_deallocated_connection(self):
+    async def test_wb_del_with_previously_deallocated_connection(self):
         self.connection._raw_connection = None
         self.connection.__del__()
 
-    def test_get_insert_identity(self):
-        result = self.connection.execute("INSERT")
+    async def test_get_insert_identity(self):
+        result = await self.connection.execute("INSERT")
         self.assertRaises(NotImplementedError,
                           result.get_insert_identity, None, None)
 
-    def test_wb_ensure_connected_noop(self):
+    async def test_wb_ensure_connected_noop(self):
         """Check that _ensure_connected() is a no-op for STATE_CONNECTED."""
+        # First establish the connection
+        await self.connection.execute("SELECT 1")
         self.assertEqual(self.connection._state, storm.database.STATE_CONNECTED)
-        def connect():
+        async def connect():
             raise DatabaseError("_ensure_connected() tried to connect")
         self.database.raw_connect = connect
-        self.connection._ensure_connected()
+        await self.connection._ensure_connected()
 
-    def test_wb_ensure_connected_dead_connection(self):
+    async def test_wb_ensure_connected_dead_connection(self):
         """Check that DisconnectionError is raised for STATE_DISCONNECTED."""
         self.connection._state = storm.database.STATE_DISCONNECTED
-        self.assertRaises(DisconnectionError,
-                          self.connection._ensure_connected)
+        with self.assertRaises(DisconnectionError):
+            await self.connection._ensure_connected()
 
-    def test_wb_ensure_connected_reconnects(self):
+    async def test_wb_ensure_connected_reconnects(self):
         """Check that _ensure_connected() reconnects for STATE_RECONNECT."""
         self.connection._state = storm.database.STATE_RECONNECT
         self.connection._raw_connection = None
 
-        self.connection._ensure_connected()
+        await self.connection._ensure_connected()
         self.assertNotEqual(self.connection._raw_connection, None)
         self.assertEqual(self.connection._state,
                          storm.database.STATE_CONNECTED)
 
-    def test_wb_ensure_connected_connect_failure(self):
+    async def test_wb_ensure_connected_connect_failure(self):
         """Check that the connection is flagged on reconnect failures."""
         self.connection._state = storm.database.STATE_RECONNECT
         self.connection._raw_connection = None
@@ -384,13 +421,13 @@ class ConnectionTest(TestHelper):
             raise DatabaseError("could not connect")
         self.database.raw_connect = _fail_to_connect
 
-        self.assertRaises(DisconnectionError,
-                          self.connection._ensure_connected)
+        with self.assertRaises(DisconnectionError):
+            await self.connection._ensure_connected()
         self.assertEqual(self.connection._state,
                          storm.database.STATE_DISCONNECTED)
         self.assertEqual(self.connection._raw_connection, None)
 
-    def test_wb_check_disconnection(self):
+    async def test_wb_check_disconnection(self):
         """Ensure that _check_disconnect() detects disconnections."""
         class FakeException(DatabaseError):
             """A fake database exception that indicates a disconnection."""
@@ -403,13 +440,13 @@ class ConnectionTest(TestHelper):
         # Error is converted to DisconnectionError:
         def raise_exception():
             raise FakeException
-        self.assertRaises(DisconnectionError,
-                          self.connection._check_disconnect, raise_exception)
+        with self.assertRaises(DisconnectionError):
+            await self.connection._check_disconnect(raise_exception)
         self.assertEqual(self.connection._state,
                          storm.database.STATE_DISCONNECTED)
         self.assertEqual(self.connection._raw_connection, None)
 
-    def test_wb_check_disconnection_extra_errors(self):
+    async def test_wb_check_disconnection_extra_errors(self):
         """Ensure that _check_disconnect() can check for additional
         exceptions."""
         class FakeException(DatabaseError):
@@ -424,101 +461,101 @@ class ConnectionTest(TestHelper):
         def raise_exception():
             raise FakeException
         # Exception passes through as normal.
-        self.assertRaises(FakeException,
-                          self.connection._check_disconnect, raise_exception)
+        with self.assertRaises(FakeException):
+            await self.connection._check_disconnect(raise_exception)
         self.assertEqual(self.connection._state,
                          storm.database.STATE_CONNECTED)
         # Exception treated as a disconnection when keyword argument passed.
-        self.assertRaises(DisconnectionError,
-                          self.connection._check_disconnect, raise_exception,
-                          extra_disconnection_errors=FakeException)
+        with self.assertRaises(DisconnectionError):
+            await self.connection._check_disconnect(raise_exception,
+                                                     extra_disconnection_errors=FakeException)
         self.assertEqual(self.connection._state,
                          storm.database.STATE_DISCONNECTED)
 
-    def test_wb_rollback_clears_disconnected_connection(self):
+    async def test_wb_rollback_clears_disconnected_connection(self):
         """Check that rollback clears the DISCONNECTED state."""
         self.connection._state = storm.database.STATE_DISCONNECTED
         self.connection._raw_connection = None
 
-        self.connection.rollback()
+        await self.connection.rollback()
         self.assertEqual(self.executed, [])
         self.assertEqual(self.connection._state,
                          storm.database.STATE_RECONNECT)
 
 
-class ResultTest(TestHelper):
+class ResultTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.executed = []
         self.raw_cursor = RawCursor(executed=self.executed)
         self.result = Result(FakeConnection(), self.raw_cursor)
 
-    def test_get_one(self):
-        self.assertEqual(self.result.get_one(), ("fetchone0",))
-        self.assertEqual(self.result.get_one(), ("fetchone1",))
-        self.assertEqual(self.result.get_one(), ("fetchone2",))
-        self.assertEqual(self.result.get_one(), None)
+    async def test_get_one(self):
+        self.assertEqual(await self.result.get_one(), ("fetchone0",))
+        self.assertEqual(await self.result.get_one(), ("fetchone1",))
+        self.assertEqual(await self.result.get_one(), ("fetchone2",))
+        self.assertEqual(await self.result.get_one(), None)
 
-    def test_get_all(self):
-        self.assertEqual(self.result.get_all(),
+    async def test_get_all(self):
+        self.assertEqual(await self.result.get_all(),
                          [("fetchall0",), ("fetchall1",)])
-        self.assertEqual(self.result.get_all(), [])
+        self.assertEqual(await self.result.get_all(), [])
 
-    def test_iter(self):
+    async def test_iter(self):
         result = Result(FakeConnection(), RawCursor(2))
-        self.assertEqual([item for item in result],
+        self.assertEqual([item async for item in result],
                          [("fetchmany0",), ("fetchmany1",), ("fetchmany2",),
                           ("fetchmany3",), ("fetchmany4",)])
 
-    def test_set_variable(self):
+    async def test_set_variable(self):
         variable = Variable()
         self.result.set_variable(variable, marker)
         self.assertEqual(variable.get(), marker)
 
-    def test_close(self):
+    async def test_close(self):
         self.result.close()
         self.assertEqual(self.executed, ["RCLOSE"])
 
-    def test_close_twice(self):
+    async def test_close_twice(self):
         self.result.close()
         self.result.close()
         self.assertEqual(self.executed, ["RCLOSE"])
 
-    def test_close_deallocates_raw_cursor(self):
+    async def test_close_deallocates_raw_cursor(self):
         refs_before = len(gc.get_referrers(self.raw_cursor))
         self.result.close()
         refs_after = len(gc.get_referrers(self.raw_cursor))
         self.assertEqual(refs_after, refs_before-1)
 
-    def test_del_deallocates_raw_cursor(self):
+    async def test_del_deallocates_raw_cursor(self):
         refs_before = len(gc.get_referrers(self.raw_cursor))
         self.result.__del__()
         refs_after = len(gc.get_referrers(self.raw_cursor))
         self.assertEqual(refs_after, refs_before-1)
 
-    def test_wb_del_with_previously_deallocated_cursor(self):
+    async def test_wb_del_with_previously_deallocated_cursor(self):
         self.result._raw_cursor = None
         self.result.__del__()
 
-    def test_set_arraysize(self):
+    async def test_set_arraysize(self):
         """When the arraysize is 1, change it to a better value."""
         raw_cursor = RawCursor()
         self.assertEqual(raw_cursor.arraysize, 1)
         result = Result(FakeConnection(), raw_cursor)
         self.assertEqual(raw_cursor.arraysize, 10)
 
-    def test_preserve_arraysize(self):
+    async def test_preserve_arraysize(self):
         """When the arraysize is not 1, preserve it."""
         raw_cursor = RawCursor(arraysize=123)
         result = Result(FakeConnection(), raw_cursor)
         self.assertEqual(raw_cursor.arraysize, 123)
 
 
-class CreateDatabaseTest(TestHelper):
+class CreateDatabaseTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.db_module = types.ModuleType("db_module")
         self.uri = None
         def create_from_uri(uri):
@@ -527,38 +564,38 @@ class CreateDatabaseTest(TestHelper):
         self.db_module.create_from_uri = create_from_uri
         sys.modules["storm.databases.db_module"] = self.db_module
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         del sys.modules["storm.databases.db_module"]
-        TestHelper.tearDown(self)
+        await AsyncTestHelper.asyncTearDown(self)
 
-    def test_create_database_with_str(self):
+    async def test_create_database_with_str(self):
         create_database("db_module:db")
         self.assertTrue(self.uri)
         self.assertEqual(self.uri.scheme, "db_module")
         self.assertEqual(self.uri.database, "db")
 
-    def test_create_database_with_unicode(self):
+    async def test_create_database_with_unicode(self):
         create_database("db_module:db")
         self.assertTrue(self.uri)
         self.assertEqual(self.uri.scheme, "db_module")
         self.assertEqual(self.uri.database, "db")
 
-    def test_create_database_with_uri(self):
+    async def test_create_database_with_uri(self):
         uri = URI("db_module:db")
         create_database(uri)
         self.assertTrue(self.uri is uri)
 
 
-class RegisterSchemeTest(TestHelper):
+class RegisterSchemeTest(AsyncTestHelper):
 
     uri = None
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         if 'factory' in storm.database._database_schemes:
             del storm.database._database_schemes['factory']
-        TestHelper.tearDown(self)
+        await AsyncTestHelper.asyncTearDown(self)
 
-    def test_register_scheme(self):
+    async def test_register_scheme(self):
         def factory(uri):
             self.uri = uri
             return "FACTORY RESULT"

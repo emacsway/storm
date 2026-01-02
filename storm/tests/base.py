@@ -24,18 +24,18 @@ import gc
 from storm.properties import Property, PropertyPublisherMeta
 from storm.info import get_obj_info
 from storm.base import *
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
-class BaseTest(TestHelper):
+class BaseTest(AsyncTestHelper):
 
-    def test_metaclass(self):
+    async def test_metaclass(self):
         class Class(Storm):
             __storm_table__ = "table_name"
             prop = Property(primary=True)
         self.assertEqual(type(Class), PropertyPublisherMeta)
 
-    def test_class_is_collectable(self):
+    async def test_class_is_collectable(self):
         class Class(Storm):
             __storm_table__ = "table_name"
             prop = Property(primary=True)

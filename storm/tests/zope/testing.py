@@ -21,7 +21,7 @@
 import os
 import sys
 
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 from storm.tests.zope import (
     has_testresources,
     has_transaction,
@@ -47,13 +47,13 @@ def apply(store):
 """
 
 
-class ZStormResourceManagerTest(TestHelper):
+class ZStormResourceManagerTest(AsyncTestHelper):
 
     def is_supported(self):
         return has_transaction and has_zope_component and has_testresources
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         package_dir = self.makeDir()
         sys.path.append(package_dir)
         self.patch_dir = os.path.join(package_dir, "patch_package")
@@ -73,13 +73,13 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.vertical_patching = False
         self.store = Store(create_database(uri))
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         global_zstorm._reset()
         del sys.modules["patch_package"]
         sys.modules.pop("patch_package.patch_1", None)
-        super().tearDown()
+        await super().asyncTearDown()
 
-    def test_make(self):
+    async def test_make(self):
         """
         L{ZStormResourceManager.make} returns a L{ZStorm} resource that can be
         used to get the registered L{Store}s.
@@ -88,7 +88,7 @@ class ZStormResourceManagerTest(TestHelper):
         store = zstorm.get("test")
         self.assertEqual([], list(store.execute("SELECT foo, bar FROM test")))
 
-    def test_make_lazy(self):
+    async def test_make_lazy(self):
         """
         L{ZStormResourceManager.make} does not create all stores upfront, but
         only when they're actually used, likewise L{ZStorm.get}.
@@ -98,7 +98,7 @@ class ZStormResourceManagerTest(TestHelper):
         store = zstorm.get("test")
         self.assertEqual([("test", store)], list(zstorm.iterstores()))
 
-    def test_make_upgrade(self):
+    async def test_make_upgrade(self):
         """
         L{ZStormResourceManager.make} upgrades the schema if needed.
         """
@@ -110,7 +110,7 @@ class ZStormResourceManagerTest(TestHelper):
         store = zstorm.get("test")
         self.assertEqual([], list(store.execute("SELECT bar FROM test")))
 
-    def test_make_upgrade_unknown_patch(self):
+    async def test_make_upgrade_unknown_patch(self):
         """
         L{ZStormResourceManager.make} resets the schema if an unknown patch
         is found
@@ -126,7 +126,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.assertEqual([(1,)],
                          list(store.execute("SELECT version FROM patch")))
 
-    def test_make_delete(self):
+    async def test_make_delete(self):
         """
         L{ZStormResourceManager.make} deletes the data from all tables to make
         sure that tests run against a clean database.
@@ -140,7 +140,7 @@ class ZStormResourceManagerTest(TestHelper):
         store = zstorm.get("test")
         self.assertEqual([], list(store.execute("SELECT foo FROM test")))
 
-    def test_make_commits_transaction_once(self):
+    async def test_make_commits_transaction_once(self):
         """
         L{ZStormResourceManager.make} commits schema changes only once
         across all stores, after all patch and delete statements have
@@ -167,7 +167,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.assertEqual([], list(store1.execute("SELECT foo FROM test")))
         self.assertEqual([], list(store2.execute("SELECT foo FROM test")))
 
-    def test_make_zstorm_overwritten(self):
+    async def test_make_zstorm_overwritten(self):
         """
         L{ZStormResourceManager.make} registers its own ZStorm again if a test
         has registered a new ZStorm utility overwriting the resource one.
@@ -177,7 +177,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.make([])
         self.assertIs(zstorm, getUtility(IZStorm))
 
-    def test_clean_flush(self):
+    async def test_clean_flush(self):
         """
         L{ZStormResourceManager.clean} tries to flush the stores to make sure
         that they are all in a consistent state.
@@ -197,7 +197,7 @@ class ZStormResourceManagerTest(TestHelper):
         store.add(Test("data", 2))
         self.assertRaises(IntegrityError, self.resource.clean, zstorm)
 
-    def test_clean_delete(self):
+    async def test_clean_delete(self):
         """
         L{ZStormResourceManager.clean} cleans the database tables from the data
         created by the tests.
@@ -209,7 +209,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.clean(zstorm)
         self.assertEqual([], list(self.store.execute("SELECT * FROM test")))
 
-    def test_clean_with_force_delete(self):
+    async def test_clean_with_force_delete(self):
         """
         If L{ZStormResourceManager.force_delete} is C{True}, L{Schema.delete}
         is always invoked upon test cleanup.
@@ -222,7 +222,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.clean(zstorm)
         self.assertEqual([], list(self.store.execute("SELECT * FROM test")))
 
-    def test_wb_clean_clears_alive_cache_before_abort(self):
+    async def test_wb_clean_clears_alive_cache_before_abort(self):
         """
         L{ZStormResourceManager.clean} clears the alive cache before
         aborting the transaction.
@@ -247,7 +247,7 @@ class ZStormResourceManagerTest(TestHelper):
 
         self.resource.clean(zstorm)
 
-    def test_schema_uri(self):
+    async def test_schema_uri(self):
         """
         It's possible to specify an alternate URI for applying the schema
         and cleaning up tables after a test.
@@ -270,7 +270,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.clean(zstorm)
         self.assertEqual([], list(schema_store.execute("SELECT * FROM test")))
 
-    def test_schema_uri_with_schema_stamp_dir(self):
+    async def test_schema_uri_with_schema_stamp_dir(self):
         """
         If a schema stamp directory is set, and the stamp indicates there's no
         need to update the schema, the resource clean up code will still
@@ -292,7 +292,7 @@ class ZStormResourceManagerTest(TestHelper):
         resource2.clean(zstorm)
         self.assertEqual([], list(store.execute("SELECT * FROM test")))
 
-    def test_no_schema(self):
+    async def test_no_schema(self):
         """
         A particular database may have no schema associated.
         """
@@ -302,7 +302,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.assertEqual([],
                          list(store.execute("SELECT * FROM sqlite_master")))
 
-    def test_no_schema_clean(self):
+    async def test_no_schema_clean(self):
         """
         A particular database may have no schema associated. If it's committed
         during tests, it will just be skipped when cleaning up tables.
@@ -317,7 +317,7 @@ class ZStormResourceManagerTest(TestHelper):
 
         self.assertEqual([], tracer.queries)
 
-    def test_deprecated_database_format(self):
+    async def test_deprecated_database_format(self):
         """
         The old deprecated format of the 'database' constructor parameter is
         still supported.
@@ -330,7 +330,7 @@ class ZStormResourceManagerTest(TestHelper):
         store = zstorm.get("test")
         self.assertIsNot(None, store)
 
-    def test_use_global_zstorm(self):
+    async def test_use_global_zstorm(self):
         """
         If the C{use_global_zstorm} attribute is C{True} then the global
         L{ZStorm} will be used.
@@ -339,7 +339,7 @@ class ZStormResourceManagerTest(TestHelper):
         zstorm = self.resource.make([])
         self.assertIs(global_zstorm, zstorm)
 
-    def test_provide_utility_before_patches(self):
+    async def test_provide_utility_before_patches(self):
         """
         The L{IZStorm} utility is provided before patches are applied, in order
         to let them get it if they need.
@@ -359,7 +359,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.assertEqual([(1,), (2,)],
                          sorted(store.execute("SELECT version FROM patch")))
 
-    def test_create_schema_stamp_dir(self):
+    async def test_create_schema_stamp_dir(self):
         """
         If a schema stamp directory is set, it's created automatically if it
         doesn't exist yet.
@@ -368,7 +368,7 @@ class ZStormResourceManagerTest(TestHelper):
         self.resource.make([])
         self.assertTrue(os.path.exists(self.resource.schema_stamp_dir))
 
-    def test_use_schema_stamp(self):
+    async def test_use_schema_stamp(self):
         """
         If a schema stamp directory is set, then it's used to decide whether
         to upgrade the schema or not. In case the patch directory hasn't been
@@ -388,7 +388,7 @@ class ZStormResourceManagerTest(TestHelper):
 
         self.assertEqual([], tracer.queries)
 
-    def test_use_schema_stamp_out_of_date(self):
+    async def test_use_schema_stamp_out_of_date(self):
         """
         If a schema stamp directory is set, then it's used to decide whether
         to upgrade the schema or not. In case the patch directory has changed

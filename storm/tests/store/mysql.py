@@ -23,18 +23,18 @@ import os
 from storm.database import create_database
 
 from storm.tests.store.base import StoreTest, EmptyResultSetTest
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
-class MySQLStoreTest(TestHelper, StoreTest):
+class MySQLStoreTest(AsyncTestHelper, StoreTest):
 
-    def setUp(self):
-        TestHelper.setUp(self)
-        StoreTest.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
+        await StoreTest.asyncSetUp(self)
 
-    def tearDown(self):
-        TestHelper.tearDown(self)
-        StoreTest.tearDown(self)
+    async def asyncTearDown(self):
+        await AsyncTestHelper.asyncTearDown(self)
+        await StoreTest.asyncTearDown(self)
 
     def is_supported(self):
         return bool(os.environ.get("STORM_MYSQL_URI"))
@@ -42,55 +42,55 @@ class MySQLStoreTest(TestHelper, StoreTest):
     def create_database(self):
         self.database = create_database(os.environ["STORM_MYSQL_URI"])
 
-    def create_tables(self):
+    async def create_tables(self):
         connection = self.connection
-        connection.execute("CREATE TABLE foo "
+        await connection.execute("CREATE TABLE foo "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " title VARCHAR(50) DEFAULT 'Default Title') "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE bar "
+        await connection.execute("CREATE TABLE bar "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " foo_id INTEGER, title VARCHAR(50)) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE bin "
+        await connection.execute("CREATE TABLE bin "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " bin BLOB, foo_id INTEGER) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE link "
+        await connection.execute("CREATE TABLE link "
                            "(foo_id INTEGER, bar_id INTEGER,"
                            " PRIMARY KEY (foo_id, bar_id)) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE money "
+        await connection.execute("CREATE TABLE money "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " value NUMERIC(6,4)) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE selfref "
+        await connection.execute("CREATE TABLE selfref "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " title VARCHAR(50),"
                            " selfref_id INTEGER,"
                            " INDEX (selfref_id),"
                            " FOREIGN KEY (selfref_id) REFERENCES selfref(id)) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE foovalue "
+        await connection.execute("CREATE TABLE foovalue "
                            "(id INT PRIMARY KEY AUTO_INCREMENT,"
                            " foo_id INTEGER,"
                            " value1 INTEGER, value2 INTEGER) "
                            "ENGINE=InnoDB")
-        connection.execute("CREATE TABLE unique_id "
+        await connection.execute("CREATE TABLE unique_id "
                            "(id VARCHAR(36) PRIMARY KEY) "
                            "ENGINE=InnoDB")
-        connection.commit()
+        await connection.commit()
 
 
-class MySQLEmptyResultSetTest(TestHelper, EmptyResultSetTest):
+class MySQLEmptyResultSetTest(AsyncTestHelper, EmptyResultSetTest):
 
-    def setUp(self):
-        TestHelper.setUp(self)
-        EmptyResultSetTest.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
+        await EmptyResultSetTest.asyncSetUp(self)
 
-    def tearDown(self):
-        TestHelper.tearDown(self)
-        EmptyResultSetTest.tearDown(self)
+    async def asyncTearDown(self):
+        await AsyncTestHelper.asyncTearDown(self)
+        await EmptyResultSetTest.asyncTearDown(self)
 
     def is_supported(self):
         return bool(os.environ.get("STORM_MYSQL_URI"))
@@ -98,9 +98,9 @@ class MySQLEmptyResultSetTest(TestHelper, EmptyResultSetTest):
     def create_database(self):
         self.database = create_database(os.environ["STORM_MYSQL_URI"])
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE foo "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE foo "
                                 "(id INT PRIMARY KEY AUTO_INCREMENT,"
                                 " title VARCHAR(50) DEFAULT 'Default Title') "
                                 "ENGINE=InnoDB")
-        self.connection.commit()
+        await self.connection.commit()

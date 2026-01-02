@@ -144,29 +144,35 @@ class Reference:
         if local is None:
             return self
 
-        remote = self._relation.get_remote(local)
-        if remote is not None:
+        # Always return an async function for consistency
+        async def _get_reference():
+            # Check cache first
+            remote = self._relation.get_remote(local)
+            if remote is not None:
+                return remote
+
+            if self._relation.local_variables_are_none(local):
+                return None
+
+            store = Store.of(local)
+            if store is None:
+                return None
+
+            # Load from database
+            if self._relation.remote_key_is_primary:
+                remote = await store.get(self._relation.remote_cls,
+                                         self._relation.get_local_variables(local))
+            else:
+                where = self._relation.get_where_for_remote(local)
+                result = store.find(self._relation.remote_cls, where)
+                remote = await result.one()
+
+            if remote is not None:
+                self._relation.link(local, remote)
+
             return remote
 
-        if self._relation.local_variables_are_none(local):
-            return None
-
-        store = Store.of(local)
-        if store is None:
-            return None
-
-        if self._relation.remote_key_is_primary:
-            remote = store.get(self._relation.remote_cls,
-                               self._relation.get_local_variables(local))
-        else:
-            where = self._relation.get_where_for_remote(local)
-            result = store.find(self._relation.remote_cls, where)
-            remote = result.one()
-
-        if remote is not None:
-            self._relation.link(local, remote)
-
-        return remote
+        return _get_reference()
 
     def __set__(self, local, remote):
         # Don't use local here, as it might be security proxied or something.

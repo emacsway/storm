@@ -11,10 +11,11 @@ import shutil
 import sys
 import os
 import gc
+import asyncio
 
 
 __all__ = ["Mocker", "expect", "IS", "CONTAINS", "IN", "MATCH",
-           "ANY", "ARGS", "KWARGS"]
+           "ANY", "ARGS", "KWARGS", "AsyncMockerTestCase"]
 
 
 __author__ = "Gustavo Niemeyer <gustavo@niemeyer.net>"
@@ -305,6 +306,104 @@ class MockerTestCase(unittest.TestCase):
     assertNotIdentical = assertIsNot
     failUnlessIdentical = failUnlessIs
     failIfIdentical = failIfIs
+
+
+class AsyncMockerTestCase(unittest.IsolatedAsyncioTestCase):
+    """Async version of MockerTestCase for async/await tests.
+
+    This class provides the same Mocker integration as MockerTestCase,
+    but works with async test methods.
+    """
+
+    expect = expect
+
+    def __init__(self, methodName="runTest"):
+        # Similar to MockerTestCase but for async methods
+        test_method = getattr(self, methodName, None)
+        if test_method is not None and asyncio.iscoroutinefunction(test_method):
+            async def test_method_wrapper():
+                try:
+                    result = await test_method()
+                except:
+                    raise
+                else:
+                    if (self.mocker.is_recording() and
+                        self.mocker.get_events()):
+                        raise RuntimeError("Mocker must be put in replay "
+                                           "mode with self.mocker.replay()")
+                    self.mocker.verify()
+                    return result
+            # Copy attributes from original method
+            for attr in dir(test_method):
+                if not hasattr(test_method_wrapper, attr) or attr == "__doc__":
+                    setattr(test_method_wrapper, attr,
+                            getattr(test_method, attr))
+            setattr(self, methodName, test_method_wrapper)
+
+        # Wrap run() for cleanup
+        run_method = self.run
+        def run_wrapper(*args, **kwargs):
+            try:
+                return run_method(*args, **kwargs)
+            finally:
+                self.__cleanup()
+        self.run = run_wrapper
+
+        self.mocker = Mocker()
+        self.__cleanup_funcs = []
+        self.__cleanup_paths = []
+
+        super().__init__(methodName)
+
+    def __cleanup(self):
+        for path in self.__cleanup_paths:
+            if os.path.isfile(path):
+                os.unlink(path)
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+        self.mocker.restore()
+        for func, args, kwargs in reversed(self.__cleanup_funcs):
+            func(*args, **kwargs)
+
+    def addCleanup(self, func, *args, **kwargs):
+        self.__cleanup_funcs.append((func, args, kwargs))
+
+    def makeFile(self, content=None, suffix="", prefix="tmp", basename=None,
+                 dirname=None, path=None):
+        """Create a temporary file and return the path to it."""
+        if path is not None:
+            self.__cleanup_paths.append(path)
+        elif basename is not None:
+            if dirname is None:
+                dirname = tempfile.mkdtemp()
+                self.__cleanup_paths.append(dirname)
+            path = os.path.join(dirname, basename)
+        else:
+            fd, path = tempfile.mkstemp(suffix, prefix, dirname)
+            self.__cleanup_paths.append(path)
+            os.close(fd)
+            if content is None:
+                os.unlink(path)
+        if content is not None:
+            file = open(path, "w")
+            file.write(content)
+            file.close()
+        return path
+
+    def makeDir(self, suffix="", prefix="tmp", dirname=None, path=None):
+        """Create a temporary directory and return the path to it."""
+        if path is not None:
+            os.makedirs(path)
+        else:
+            path = tempfile.mkdtemp(suffix, prefix, dirname)
+        self.__cleanup_paths.append(path)
+        return path
+
+    # Compatibility aliases for identity assertions
+    assertIdentical = unittest.TestCase.assertIs
+    assertNotIdentical = unittest.TestCase.assertIsNot
+    failUnlessIdentical = unittest.TestCase.assertIs
+    failIfIdentical = unittest.TestCase.assertIsNot
 
 
 # --------------------------------------------------------------------

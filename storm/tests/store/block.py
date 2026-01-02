@@ -20,21 +20,21 @@
 from storm.databases.sqlite import SQLite
 from storm.exceptions import ConnectionBlockedError
 from storm.store import Store, block_access
-from storm.tests.helper import TestHelper, MakePath
+from storm.tests.helper import AsyncTestHelper, MakePath
 from storm.uri import URI
 
 
-class BlockAccessTest(TestHelper):
+class BlockAccessTest(AsyncTestHelper):
     """Tests for L{block_access}."""
 
     helpers = [MakePath]
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         database = SQLite(URI("sqlite:"))
         self.store = Store(database)
 
-    def test_block_access(self):
+    async def test_block_access(self):
         """
         The L{block_access} context manager blocks access to a L{Store}.  A
         L{ConnectionBlockedError} exception is raised if an attempt to access
@@ -43,10 +43,10 @@ class BlockAccessTest(TestHelper):
         with block_access(self.store):
             self.assertRaises(ConnectionBlockedError, self.store.execute,
                               "SELECT 1")
-        result = self.store.execute("SELECT 1")
+        result = await self.store.execute("SELECT 1")
         self.assertEqual([(1,)], list(result))
 
-    def test_block_access_with_multiple_stores(self):
+    async def test_block_access_with_multiple_stores(self):
         """
         If multiple L{Store}s are passed to L{block_access} they will all be
         blocked until the managed context is left.

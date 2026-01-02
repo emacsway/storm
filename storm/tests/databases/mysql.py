@@ -30,7 +30,7 @@ from storm.variables import IntVariable, UnicodeVariable
 from storm.tests.databases.base import (
     DatabaseTest, DatabaseDisconnectionTest, UnsupportedDatabaseTest)
 from storm.tests.databases.proxy import ProxyTCPServer
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 def create_proxy_and_uri(uri):
@@ -43,7 +43,7 @@ def create_proxy_and_uri(uri):
     return proxy, proxy_uri
 
 
-class MySQLTest(DatabaseTest, TestHelper):
+class MySQLTest(DatabaseTest, AsyncTestHelper):
 
     supports_microseconds = False
 
@@ -53,39 +53,42 @@ class MySQLTest(DatabaseTest, TestHelper):
     def create_database(self):
         self.database = create_database(os.environ["STORM_MYSQL_URI"])
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE number "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE number "
                                 "(one INTEGER, two INTEGER, three INTEGER)")
-        self.connection.execute("CREATE TABLE test "
+        await self.connection.execute("CREATE TABLE test "
                                 "(id INT AUTO_INCREMENT PRIMARY KEY,"
                                 " title VARCHAR(50)) ENGINE=InnoDB")
-        self.connection.execute("CREATE TABLE datetime_test "
+        await self.connection.execute("CREATE TABLE datetime_test "
                                 "(id INT AUTO_INCREMENT PRIMARY KEY,"
                                 " dt TIMESTAMP, d DATE, t TIME, td TEXT) "
                                 "ENGINE=InnoDB")
-        self.connection.execute("CREATE TABLE bin_test "
+        await self.connection.execute("CREATE TABLE bin_test "
                                 "(id INT AUTO_INCREMENT PRIMARY KEY,"
                                 " b BLOB) ENGINE=InnoDB")
 
     def test_wb_create_database(self):
         database = create_database("mysql://un:pw@ht:12/db?unix_socket=us")
         self.assertTrue(isinstance(database, MySQL))
+        # aiomysql uses "password" instead of "passwd", "unix_socket" instead of socket
         for key, value in [("db", "db"), ("host", "ht"), ("port", 12),
-                           ("user", "un"), ("passwd", "pw"),
+                           ("user", "un"), ("password", "pw"),
                            ("unix_socket", "us")]:
             self.assertEqual(database._connect_kwargs.get(key), value)
 
-    def test_charset_defaults_to_utf8mb3(self):
-        result = self.connection.execute("SELECT @@character_set_client")
-        self.assertEqual(result.get_one(), ("utf8mb3",))
+    async def test_charset_defaults_to_utf8mb3(self):
+        # aiomysql defaults to utf8mb4 instead of utf8mb3
+        result = await self.connection.execute("SELECT @@character_set_client")
+        self.assertEqual(await result.get_one(), ("utf8mb4",))
 
-    def test_charset_option(self):
+    async def test_charset_option(self):
         uri = URI(os.environ["STORM_MYSQL_URI"])
         uri.options["charset"] = "ascii"
         database = create_database(uri)
         connection = database.connect()
-        result = connection.execute("SELECT @@character_set_client")
-        self.assertEqual(result.get_one(), ("ascii",))
+        result = await connection.execute("SELECT @@character_set_client")
+        self.assertEqual(await result.get_one(), ("ascii",))
+        await connection.close()
 
     def test_get_insert_identity(self):
         # Primary keys are filled in during execute() for MySQL
@@ -95,7 +98,7 @@ class MySQLTest(DatabaseTest, TestHelper):
         # Primary keys are filled in during execute() for MySQL
         pass
 
-    def test_execute_insert_auto_increment_primary_key(self):
+    async def test_execute_insert_auto_increment_primary_key(self):
         id_column = Column("id", "test")
         id_variable = IntVariable()
         title_column = Column("title", "test")
@@ -109,14 +112,14 @@ class MySQLTest(DatabaseTest, TestHelper):
         insert = Insert({title_column: title_variable},
                         primary_columns=(id_column, dummy_column),
                         primary_variables=(id_variable, dummy_variable))
-        self.connection.execute(insert)
+        await self.connection.execute(insert)
         self.assertTrue(id_variable.is_defined())
         self.assertFalse(dummy_variable.is_defined())
 
         # The newly inserted row should have the maximum id value for
         # the table.
-        result = self.connection.execute("SELECT MAX(id) FROM test")
-        self.assertEqual(result.get_one()[0], id_variable.get())
+        result = await self.connection.execute("SELECT MAX(id) FROM test")
+        self.assertEqual((await result.get_one())[0], id_variable.get())
 
     def test_mysql_specific_reserved_words(self):
         reserved_words = """
@@ -144,13 +147,13 @@ class MySQLTest(DatabaseTest, TestHelper):
                             "Word missing: %s" % (word,))
 
 
-class MySQLUnsupportedTest(UnsupportedDatabaseTest, TestHelper):
+class MySQLUnsupportedTest(UnsupportedDatabaseTest, AsyncTestHelper):
 
-    dbapi_module_names = ["MySQLdb"]
+    dbapi_module_names = ["aiomysql", "pymysql"]
     db_module_name = "mysql"
 
 
-class MySQLDisconnectionTest(DatabaseDisconnectionTest, TestHelper):
+class MySQLDisconnectionTest(DatabaseDisconnectionTest, AsyncTestHelper):
 
     environment_variable = "STORM_MYSQL_URI"
     host_environment_variable = "STORM_MYSQL_HOST_URI"

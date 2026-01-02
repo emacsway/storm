@@ -27,10 +27,10 @@ from storm.databases.sqlite import SQLite
 from storm.database import create_database
 from storm.uri import URI
 from storm.tests.databases.base import DatabaseTest, UnsupportedDatabaseTest
-from storm.tests.helper import TestHelper, MakePath
+from storm.tests.helper import AsyncTestHelper, MakePath
 
 
-class SQLiteMemoryTest(DatabaseTest, TestHelper):
+class SQLiteMemoryTest(DatabaseTest, AsyncTestHelper):
 
     helpers = [MakePath]
     
@@ -41,38 +41,39 @@ class SQLiteMemoryTest(DatabaseTest, TestHelper):
         self.database = SQLite(URI("sqlite:%s?synchronous=OFF&timeout=0" %
                                    self.get_path()))
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE number "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE number "
                                 "(one INTEGER, two INTEGER, three INTEGER)")
-        self.connection.execute("CREATE TABLE test "
+        await self.connection.execute("CREATE TABLE test "
                                 "(id INTEGER PRIMARY KEY, title VARCHAR)")
-        self.connection.execute("CREATE TABLE datetime_test "
+        await self.connection.execute("CREATE TABLE datetime_test "
                                 "(id INTEGER PRIMARY KEY,"
                                 " dt TIMESTAMP, d DATE, t TIME, td INTERVAL)")
-        self.connection.execute("CREATE TABLE bin_test "
+        await self.connection.execute("CREATE TABLE bin_test "
                                 "(id INTEGER PRIMARY KEY, b BLOB)")
 
-    def drop_tables(self):
+    async def drop_tables(self):
         pass
 
-    def test_wb_create_database(self):
+    async def test_wb_create_database(self):
         database = create_database("sqlite:")
         self.assertTrue(isinstance(database, SQLite))
         self.assertEqual(database._filename, ":memory:")
 
-    def test_concurrent_behavior(self):
+    async def test_concurrent_behavior(self):
         pass # We can't connect to the in-memory database twice, so we can't
              # exercise the concurrency behavior (nor it makes sense).
 
-    def test_synchronous(self):
+    async def test_synchronous(self):
         synchronous_values = {"OFF": 0, "NORMAL": 1, "FULL": 2}
         for value in synchronous_values:
             database = SQLite(URI("sqlite:%s?synchronous=%s" %
                                   (self.get_path(), value)))
             connection = database.connect()
-            result = connection.execute("PRAGMA synchronous")
-            self.assertEqual(result.get_one()[0],
+            result = await connection.execute("PRAGMA synchronous")
+            self.assertEqual((await result.get_one())[0],
                              synchronous_values[value])
+            await connection.close()
 
     def test_sqlite_specific_reserved_words(self):
         """Check sqlite-specific reserved words are recognized.
@@ -103,54 +104,64 @@ class SQLiteFileTest(SQLiteMemoryTest):
         self.assertTrue(isinstance(database, SQLite))
         self.assertEqual(database._filename, filename)
 
-    def test_timeout(self):
+    async def test_timeout(self):
         database = create_database("sqlite:%s?timeout=0.3" % self.get_path())
         connection1 = database.connect()
         connection2 = database.connect()
-        connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
-        connection1.commit()
-        connection1.execute("INSERT INTO test VALUES (1)")
-        started = time.time()
         try:
-            connection2.execute("INSERT INTO test VALUES (2)")
-        except OperationalError as exception:
-            self.assertEqual(str(exception), "database is locked")
-            self.assertTrue(time.time()-started >= 0.3)
-        else:
-            self.fail("OperationalError not raised")
+            await connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
+            await connection1.commit()
+            await connection1.execute("INSERT INTO test VALUES (1)")
+            started = time.time()
+            try:
+                await connection2.execute("INSERT INTO test VALUES (2)")
+            except OperationalError as exception:
+                self.assertEqual(str(exception), "database is locked")
+                self.assertTrue(time.time()-started >= 0.3)
+            else:
+                self.fail("OperationalError not raised")
+        finally:
+            await connection1.close()
+            await connection2.close()
 
-    def test_commit_timeout(self):
+    async def test_commit_timeout(self):
         """Regression test for commit observing the timeout.
-        
+
         In 0.10, the timeout wasn't observed for connection.commit().
 
         """
         # Create a database with a table.
         database = create_database("sqlite:%s?timeout=0.3" % self.get_path())
         connection1 = database.connect()
-        connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
-        connection1.commit()
-
-        # Put some data in, but also make a second connection to the database,
-        # which will prevent a commit until it is closed.
-        connection1.execute("INSERT INTO test VALUES (1)")
-        connection2 = database.connect()
-        connection2.execute("SELECT id FROM test")
-
-        started = time.time()
+        connection2 = None
         try:
-            connection1.commit()
-        except OperationalError as exception:
-            self.assertEqual(str(exception), "database is locked")
-            # In 0.10, the next assertion failed because the timeout wasn't
-            # enforced for the "COMMIT" statement.
-            self.assertTrue(time.time()-started >= 0.3)
-        else:
-            self.fail("OperationalError not raised")
+            await connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
+            await connection1.commit()
 
-    def test_recover_after_timeout(self):
+            # Put some data in, but also make a second connection to the database,
+            # which will prevent a commit until it is closed.
+            await connection1.execute("INSERT INTO test VALUES (1)")
+            connection2 = database.connect()
+            await connection2.execute("SELECT id FROM test")
+
+            started = time.time()
+            try:
+                await connection1.commit()
+            except OperationalError as exception:
+                self.assertEqual(str(exception), "database is locked")
+                # In 0.10, the next assertion failed because the timeout wasn't
+                # enforced for the "COMMIT" statement.
+                self.assertTrue(time.time()-started >= 0.3)
+            else:
+                self.fail("OperationalError not raised")
+        finally:
+            await connection1.close()
+            if connection2 is not None:
+                await connection2.close()
+
+    async def test_recover_after_timeout(self):
         """Regression test for recovering from database locked exception.
-        
+
         In 0.10, connection.commit() would forget that a transaction was in
         progress if an exception was raised, such as an OperationalError due to
         another connection being open.  As a result, a subsequent modification
@@ -161,77 +172,85 @@ class SQLiteFileTest(SQLiteMemoryTest):
         # Create a database with a table.
         database = create_database("sqlite:%s?timeout=0.3" % self.get_path())
         connection1 = database.connect()
-        connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
-        connection1.commit()
+        await connection1.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
+        await connection1.commit()
 
         # Put some data in, but also make a second connection to the database,
         # which will prevent a commit until it is closed.
-        connection1.execute("INSERT INTO test VALUES (1)")
+        await connection1.execute("INSERT INTO test VALUES (1)")
         connection2 = database.connect()
-        connection2.execute("SELECT id FROM test")
-        self.assertRaises(OperationalError, connection1.commit)
+        await connection2.execute("SELECT id FROM test")
+        with self.assertRaises(OperationalError):
+            await connection1.commit()
 
         # Close the second connection - it should now be possible to commit.
-        connection2.close()
+        await connection2.close()
 
         # In 0.10, the next statement raised OperationalError: cannot start a
         # transaction within a transaction
-        connection1.execute("INSERT INTO test VALUES (2)")
-        connection1.commit()
+        await connection1.execute("INSERT INTO test VALUES (2)")
+        await connection1.commit()
 
         # Check that the correct data is present
-        self.assertEqual(connection1.execute("SELECT id FROM test").get_all(),
+        self.assertEqual(await (await connection1.execute("SELECT id FROM test")).get_all(),
                          [(1,), (2,)])
 
-    def test_journal(self):
+        await connection1.close()
+
+    async def test_journal(self):
         journal_values = {"DELETE": 'delete', "TRUNCATE": 'truncate',
                           "PERSIST": 'persist', "MEMORY": 'memory',
                           "WAL": 'wal', "OFF": 'off'}
         for value in journal_values:
             database = SQLite(URI("sqlite:%s?journal_mode=%s" %
-                                  (self.get_path(), value)))
+                                  (self.make_path(), value)))
             connection = database.connect()
-            result = connection.execute("PRAGMA journal_mode").get_one()[0]
+            result = (await (await connection.execute("PRAGMA journal_mode")).get_one())[0]
             self.assertEqual(result,
                              journal_values[value])
+            await connection.close()
 
-    def test_journal_persistency_to_rollback(self):
+    async def test_journal_persistency_to_rollback(self):
         journal_values = {"DELETE": 'delete', "TRUNCATE": 'truncate',
                           "PERSIST": 'persist', "MEMORY": 'memory',
                           "WAL": 'wal', "OFF": 'off'}
         for value in journal_values:
+            path = self.make_path()
             database = SQLite(URI("sqlite:%s?journal_mode=%s" %
-                                  (self.get_path(), value)))
+                                  (path, value)))
             connection = database.connect()
-            connection.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
-            connection.rollback()
-            result = connection.execute("PRAGMA journal_mode").get_one()[0]
-            self.assertEqual(result,
-                             journal_values[value])
+            await connection.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
+            await connection.rollback()
+            result = (await (await connection.execute("PRAGMA journal_mode")).get_one())[0]
+            self.assertEqual(result, journal_values[value],
+                           f"Expected {journal_values[value]} for {value} at {path}, got {result}")
+            await connection.close()
 
-    def test_foreign_keys(self):
+    async def test_foreign_keys(self):
         foreign_keys_values = {"ON": 1, "OFF": 0}
         for value in foreign_keys_values:
             database = SQLite(URI("sqlite:%s?foreign_keys=%s" %
-                                  (self.get_path(), value)))
+                                  (self.make_path(), value)))
             connection = database.connect()
-            result = connection.execute("PRAGMA foreign_keys").get_one()[0]
+            result = (await (await connection.execute("PRAGMA foreign_keys")).get_one())[0]
             self.assertEqual(result,
                              foreign_keys_values[value])
+            await connection.close()
 
-    def test_foreign_keys_persistency_to_rollback(self):
+    async def test_foreign_keys_persistency_to_rollback(self):
         foreign_keys_values = {"ON": 1, "OFF": 0}
         for value in foreign_keys_values:
             database = SQLite(URI("sqlite:%s?foreign_keys=%s" %
-                                  (self.get_path(), value)))
+                                  (self.make_path(), value)))
             connection = database.connect()
-            connection.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
-            connection.rollback()
-            result = connection.execute("PRAGMA foreign_keys").get_one()[0]
+            await connection.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
+            await connection.rollback()
+            result = (await (await connection.execute("PRAGMA foreign_keys")).get_one())[0]
             self.assertEqual(result,
                              foreign_keys_values[value])
+            await connection.close()
 
-class SQLiteUnsupportedTest(UnsupportedDatabaseTest, TestHelper):
+class SQLiteUnsupportedTest(UnsupportedDatabaseTest, AsyncTestHelper):
  
-    dbapi_module_names = ["pysqlite2", "sqlite3"]
+    dbapi_module_names = ["aiosqlite"]
     db_module_name = "sqlite"

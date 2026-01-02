@@ -1,11 +1,11 @@
 import queue
-from unittest import TestCase
 import threading
 import time
 
 from storm.wsgi import make_app
+from storm.tests.helper import AsyncTestHelper
 
-class TestMakeApp(TestCase):
+class TestMakeApp(AsyncTestHelper):
 
     def stub_app(self, environ, start_response):
         if getattr(self, 'in_request', None):

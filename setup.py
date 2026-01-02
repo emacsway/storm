@@ -23,10 +23,11 @@ with open("README") as readme:
 
 tests_require = [
     "fixtures >= 1.3.0",
-    "mysqlclient",
+    "aiosqlite >= 0.19.0",
+    "aiomysql >= 0.2.0",
     "pgbouncer >= 0.0.7",
     "postgresfixture",
-    "psycopg2 >= 2.3.0",
+    "psycopg[binary] >= 3.0",
     "testresources >= 0.2.4",
     "testtools >= 0.9.8",
     "timeline >= 0.0.2",
@@ -63,8 +64,6 @@ setup(
          "Lesser General Public License (LGPL)"),
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -82,7 +81,7 @@ setup(
     # warning) by distutils.
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=["packaging >= 14.1"],
     test_suite="storm.tests.find_tests",
     tests_require=tests_require,

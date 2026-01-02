@@ -21,76 +21,76 @@
 from storm.databases.sqlite import SQLite
 from storm.uri import URI
 from storm.tests.store.base import StoreTest, EmptyResultSetTest
-from storm.tests.helper import TestHelper, MakePath
+from storm.tests.helper import AsyncTestHelper, MakePath
 
 
-class SQLiteStoreTest(TestHelper, StoreTest):
+class SQLiteStoreTest(AsyncTestHelper, StoreTest):
 
     helpers = [MakePath]
 
-    def setUp(self):
-        TestHelper.setUp(self)
-        StoreTest.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
+        await StoreTest.asyncSetUp(self)
 
-    def tearDown(self):
-        TestHelper.tearDown(self)
-        StoreTest.tearDown(self)
+    async def asyncTearDown(self):
+        await AsyncTestHelper.asyncTearDown(self)
+        await StoreTest.asyncTearDown(self)
 
     def create_database(self):
         self.database = SQLite(URI("sqlite:%s?synchronous=OFF" %
                                    self.make_path()))
 
-    def create_tables(self):
+    async def create_tables(self):
         connection = self.connection
-        connection.execute("CREATE TABLE foo "
+        await connection.execute("CREATE TABLE foo "
                            "(id INTEGER PRIMARY KEY,"
                            " title VARCHAR DEFAULT 'Default Title')")
-        connection.execute("CREATE TABLE bar "
+        await connection.execute("CREATE TABLE bar "
                            "(id INTEGER PRIMARY KEY,"
                            " foo_id INTEGER, title VARCHAR)")
-        connection.execute("CREATE TABLE bin "
+        await connection.execute("CREATE TABLE bin "
                            "(id INTEGER PRIMARY KEY, bin BLOB, foo_id INTEGER)")
-        connection.execute("CREATE TABLE link "
+        await connection.execute("CREATE TABLE link "
                            "(foo_id INTEGER, bar_id INTEGER)")
         # We have to use TEXT here, since NUMERIC would cause SQLite
         # to interpret values as float, and thus lose precision.
-        connection.execute("CREATE TABLE money "
+        await connection.execute("CREATE TABLE money "
                            "(id INTEGER PRIMARY KEY, value TEXT)")
-        connection.execute("CREATE TABLE selfref "
+        await connection.execute("CREATE TABLE selfref "
                            "(id INTEGER PRIMARY KEY, title VARCHAR,"
                            " selfref_id INTEGER)")
-        connection.execute("CREATE TABLE foovalue "
+        await connection.execute("CREATE TABLE foovalue "
                            "(id INTEGER PRIMARY KEY, foo_id INTEGER,"
                            " value1 INTEGER, value2 INTEGER)")
-        connection.execute("CREATE TABLE unique_id "
+        await connection.execute("CREATE TABLE unique_id "
                            "(id VARCHAR PRIMARY KEY)")
-        connection.commit()
+        await connection.commit()
 
     def drop_tables(self):
         pass
 
 
-class SQLiteEmptyResultSetTest(TestHelper, EmptyResultSetTest):
+class SQLiteEmptyResultSetTest(AsyncTestHelper, EmptyResultSetTest):
 
     helpers = [MakePath]
 
-    def setUp(self):
-        TestHelper.setUp(self)
-        EmptyResultSetTest.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
+        await EmptyResultSetTest.asyncSetUp(self)
 
-    def tearDown(self):
-        TestHelper.tearDown(self)
-        EmptyResultSetTest.tearDown(self)
+    async def asyncTearDown(self):
+        await AsyncTestHelper.asyncTearDown(self)
+        await EmptyResultSetTest.asyncTearDown(self)
 
     def create_database(self):
         self.database = SQLite(URI("sqlite:%s?synchronous=OFF" %
                                    self.make_path()))
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE foo "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE foo "
                                 "(id INTEGER PRIMARY KEY,"
                                 " title VARCHAR DEFAULT 'Default Title')")
-        self.connection.commit()
+        await self.connection.commit()
 
     def drop_tables(self):
         pass

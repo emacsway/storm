@@ -24,7 +24,7 @@ import sys
 from storm.locals import StormError, Store, create_database
 from storm.schema.schema import (
     Schema, SchemaMissingError, UnappliedPatchesError)
-from storm.tests.mocker import MockerTestCase
+from storm.tests.mocker import AsyncMockerTestCase
 
 
 class Package:
@@ -40,10 +40,10 @@ class Package:
         file.close()
 
 
-class SchemaTest(MockerTestCase):
+class SchemaTest(AsyncMockerTestCase):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.database = create_database("sqlite:///%s" % self.makeFile())
         self.store = Store(self.database)
 
@@ -58,7 +58,7 @@ class SchemaTest(MockerTestCase):
 
         self.schema = Schema(creates, drops, deletes, patch_package)
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         for package_dir in self._package_dirs:
             sys.path.remove(package_dir)
 
@@ -68,7 +68,7 @@ class SchemaTest(MockerTestCase):
             elif any(name.startswith("%s." % x) for x in self._package_names):
                 del sys.modules[name]
 
-        super().tearDown()
+        await super().asyncTearDown()
 
     def create_package(self, base_dir, name, init_module=None):
         """Create a Python package.
@@ -95,17 +95,17 @@ class SchemaTest(MockerTestCase):
 
         return Package(package_dir, name)
 
-    def test_check_with_missing_schema(self):
+    async def test_check_with_missing_schema(self):
         """
         L{Schema.check} raises an exception if the given store is completely
         pristine and no schema has been applied yet. The transaction doesn't
         get rolled back so it's still usable.
         """
-        self.store.execute("CREATE TABLE foo (bar INT)")
+        await self.store.execute("CREATE TABLE foo (bar INT)")
         self.assertRaises(SchemaMissingError, self.schema.check, self.store)
-        self.assertIsNone(self.store.execute("SELECT 1 FROM foo").get_one())
+        self.assertIsNone(await (await self.store.execute("SELECT 1 FROM foo")).get_one())
 
-    def test_check_with_unapplied_patches(self):
+    async def test_check_with_unapplied_patches(self):
         """
         L{Schema.check} raises an exception if the given store has unapplied
         schema patches.
@@ -118,39 +118,39 @@ def apply(store):
         self.package.create_module("patch_1.py", contents)
         self.assertRaises(UnappliedPatchesError, self.schema.check, self.store)
 
-    def test_create(self):
+    async def test_create(self):
         """
         L{Schema.create} can be used to create the tables of a L{Store}.
         """
         self.assertRaises(StormError,
                           self.store.execute, "SELECT * FROM person")
         self.schema.create(self.store)
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")), [])
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")), [])
         # By default changes are committed
         store2 = Store(self.database)
-        self.assertEqual(list(store2.execute("SELECT * FROM person")), [])
+        self.assertEqual(list(await store2.execute("SELECT * FROM person")), [])
 
-    def test_create_with_autocommit_off(self):
+    async def test_create_with_autocommit_off(self):
         """
         L{Schema.autocommit} can be used to turn automatic commits off.
         """
         self.schema.autocommit(False)
         self.schema.create(self.store)
-        self.store.rollback()
+        await self.store.rollback()
         self.assertRaises(StormError, self.store.execute,
                           "SELECT * FROM patch")
 
-    def test_drop(self):
+    async def test_drop(self):
         """
         L{Schema.drop} can be used to drop the tables of a L{Store}.
         """
         self.schema.create(self.store)
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")), [])
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")), [])
         self.schema.drop(self.store)
         self.assertRaises(StormError,
                           self.store.execute, "SELECT * FROM person")
 
-    def test_drop_with_missing_patch_table(self):
+    async def test_drop_with_missing_patch_table(self):
         """
         L{Schema.drop} works fine even if the user's supplied statements end up
         dropping the patch table that we created.
@@ -162,18 +162,18 @@ def apply(store):
         self.assertRaises(StormError,
                           self.store.execute, "SELECT * FROM patch")
 
-    def test_delete(self):
+    async def test_delete(self):
         """
         L{Schema.delete} can be used to clear the tables of a L{Store}.
         """
         self.schema.create(self.store)
-        self.store.execute("INSERT INTO person (id, name) VALUES (1, 'Jane')")
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")),
+        await self.store.execute("INSERT INTO person (id, name) VALUES (1, 'Jane')")
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")),
                          [(1, "Jane")])
         self.schema.delete(self.store)
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")), [])
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")), [])
 
-    def test_upgrade_creates_schema(self):
+    async def test_upgrade_creates_schema(self):
         """
         L{Schema.upgrade} creates a schema from scratch if no exist, and is
         effectively equivalent to L{Schema.create} in such case.
@@ -181,9 +181,9 @@ def apply(store):
         self.assertRaises(StormError,
                           self.store.execute, "SELECT * FROM person")
         self.schema.upgrade(self.store)
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")), [])
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")), [])
 
-    def test_upgrade_marks_patches_applied(self):
+    async def test_upgrade_marks_patches_applied(self):
         """
         L{Schema.upgrade} updates the patch table after applying the needed
         patches.
@@ -196,10 +196,10 @@ def apply(store):
         statement = "SELECT * FROM patch"
         self.assertRaises(StormError, self.store.execute, statement)
         self.schema.upgrade(self.store)
-        self.assertEqual(list(self.store.execute("SELECT * FROM patch")),
+        self.assertEqual(list(await self.store.execute("SELECT * FROM patch")),
                          [(1,)])
 
-    def test_upgrade_applies_patches(self):
+    async def test_upgrade_applies_patches(self):
         """
         L{Schema.upgrade} executes the needed patches, that typically modify
         the existing schema.
@@ -211,12 +211,12 @@ def apply(store):
 """
         self.package.create_module("patch_1.py", contents)
         self.schema.upgrade(self.store)
-        self.store.execute(
+        await self.store.execute(
             "INSERT INTO person (id, name, phone) VALUES (1, 'Jane', '123')")
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")),
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")),
                          [(1, "Jane", "123")])
 
-    def test_advance(self):
+    async def test_advance(self):
         """
         L{Schema.advance} executes the given patch version.
         """
@@ -232,7 +232,7 @@ def apply(store):
         self.package.create_module("patch_1.py", contents1)
         self.package.create_module("patch_2.py", contents2)
         self.schema.advance(self.store, 1)
-        self.store.execute(
+        await self.store.execute(
             "INSERT INTO person (id, name, phone) VALUES (1, 'Jane', '123')")
-        self.assertEqual(list(self.store.execute("SELECT * FROM person")),
+        self.assertEqual(list(await self.store.execute("SELECT * FROM person")),
                          [(1, "Jane", "123")])

@@ -1,5 +1,5 @@
 from storm.tests import has_psycopg
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 from storm.tests.zope import has_transaction, has_zope_component
 from storm.tests.twisted import has_twisted
 
@@ -16,27 +16,27 @@ if has_transaction and has_zope_component and has_twisted:
     from storm.twisted.testing import FakeThreadPool
 else:
     # We can't use trial's TestCase as base
-    TestCase = TestHelper
-    TestHelper = object
+    TestCase = AsyncTestHelper
+    AsyncTestHelper = object
 
 if has_psycopg:
     from psycopg2.extensions import TransactionRollbackError
 
 
-class TransactorTest(TestCase, TestHelper):
+class TransactorTest(TestCase, AsyncTestHelper):
 
     def is_supported(self):
         return has_transaction and has_zope_component and has_twisted
 
-    def setUp(self):
+    async def asyncSetUp(self):
         TestCase.setUp(self)
-        TestHelper.setUp(self)
+        await AsyncTestHelper.asyncSetUp(self)
         self.threadpool = FakeThreadPool()
         self.transaction = self.mocker.mock()
         self.transactor = Transactor(self.threadpool, self.transaction)
         self.function = self.mocker.mock()
 
-    def test_run(self):
+    async def test_run(self):
         """
         L{Transactor.run} executes a function in a thread, commits
         the transaction and returns a deferred firing the function result.
@@ -49,7 +49,7 @@ class TransactorTest(TestCase, TestHelper):
         deferred.addCallback(self.assertEqual, 3)
         return deferred
 
-    def test_run_with_function_failure(self):
+    async def test_run_with_function_failure(self):
         """
         If the given function raises an error, then L{Transactor.run}
         aborts the transaction and re-raises the same error.
@@ -62,7 +62,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, ZeroDivisionError)
         return deferred
 
-    def test_run_with_disconnection_error(self):
+    async def test_run_with_disconnection_error(self):
         """
         If the given function raises a L{DisconnectionError}, then a C{SELECT
         1} will be executed in each registered store such that C{psycopg}
@@ -86,7 +86,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, DisconnectionError)
         return deferred
 
-    def test_run_with_disconnection_error_in_execute_is_ignored(self):
+    async def test_run_with_disconnection_error_in_execute_is_ignored(self):
         """
         If the given function raises a L{DisconnectionError}, then a C{SELECT
         1} will be executed in each registered store such that C{psycopg}
@@ -111,7 +111,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, DisconnectionError)
         return deferred
 
-    def test_run_with_commit_failure(self):
+    async def test_run_with_commit_failure(self):
         """
         If the given function succeeds but the transaction fails to commit,
         then L{Transactor.run} aborts the transaction and re-raises
@@ -126,14 +126,14 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, ZeroDivisionError)
         return deferred
 
-    def test_wb_default_transaction(self):
+    async def test_wb_default_transaction(self):
         """
         By default L{Transact} uses the global transaction manager.
         """
         transactor = Transactor(self.threadpool)
         self.assertIdentical(transaction, transactor._transaction)
 
-    def test_decorate(self):
+    async def test_decorate(self):
         """
         A L{transact} decorator can be used with methods of an object that
         contains a L{Transactor} instance as a C{transactor} instance variable,
@@ -154,7 +154,7 @@ class TransactorTest(TestCase, TestHelper):
         deferred.addCallback(self.assertEqual, "result")
         return deferred
 
-    def test_run_with_integrity_error_retries(self):
+    async def test_run_with_integrity_error_retries(self):
         """
         If the given function raises a L{IntegrityError}, then the function
         will be retried another two times before letting the exception bubble
@@ -182,7 +182,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, IntegrityError)
         return deferred
 
-    def test_run_with_transaction_rollback_error_retries(self):
+    async def test_run_with_transaction_rollback_error_retries(self):
         """
         If the given function raises a L{TransactionRollbackError}, then the
         function will be retried another two times before letting the exception
@@ -213,7 +213,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, TransactionRollbackError)
         return deferred
 
-    def test_run_with_disconnection_error_retries(self):
+    async def test_run_with_disconnection_error_retries(self):
         """
         If the given function raises a L{DisconnectionError}, then the
         function will be retried another two times before letting the exception
@@ -249,7 +249,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, DisconnectionError)
         return deferred
 
-    def test_run_with_integrity_error_on_commit_retries(self):
+    async def test_run_with_integrity_error_on_commit_retries(self):
         """
         If the given function raises a L{IntegrityError}, then the function
         will be retried another two times before letting the exception bubble
@@ -280,7 +280,7 @@ class TransactorTest(TestCase, TestHelper):
         self.assertFailure(deferred, IntegrityError)
         return deferred
 
-    def test_run_with_on_retry_callback(self):
+    async def test_run_with_on_retry_callback(self):
         """
         If a retry callback is passed with the C{on_retry} parameter, then
         it's invoked with the number of retries performed so far.

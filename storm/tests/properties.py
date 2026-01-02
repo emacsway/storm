@@ -31,7 +31,7 @@ from storm.variables import *
 from storm.info import get_obj_info
 from storm.expr import Column, Select, compile, State, SQLRaw
 from storm.tests.info import Wrapper
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 class CustomVariable(Variable):
@@ -41,10 +41,10 @@ class Custom(SimpleProperty):
     variable_class = CustomVariable
 
 
-class PropertyTest(TestHelper):
+class PropertyTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         class Class:
             __storm_table__ = "mytable"
             prop1 = Custom("column1", primary=True)
@@ -55,10 +55,10 @@ class PropertyTest(TestHelper):
         self.Class = Class
         self.SubClass = SubClass
 
-    def test_column(self):
+    async def test_column(self):
         self.assertTrue(isinstance(self.Class.prop1, Column))
 
-    def test_cls(self):
+    async def test_cls(self):
         self.assertEqual(self.Class.prop1.cls, self.Class)
         self.assertEqual(self.Class.prop2.cls, self.Class)
         self.assertEqual(self.SubClass.prop1.cls, self.SubClass)
@@ -66,7 +66,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(self.Class.prop1.cls, self.Class)
         self.assertEqual(self.Class.prop2.cls, self.Class)
 
-    def test_cls_reverse(self):
+    async def test_cls_reverse(self):
         self.assertEqual(self.SubClass.prop1.cls, self.SubClass)
         self.assertEqual(self.SubClass.prop2.cls, self.SubClass)
         self.assertEqual(self.Class.prop1.cls, self.Class)
@@ -74,29 +74,29 @@ class PropertyTest(TestHelper):
         self.assertEqual(self.SubClass.prop1.cls, self.SubClass)
         self.assertEqual(self.SubClass.prop2.cls, self.SubClass)
 
-    def test_name(self):
+    async def test_name(self):
         self.assertEqual(self.Class.prop1.name, "column1")
 
-    def test_auto_name(self):
+    async def test_auto_name(self):
         self.assertEqual(self.Class.prop2.name, "prop2")
 
-    def test_auto_table(self):
+    async def test_auto_table(self):
         self.assertEqual(self.Class.prop1.table, self.Class)
         self.assertEqual(self.Class.prop2.table, self.Class)
 
-    def test_auto_table_subclass(self):
+    async def test_auto_table_subclass(self):
         self.assertEqual(self.Class.prop1.table, self.Class)
         self.assertEqual(self.Class.prop2.table, self.Class)
         self.assertEqual(self.SubClass.prop1.table, self.SubClass)
         self.assertEqual(self.SubClass.prop2.table, self.SubClass)
 
-    def test_auto_table_subclass_reverse_initialization(self):
+    async def test_auto_table_subclass_reverse_initialization(self):
         self.assertEqual(self.SubClass.prop1.table, self.SubClass)
         self.assertEqual(self.SubClass.prop2.table, self.SubClass)
         self.assertEqual(self.Class.prop1.table, self.Class)
         self.assertEqual(self.Class.prop2.table, self.Class)
 
-    def test_variable_factory(self):
+    async def test_variable_factory(self):
         variable = self.Class.prop1.variable_factory()
         self.assertTrue(isinstance(variable, CustomVariable))
         self.assertFalse(variable.is_defined())
@@ -105,7 +105,7 @@ class PropertyTest(TestHelper):
         self.assertTrue(isinstance(variable, CustomVariable))
         self.assertTrue(variable.is_defined())
 
-    def test_variable_factory_validator_attribute(self):
+    async def test_variable_factory_validator_attribute(self):
         # Should work even if we make things harder by reusing properties.
         prop = Custom()
         class Class1:
@@ -123,13 +123,13 @@ class PropertyTest(TestHelper):
         variable2.set(2)
         self.assertEqual(args, [(None, "prop1", 1), (None, "prop2", 2)])
 
-    def test_default(self):
+    async def test_default(self):
         obj = self.SubClass()
         self.assertEqual(obj.prop1, None)
         self.assertEqual(obj.prop2, None)
         self.assertEqual(obj.prop3, 50)
 
-    def test_set_get(self):
+    async def test_set_get(self):
         obj = self.Class()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -138,7 +138,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, 20)
         self.assertEqual(obj.prop3, 30)
 
-    def test_set_get_none(self):
+    async def test_set_get_none(self):
         obj = self.Class()
         obj.prop1 = None
         obj.prop2 = None
@@ -146,7 +146,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, None)
         self.assertRaises(NoneError, setattr, obj, "prop3", None)
 
-    def test_set_with_validator(self):
+    async def test_set_with_validator(self):
         args = []
         def validator(obj, attr, value):
             args[:] = obj, attr, value
@@ -162,7 +162,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(args, [obj, "prop", 21])
         self.assertEqual(obj.prop, 42)
 
-    def test_set_get_subclass(self):
+    async def test_set_get_subclass(self):
         obj = self.SubClass()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -171,7 +171,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, 20)
         self.assertEqual(obj.prop3, 30)
 
-    def test_set_get_explicitly(self):
+    async def test_set_get_explicitly(self):
         obj = self.Class()
         prop1 = self.Class.prop1
         prop2 = self.Class.prop2
@@ -183,7 +183,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(prop2.__get__(obj), 20)
         self.assertEqual(prop3.__get__(obj), 30)
 
-    def test_set_get_subclass_explicitly(self):
+    async def test_set_get_subclass_explicitly(self):
         obj = self.SubClass()
         prop1 = self.Class.prop1
         prop2 = self.Class.prop2
@@ -195,7 +195,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(prop2.__get__(obj), 20)
         self.assertEqual(prop3.__get__(obj), 30)
 
-    def test_delete(self):
+    async def test_delete(self):
         obj = self.Class()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -207,7 +207,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, None)
         self.assertEqual(obj.prop3, None)
 
-    def test_delete_subclass(self):
+    async def test_delete_subclass(self):
         obj = self.SubClass()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -219,7 +219,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, None)
         self.assertEqual(obj.prop3, None)
 
-    def test_delete_explicitly(self):
+    async def test_delete_explicitly(self):
         obj = self.Class()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -231,7 +231,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, None)
         self.assertEqual(obj.prop3, None)
 
-    def test_delete_subclass_explicitly(self):
+    async def test_delete_subclass_explicitly(self):
         obj = self.SubClass()
         obj.prop1 = 10
         obj.prop2 = 20
@@ -243,7 +243,7 @@ class PropertyTest(TestHelper):
         self.assertEqual(obj.prop2, None)
         self.assertEqual(obj.prop3, None)
 
-    def test_comparable_expr(self):
+    async def test_comparable_expr(self):
         prop1 = self.Class.prop1
         prop2 = self.Class.prop2
         prop3 = self.Class.prop3
@@ -263,7 +263,7 @@ class PropertyTest(TestHelper):
              CustomVariable("value2"),
              CustomVariable("value3")])
 
-    def test_comparable_expr_subclass(self):
+    async def test_comparable_expr_subclass(self):
         prop1 = self.SubClass.prop1
         prop2 = self.SubClass.prop2
         prop3 = self.SubClass.prop3
@@ -282,7 +282,7 @@ class PropertyTest(TestHelper):
              CustomVariable("value2"),
              CustomVariable("value3")])
 
-    def test_set_get_delete_with_wrapper(self):
+    async def test_set_get_delete_with_wrapper(self):
         obj = self.Class()
         get_obj_info(obj) # Ensure the obj_info exists for obj.
         self.Class.prop1.__set__(Wrapper(obj), 10)
@@ -290,7 +290,7 @@ class PropertyTest(TestHelper):
         self.Class.prop1.__delete__(Wrapper(obj))
         self.assertEqual(self.Class.prop1.__get__(Wrapper(obj)), None)
 
-    def test_reuse_of_instance(self):
+    async def test_reuse_of_instance(self):
         """Properties are dynamically bound to the class where they're used.
 
         It basically means that the property may be instantiated
@@ -311,9 +311,9 @@ class PropertyTest(TestHelper):
         self.assertEqual(Class2.prop2.table, Class2)
 
 
-class PropertyKindsTest(TestHelper):
+class PropertyKindsTest(AsyncTestHelper):
 
-    def setup(self, property, *args, **kwargs):
+    async def setup(self, property, *args, **kwargs):
         prop2_kwargs = kwargs.pop("prop2_kwargs", {})
         kwargs["primary"] = True
         class Class:
@@ -331,8 +331,8 @@ class PropertyKindsTest(TestHelper):
         self.variable1 = self.obj_info.variables[self.column1]
         self.variable2 = self.obj_info.variables[self.column2]
 
-    def test_bool(self):
-        self.setup(Bool, default=True, allow_none=False)
+    async def test_bool(self):
+        await self.setup(Bool, default=True, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -353,8 +353,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1 = 0
         self.assertTrue(self.obj.prop1 is False)
 
-    def test_int(self):
-        self.setup(Int, default=50, allow_none=False)
+    async def test_int(self):
+        await self.setup(Int, default=50, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -375,8 +375,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1 = True
         self.assertEqual(self.obj.prop1, 1)
 
-    def test_float(self):
-        self.setup(Float, default=50.5, allow_none=False)
+    async def test_float(self):
+        await self.setup(Float, default=50.5, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -395,8 +395,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1 = 1
         self.assertTrue(isinstance(self.obj.prop1, float))
 
-    def test_decimal(self):
-        self.setup(Decimal, default=decimal("50.5"), allow_none=False)
+    async def test_decimal(self):
+        await self.setup(Decimal, default=decimal("50.5"), allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -415,8 +415,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1 = 1
         self.assertTrue(isinstance(self.obj.prop1, decimal))
 
-    def test_bytes(self):
-        self.setup(Bytes, default=b"def", allow_none=False)
+    async def test_bytes(self):
+        await self.setup(Bytes, default=b"def", allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -434,8 +434,8 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", "unicode")
 
-    def test_unicode(self):
-        self.setup(Unicode, default="def", allow_none=False)
+    async def test_unicode(self):
+        await self.setup(Unicode, default="def", allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -453,8 +453,8 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", b"str")
 
-    def test_datetime(self):
-        self.setup(DateTime, default=0, allow_none=False)
+    async def test_datetime(self):
+        await self.setup(DateTime, default=0, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -477,8 +477,8 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", object())
 
-    def test_date(self):
-        self.setup(Date, default=date(2006, 1, 1), allow_none=False)
+    async def test_date(self):
+        await self.setup(Date, default=date(2006, 1, 1), allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -501,8 +501,8 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", object())
 
-    def test_time(self):
-        self.setup(Time, default=time(12, 34), allow_none=False)
+    async def test_time(self):
+        await self.setup(Time, default=time(12, 34), allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -525,8 +525,8 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", object())
 
-    def test_timedelta(self):
-        self.setup(TimeDelta,
+    async def test_timedelta(self):
+        await self.setup(TimeDelta,
                    default=timedelta(days=1, seconds=2, microseconds=3),
                    allow_none=False)
 
@@ -551,10 +551,10 @@ class PropertyKindsTest(TestHelper):
 
         self.assertRaises(TypeError, setattr, self.obj, "prop1", object())
 
-    def test_uuid(self):
+    async def test_uuid(self):
         value1 = uuid.UUID("{0609f76b-878f-4546-baf5-c1b135e8de72}")
         value2 = uuid.UUID("{c9703f9d-0abb-47d7-a793-8f90f1b98d5e}")
-        self.setup(UUID, default=value1, allow_none=False)
+        await self.setup(UUID, default=value1, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -578,8 +578,8 @@ class PropertyKindsTest(TestHelper):
         self.assertRaises(TypeError, setattr, self.obj, "prop1",
                           "{0609f76b-878f-4546-baf5-c1b135e8de72}")
 
-    def test_enum(self):
-        self.setup(Enum, map={"foo": 1, "bar": 2},
+    async def test_enum(self):
+        await self.setup(Enum, map={"foo": 1, "bar": 2},
                    default="foo", allow_none=False,
                    prop2_kwargs=dict(map={"foo": 1, "bar": 2}))
 
@@ -605,8 +605,8 @@ class PropertyKindsTest(TestHelper):
         self.assertRaises(ValueError, setattr, self.obj, "prop1", "baz")
         self.assertRaises(ValueError, setattr, self.obj, "prop1", 1)
 
-    def test_enum_with_set_map(self):
-        self.setup(Enum, map={"foo": 1, "bar": 2},
+    async def test_enum_with_set_map(self):
+        await self.setup(Enum, map={"foo": 1, "bar": 2},
                    set_map={"fooics": 1, "barics": 2},
                    default="fooics", allow_none=False,
                    prop2_kwargs=dict(map={"foo": 1, "bar": 2}))
@@ -633,8 +633,8 @@ class PropertyKindsTest(TestHelper):
         self.assertRaises(ValueError, setattr, self.obj, "prop1", "foo")
         self.assertRaises(ValueError, setattr, self.obj, "prop1", 1)
 
-    def test_pickle(self):
-        self.setup(Pickle, default_factory=dict, allow_none=False)
+    async def test_pickle(self):
+        await self.setup(Pickle, default_factory=dict, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -655,8 +655,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1.append("a")
         self.assertEqual(self.obj.prop1, ["a"])
 
-    def test_pickle_events(self):
-        self.setup(Pickle, default_factory=list, allow_none=False)
+    async def test_pickle_events(self):
+        await self.setup(Pickle, default_factory=list, allow_none=False)
 
         changes = []
         def changed(owner, variable, old_value, new_value, fromdb):
@@ -686,12 +686,12 @@ class PropertyKindsTest(TestHelper):
         del self.obj
         self.assertEqual(changes, [(self.variable1, None, ["a"], False)])
 
-    def test_json(self):
+    async def test_json(self):
         # Skip test if json support is not available.
         if json is None:
             return
 
-        self.setup(JSON, default_factory=dict, allow_none=False)
+        await self.setup(JSON, default_factory=dict, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -712,12 +712,12 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1.append("a")
         self.assertEqual(self.obj.prop1, ["a"])
 
-    def test_json_events(self):
+    async def test_json_events(self):
         # Skip test if json support is not available.
         if json is None:
             return
 
-        self.setup(JSON, default_factory=list, allow_none=False)
+        await self.setup(JSON, default_factory=list, allow_none=False)
 
         changes = []
         def changed(owner, variable, old_value, new_value, fromdb):
@@ -747,8 +747,8 @@ class PropertyKindsTest(TestHelper):
         del self.obj
         self.assertEqual(changes, [(self.variable1, None, ["a"], False)])
 
-    def test_list(self):
-        self.setup(List, default_factory=list, allow_none=False)
+    async def test_list(self):
+        await self.setup(List, default_factory=list, allow_none=False)
 
         self.assertTrue(isinstance(self.column1, Column))
         self.assertTrue(isinstance(self.column2, Column))
@@ -769,8 +769,8 @@ class PropertyKindsTest(TestHelper):
         self.obj.prop1.append("b")
         self.assertEqual(self.obj.prop1, ["a", "b"])
 
-    def test_list_events(self):
-        self.setup(List, default_factory=list, allow_none=False)
+    async def test_list_events(self):
+        await self.setup(List, default_factory=list, allow_none=False)
 
         changes = []
         def changed(owner, variable, old_value, new_value, fromdb):
@@ -797,7 +797,7 @@ class PropertyKindsTest(TestHelper):
         del self.obj
         self.assertEqual(changes, [(self.variable1, None, ["a"], False)])
 
-    def test_variable_factory_arguments(self):
+    async def test_variable_factory_arguments(self):
         class Class:
             __storm_table__ = "test"
             id = Int(primary=True)
@@ -876,10 +876,10 @@ class PropertyKindsTest(TestHelper):
             self.assertEqual(validator_args, [None, "prop", value])
 
 
-class PropertyRegistryTest(TestHelper):
+class PropertyRegistryTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
 
         class Class:
             __storm_table__ = "mytable"
@@ -895,24 +895,24 @@ class PropertyRegistryTest(TestHelper):
 
         self.registry = PropertyRegistry()
 
-    def test_get_empty(self):
+    async def test_get_empty(self):
         self.assertRaises(PropertyPathError, self.registry.get, "unexistent")
 
-    def test_get(self):
+    async def test_get(self):
         self.registry.add_class(self.Class)
         prop1 = self.registry.get("prop1")
         prop2 = self.registry.get("prop2")
         self.assertTrue(prop1 is self.Class.prop1)
         self.assertTrue(prop2 is self.Class.prop2)
 
-    def test_get_with_class_name(self):
+    async def test_get_with_class_name(self):
         self.registry.add_class(self.Class)
         prop1 = self.registry.get("Class.prop1")
         prop2 = self.registry.get("Class.prop2")
         self.assertTrue(prop1 is self.Class.prop1)
         self.assertTrue(prop2 is self.Class.prop2)
 
-    def test_get_with_two_classes(self):
+    async def test_get_with_two_classes(self):
         self.registry.add_class(self.Class)
         self.registry.add_class(self.SubClass)
         prop1 = self.registry.get("Class.prop1")
@@ -924,7 +924,7 @@ class PropertyRegistryTest(TestHelper):
         self.assertTrue(prop1 is self.SubClass.prop1)
         self.assertTrue(prop2 is self.SubClass.prop2)
 
-    def test_get_ambiguous(self):
+    async def test_get_ambiguous(self):
         self.AnotherClass.__module__ += ".foo"
         self.registry.add_class(self.Class)
         self.registry.add_class(self.SubClass)
@@ -936,7 +936,7 @@ class PropertyRegistryTest(TestHelper):
         self.assertTrue(prop1 is self.SubClass.prop1)
         self.assertTrue(prop2 is self.SubClass.prop2)
 
-    def test_get_ambiguous_but_different_path(self):
+    async def test_get_ambiguous_but_different_path(self):
         self.AnotherClass.__module__ += ".foo"
         self.registry.add_class(self.Class)
         self.registry.add_class(self.SubClass)
@@ -954,7 +954,7 @@ class PropertyRegistryTest(TestHelper):
         self.assertTrue(prop1 is self.AnotherClass.prop1)
         self.assertTrue(prop2 is self.AnotherClass.prop2)
 
-    def test_get_ambiguous_but_different_path_with_namespace(self):
+    async def test_get_ambiguous_but_different_path_with_namespace(self):
         self.AnotherClass.__module__ += ".foo"
         self.registry.add_class(self.Class)
         self.registry.add_class(self.SubClass)
@@ -969,7 +969,7 @@ class PropertyRegistryTest(TestHelper):
         self.assertTrue(prop1 is self.AnotherClass.prop1)
         self.assertTrue(prop2 is self.AnotherClass.prop2)
 
-    def test_class_is_collectable(self):
+    async def test_class_is_collectable(self):
         self.AnotherClass.__module__ += ".foo"
         self.registry.add_class(self.Class)
         self.registry.add_class(self.AnotherClass)
@@ -980,17 +980,17 @@ class PropertyRegistryTest(TestHelper):
         self.assertTrue(prop1 is self.Class.prop1)
         self.assertTrue(prop2 is self.Class.prop2)
 
-    def test_add_property(self):
+    async def test_add_property(self):
         self.registry.add_property(self.Class, self.Class.prop1, "custom_name")
         prop1 = self.registry.get("Class.custom_name")
         self.assertEqual(prop1, self.Class.prop1)
         self.assertRaises(PropertyPathError, self.registry.get, "Class.prop1")
 
 
-class PropertyPublisherMetaTest(TestHelper):
+class PropertyPublisherMetaTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
 
         class Base(metaclass=PropertyPublisherMeta):
             pass
@@ -1014,15 +1014,15 @@ class PropertyPublisherMetaTest(TestHelper):
 
         self.registry = Base._storm_property_registry
 
-    def test_get_empty(self):
+    async def test_get_empty(self):
         self.assertRaises(PropertyPathError, self.registry.get, "unexistent")
 
-    def test_get_subclass(self):
+    async def test_get_subclass(self):
         prop1 = self.registry.get("SubClass.prop1")
         prop2 = self.registry.get("SubClass.prop2")
         self.assertTrue(prop1 is self.SubClass.prop1)
         self.assertTrue(prop2 is self.SubClass.prop2)
 
-    def test_get_ambiguous(self):
+    async def test_get_ambiguous(self):
         self.assertRaises(PropertyPathError, self.registry.get, "Class.prop1")
         self.assertRaises(PropertyPathError, self.registry.get, "Class.prop2")

@@ -162,3 +162,58 @@ the storm branch you want to test, and run:
 
 They'll take a while to run.  All tests should pass: failures mean
 there's a problem with your environment or a bug in Storm.
+
+Running tests with Docker
+--------------------------
+
+For async Storm development, you can run database integration tests using
+Docker containers instead of installing databases locally. This is useful
+for testing PostgreSQL and MySQL async drivers.
+
+1. Start database containers:
+
+ $ docker-compose up -d
+
+   Or start individual containers:
+
+   PostgreSQL:
+   $ docker run -d --name storm-postgres \
+       -e POSTGRES_USER=storm \
+       -e POSTGRES_PASSWORD=storm \
+       -e POSTGRES_DB=storm_test \
+       -p 5433:5432 \
+       postgres:15
+
+   MySQL:
+   $ docker run -d --name storm-mysql \
+       -e MYSQL_ROOT_PASSWORD=root \
+       -e MYSQL_DATABASE=storm_test \
+       -e MYSQL_USER=storm \
+       -e MYSQL_PASSWORD=storm \
+       -p 3307:3306 \
+       mysql:8.0 --default-authentication-plugin=mysql_native_password
+
+2. Wait for databases to be ready (about 5-10 seconds), then run tests:
+
+   SQLite (no Docker needed):
+   $ STORM_SQLITE_URI=sqlite: python -m unittest discover \
+       -s storm/tests/databases -p 'sqlite.py' -v
+
+   PostgreSQL:
+   $ STORM_POSTGRES_URI="postgres://storm:storm@127.0.0.1:5433/storm_test" \
+       python -m unittest storm.tests.databases.postgres.PostgresTest -v
+
+   MySQL:
+   $ STORM_MYSQL_URI="mysql://storm:storm@127.0.0.1:3307/storm_test" \
+       python -m unittest storm.tests.databases.mysql.MySQLTest -v
+
+3. Clean up containers when done:
+
+ $ docker rm -f storm-postgres storm-mysql
+
+   Or with docker-compose:
+
+ $ docker-compose down
+
+Note: The async version of Storm uses psycopg (v3), aiomysql, and aiosqlite
+as database drivers instead of the synchronous versions.

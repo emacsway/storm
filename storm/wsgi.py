@@ -21,7 +21,7 @@
 
 """Glue to wire a storm timeline tracer up to a WSGI app."""
 
-import threading
+from contextvars import ContextVar
 import weakref
 
 __all__ = ['make_app']
@@ -45,13 +45,13 @@ def make_app(app):
     @return: A wrapped WSGI app and a timeline factory function for use with
         L{TimelineTracer <storm.tracer.TimelineTracer>}.
     """
-    timeline_map = threading.local()
+    timeline_context = ContextVar('timeline', default=None)
     def wrapper(environ, start_response):
         timeline = environ.get('timeline.timeline')
-        timeline_map.timeline = None
+        timeline_context.set(None)
         if timeline is not None:
-            timeline_map.timeline = weakref.ref(timeline)
-        # We could clean up timeline_map.timeline after we're done with the
+            timeline_context.set(weakref.ref(timeline))
+        # We could clean up timeline_context after we're done with the
         # request, but for that we'd have to consume all the data from the
         # underlying app and it wouldn't play well with some non-standard
         # tricks (e.g. let the reactor consume IBodyProducers asynchronously
@@ -59,7 +59,7 @@ def make_app(app):
         return app(environ, start_response)
 
     def get_timeline():
-        timeline = getattr(timeline_map, 'timeline', None)
+        timeline = timeline_context.get()
         if timeline is not None:
             return timeline()
     return wrapper, get_timeline

@@ -50,7 +50,7 @@ from storm.tests.databases.base import (
 from storm.tests.databases.proxy import ProxyTCPServer
 from storm.tests.expr import column1, column2, column3, elem1, table1, TrackContext
 from storm.tests.tracer import TimeoutTracerTestBase
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 try:
     import pgbouncer
@@ -70,10 +70,10 @@ def create_proxy_and_uri(uri):
     return proxy, proxy_uri
 
 
-def terminate_other_backends(connection):
+async def terminate_other_backends(connection):
     """Terminate all connections to the database except the one given."""
     pid_column = "procpid" if connection._database._version < 90200 else "pid"
-    connection.execute(
+    await connection.execute(
         "SELECT pg_terminate_backend(%(pid_column)s)"
         "  FROM pg_stat_activity"
         " WHERE datname = current_database()"
@@ -81,14 +81,14 @@ def terminate_other_backends(connection):
         {"pid_column": pid_column})
 
 
-def terminate_all_backends(database):
+async def terminate_all_backends(database):
     """Terminate all connections to the given database."""
     connection = database.connect()
-    terminate_other_backends(connection)
-    connection.close()
+    await terminate_other_backends(connection)
+    await connection.close()
 
 
-class PostgresTest(DatabaseTest, TestHelper):
+class PostgresTest(DatabaseTest, AsyncTestHelper):
 
     def is_supported(self):
         return bool(os.environ.get("STORM_POSTGRES_URI"))
@@ -96,42 +96,42 @@ class PostgresTest(DatabaseTest, TestHelper):
     def create_database(self):
         self.database = create_database(os.environ["STORM_POSTGRES_URI"])
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE number "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE number "
                                 "(one INTEGER, two INTEGER, three INTEGER)")
-        self.connection.execute("CREATE TABLE test "
+        await self.connection.execute("CREATE TABLE test "
                                 "(id SERIAL PRIMARY KEY, title VARCHAR)")
-        self.connection.execute("CREATE TABLE datetime_test "
+        await self.connection.execute("CREATE TABLE datetime_test "
                                 "(id SERIAL PRIMARY KEY,"
                                 " dt TIMESTAMP, d DATE, t TIME, td INTERVAL)")
-        self.connection.execute("CREATE TABLE bin_test "
+        await self.connection.execute("CREATE TABLE bin_test "
                                 "(id SERIAL PRIMARY KEY, b BYTEA)")
-        self.connection.execute("CREATE TABLE like_case_insensitive_test "
+        await self.connection.execute("CREATE TABLE like_case_insensitive_test "
                                 "(id SERIAL PRIMARY KEY, description TEXT)")
-        self.connection.execute("CREATE TABLE returning_test "
+        await self.connection.execute("CREATE TABLE returning_test "
                                 "(id1 INTEGER DEFAULT 123, "
                                 " id2 INTEGER DEFAULT 456)")
-        self.connection.execute("CREATE TABLE json_test "
+        await self.connection.execute("CREATE TABLE json_test "
                                 "(id SERIAL PRIMARY KEY, "
                                 " json JSON)")
 
-    def drop_tables(self):
-        super().drop_tables()
+    async def drop_tables(self):
+        await super().drop_tables()
         tables = ("like_case_insensitive_test", "returning_test", "json_test")
         for table in tables:
             try:
-                self.connection.execute("DROP TABLE %s" % table)
-                self.connection.commit()
+                await self.connection.execute("DROP TABLE %s" % table)
+                await self.connection.commit()
             except:
-                self.connection.rollback()
+                await self.connection.rollback()
 
-    def create_sample_data(self):
-        super().create_sample_data()
-        self.connection.execute("INSERT INTO like_case_insensitive_test "
+    async def create_sample_data(self):
+        await super().create_sample_data()
+        await self.connection.execute("INSERT INTO like_case_insensitive_test "
                                 "(description) VALUES ('hullah')")
-        self.connection.execute("INSERT INTO like_case_insensitive_test "
+        await self.connection.execute("INSERT INTO like_case_insensitive_test "
                                 "(description) VALUES ('HULLAH')")
-        self.connection.commit()
+        await self.connection.commit()
 
     def test_wb_create_database(self):
         database = create_database("postgres://un:pw@ht:12/db")
@@ -142,81 +142,87 @@ class PostgresTest(DatabaseTest, TestHelper):
         database = create_database("postgres:postgres")
         self.assertEqual(database._dsn, "dbname=postgres")
 
-    def test_wb_version(self):
+    async def test_wb_version(self):
         version = self.database._version
         self.assertEqual(type(version), int)
         try:
-            result = self.connection.execute("SHOW server_version_num")
+            result = await self.connection.execute("SHOW server_version_num")
         except ProgrammingError:
             self.assertEqual(version, 0)
         else:
-            server_version = int(result.get_one()[0])
+            server_version = int((await result.get_one())[0])
             self.assertEqual(version, server_version)
 
-    def test_utf8_client_encoding(self):
+    async def test_utf8_client_encoding(self):
         connection = self.database.connect()
-        result = connection.execute("SHOW client_encoding")
-        encoding = result.get_one()[0]
+        result = await connection.execute("SHOW client_encoding")
+        encoding = (await result.get_one())[0]
         self.assertEqual(encoding.upper(), "UTF8")
+        await connection.close()
 
-    def test_unicode(self):
+    async def test_unicode(self):
         raw_str = b"\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
         uni_str = raw_str.decode("UTF-8")
 
         connection = self.database.connect()
-        connection.execute(
+        await connection.execute(
             (b"INSERT INTO test VALUES (1, '%s')" % raw_str).decode("UTF-8"))
 
-        result = connection.execute("SELECT title FROM test WHERE id=1")
-        title = result.get_one()[0]
+        result = await connection.execute("SELECT title FROM test WHERE id=1")
+        title = (await result.get_one())[0]
 
         self.assertTrue(isinstance(title, str))
         self.assertEqual(title, uni_str)
+        await connection.close()
 
-    def test_unicode_array(self):
+    async def test_unicode_array(self):
         raw_str = b"\xc3\xa1\xc3\xa9\xc3\xad\xc3\xb3\xc3\xba"
         uni_str = raw_str.decode("UTF-8")
 
         connection = self.database.connect()
-        result = connection.execute(
+        result = await connection.execute(
             (b"""SELECT '{"%s"}'::TEXT[]""" % raw_str).decode("UTF-8"))
-        self.assertEqual(result.get_one()[0], [uni_str])
-        result = connection.execute("""SELECT ?::TEXT[]""", ([uni_str],))
-        self.assertEqual(result.get_one()[0], [uni_str])
+        self.assertEqual((await result.get_one())[0], [uni_str])
+        result = await connection.execute("""SELECT ?::TEXT[]""", ([uni_str],))
+        self.assertEqual((await result.get_one())[0], [uni_str])
+        await connection.close()
 
-    def test_time(self):
+    async def test_time(self):
         connection = self.database.connect()
         value = time(12, 34)
-        result = connection.execute("SELECT ?::TIME", (value,))
-        self.assertEqual(result.get_one()[0], value)
+        result = await connection.execute("SELECT ?::TIME", (value,))
+        self.assertEqual((await result.get_one())[0], value)
+        await connection.close()
 
-    def test_date(self):
+    async def test_date(self):
         connection = self.database.connect()
         value = date(2007, 6, 22)
-        result = connection.execute("SELECT ?::DATE", (value,))
-        self.assertEqual(result.get_one()[0], value)
+        result = await connection.execute("SELECT ?::DATE", (value,))
+        self.assertEqual((await result.get_one())[0], value)
+        await connection.close()
 
-    def test_interval(self):
+    async def test_interval(self):
         connection = self.database.connect()
         value = timedelta(365)
-        result = connection.execute("SELECT ?::INTERVAL", (value,))
-        self.assertEqual(result.get_one()[0], value)
+        result = await connection.execute("SELECT ?::INTERVAL", (value,))
+        self.assertEqual((await result.get_one())[0], value)
+        await connection.close()
 
-    def test_datetime_with_none(self):
-        self.connection.execute("INSERT INTO datetime_test (dt) VALUES (NULL)")
-        result = self.connection.execute("SELECT dt FROM datetime_test")
+    async def test_datetime_with_none(self):
+        await self.connection.execute("INSERT INTO datetime_test (dt) VALUES (NULL)")
+        result = await self.connection.execute("SELECT dt FROM datetime_test")
         variable = DateTimeVariable()
-        result.set_variable(variable, result.get_one()[0])
+        result.set_variable(variable, (await result.get_one())[0])
         self.assertEqual(variable.get(), None)
 
-    def test_array_support(self):
+    async def test_array_support(self):
         try:
-            self.connection.execute("DROP TABLE array_test")
-            self.connection.commit()
+            await self.connection.execute("DROP TABLE array_test")
+            await self.connection.commit()
         except:
-            self.connection.rollback()
+            await self.connection.rollback()
 
-        self.connection.execute("CREATE TABLE array_test "
+        await self.connection.execute("CREATE TABLE array_test "
                                 "(id SERIAL PRIMARY KEY, a INT[])")
 
         variable = ListVariable(IntVariable)
@@ -225,12 +231,12 @@ class PostgresTest(DatabaseTest, TestHelper):
         state = State()
         statement = compile(variable, state)
 
-        self.connection.execute("INSERT INTO array_test VALUES (1, %s)"
+        await self.connection.execute("INSERT INTO array_test VALUES (1, %s)"
                                 % statement, state.parameters)
 
-        result = self.connection.execute("SELECT a FROM array_test WHERE id=1")
+        result = await self.connection.execute("SELECT a FROM array_test WHERE id=1")
 
-        array = result.get_one()[0]
+        array = (await result.get_one())[0]
 
         self.assertTrue(isinstance(array, list))
 
@@ -238,14 +244,14 @@ class PostgresTest(DatabaseTest, TestHelper):
         result.set_variable(variable, array)
         self.assertEqual(variable.get(), [1,2,3,4])
 
-    def test_array_support_with_empty(self):
+    async def test_array_support_with_empty(self):
         try:
-            self.connection.execute("DROP TABLE array_test")
-            self.connection.commit()
+            await self.connection.execute("DROP TABLE array_test")
+            await self.connection.commit()
         except:
-            self.connection.rollback()
+            await self.connection.rollback()
 
-        self.connection.execute("CREATE TABLE array_test "
+        await self.connection.execute("CREATE TABLE array_test "
                                 "(id SERIAL PRIMARY KEY, a INT[])")
 
         variable = ListVariable(IntVariable)
@@ -254,12 +260,12 @@ class PostgresTest(DatabaseTest, TestHelper):
         state = State()
         statement = compile(variable, state)
 
-        self.connection.execute("INSERT INTO array_test VALUES (1, %s)"
+        await self.connection.execute("INSERT INTO array_test VALUES (1, %s)"
                                 % statement, state.parameters)
 
-        result = self.connection.execute("SELECT a FROM array_test WHERE id=1")
+        result = await self.connection.execute("SELECT a FROM array_test WHERE id=1")
 
-        array = result.get_one()[0]
+        array = (await result.get_one())[0]
 
         self.assertTrue(isinstance(array, list))
 
@@ -267,7 +273,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         result.set_variable(variable, array)
         self.assertEqual(variable.get(), [])
 
-    def test_expressions_in_union_order_by(self):
+    async def test_expressions_in_union_order_by(self):
         # The following statement breaks in postgres:
         #     SELECT 1 AS id UNION SELECT 1 ORDER BY id+1;
         # With the error:
@@ -287,24 +293,24 @@ class PostgresTest(DatabaseTest, TestHelper):
                          'ORDER BY id + ? LIMIT 1 OFFSET 1')
         self.assertVariablesEqual(state.parameters, [Variable(1)])
 
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_one(), (1,))
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_one(), (1,))
 
-    def test_expressions_in_union_in_union_order_by(self):
+    async def test_expressions_in_union_in_union_order_by(self):
         column = SQLRaw("1")
         alias = Alias(column, "id")
         expr = Union(Select(alias), Select(column), order_by=alias+1,
                      limit=1, offset=1, all=True)
         expr = Union(expr, expr, order_by=alias+1, all=True)
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(1,), (1,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(1,), (1,)])
 
-    def test_sequence(self):
+    async def test_sequence(self):
         expr1 = Select(Sequence("test_id_seq"))
         expr2 = "SELECT currval('test_id_seq')"
-        value1 = self.connection.execute(expr1).get_one()[0]
-        value2 = self.connection.execute(expr2).get_one()[0]
-        value3 = self.connection.execute(expr1).get_one()[0]
+        value1 = (await (await self.connection.execute(expr1)).get_one())[0]
+        value2 = (await (await self.connection.execute(expr2)).get_one())[0]
+        value3 = (await (await self.connection.execute(expr1)).get_one())[0]
         self.assertEqual(value1, value2)
         self.assertEqual(value3-value1, 1)
 
@@ -319,49 +325,49 @@ class PostgresTest(DatabaseTest, TestHelper):
         statement = compile(expr)
         self.assertEqual(statement, "? ILIKE ?")
 
-    def test_case_default_like(self):
+    async def test_case_default_like(self):
 
         like = Like(SQLRaw("description"), "%hullah%")
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(1,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(1,)])
 
         like = Like(SQLRaw("description"), "%HULLAH%")
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(2,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(2,)])
 
-    def test_case_sensitive_like(self):
+    async def test_case_sensitive_like(self):
 
         like = Like(SQLRaw("description"), "%hullah%", case_sensitive=True)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(1,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(1,)])
 
         like = Like(SQLRaw("description"), "%HULLAH%", case_sensitive=True)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(2,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(2,)])
 
-    def test_case_insensitive_like(self):
+    async def test_case_insensitive_like(self):
 
         like = Like(SQLRaw("description"), "%hullah%", case_sensitive=False)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(1,), (2,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(1,), (2,)])
         like = Like(SQLRaw("description"), "%HULLAH%", case_sensitive=False)
         expr = Select(SQLRaw("id"), like, tables=["like_case_insensitive_test"])
-        result = self.connection.execute(expr)
-        self.assertEqual(result.get_all(), [(1,), (2,)])
+        result = await self.connection.execute(expr)
+        self.assertEqual(await result.get_all(), [(1,), (2,)])
 
-    def test_none_on_string_variable(self):
+    async def test_none_on_string_variable(self):
         """
         Verify that the logic to enforce fix E''-styled strings isn't
         breaking on NULL values.
         """
         variable = BytesVariable(value=None)
-        result = self.connection.execute(Select(variable))
-        self.assertEqual(result.get_one(), (None,))
+        result = await self.connection.execute(Select(variable))
+        self.assertEqual(await result.get_one(), (None,))
 
     def test_compile_table_with_schema(self):
         class Foo:
@@ -445,10 +451,10 @@ class PostgresTest(DatabaseTest, TestHelper):
         expected = """currval('"the schema"."the table_the column_seq"')"""
         self.assertEqual(statement, expected)
 
-    def test_get_insert_identity(self):
+    async def test_get_insert_identity(self):
         column = Column("thecolumn", "thetable")
         variable = IntVariable()
-        result = self.connection.execute("SELECT 1")
+        result = await self.connection.execute("SELECT 1")
         where = result.get_insert_identity((column,), (variable,))
         self.assertEqual(compile(where),
                          "thetable.thecolumn = "
@@ -474,7 +480,7 @@ class PostgresTest(DatabaseTest, TestHelper):
                          'UPDATE "table 1" SET column1=elem1 '
                          'RETURNING column3')
 
-    def test_execute_insert_returning(self):
+    async def test_execute_insert_returning(self):
         if self.database._version < 80200:
             return # Can't run this test with old PostgreSQL versions.
 
@@ -484,7 +490,7 @@ class PostgresTest(DatabaseTest, TestHelper):
         variable2 = IntVariable()
         insert = Insert({}, primary_columns=(column1, column2),
                             primary_variables=(variable1, variable2))
-        self.connection.execute(insert)
+        await self.connection.execute(insert)
 
         self.assertTrue(variable1.is_defined())
         self.assertTrue(variable2.is_defined())
@@ -492,10 +498,10 @@ class PostgresTest(DatabaseTest, TestHelper):
         self.assertEqual(variable1.get(), 123)
         self.assertEqual(variable2.get(), 456)
 
-        result = self.connection.execute("SELECT * FROM returning_test")
-        self.assertEqual(result.get_one(), (123, 456))
+        result = await self.connection.execute("SELECT * FROM returning_test")
+        self.assertEqual(await result.get_one(), (123, 456))
 
-    def test_wb_execute_insert_returning_not_used_with_old_postgres(self):
+    async def test_wb_execute_insert_returning_not_used_with_old_postgres(self):
         """Shouldn't try to use RETURNING with PostgreSQL < 8.2."""
         column1 = Column("id1", "returning_test")
         column2 = Column("id2", "returning_test")
@@ -505,149 +511,149 @@ class PostgresTest(DatabaseTest, TestHelper):
                             primary_variables=(variable1, variable2))
         self.database._version = 80109
 
-        self.connection.execute(insert)
+        await self.connection.execute(insert)
 
         self.assertFalse(variable1.is_defined())
         self.assertFalse(variable2.is_defined())
 
-        result = self.connection.execute("SELECT * FROM returning_test")
-        self.assertEqual(result.get_one(), (123, 456))
+        result = await self.connection.execute("SELECT * FROM returning_test")
+        self.assertEqual(await result.get_one(), (123, 456))
 
-    def test_execute_insert_returning_without_columns(self):
+    async def test_execute_insert_returning_without_columns(self):
         """Without primary_columns, the RETURNING system won't be used."""
         column1 = Column("id1", "returning_test")
         variable1 = IntVariable()
         insert = Insert({column1: 123}, primary_variables=(variable1,))
-        self.connection.execute(insert)
+        await self.connection.execute(insert)
 
         self.assertFalse(variable1.is_defined())
 
-        result = self.connection.execute("SELECT * FROM returning_test")
-        self.assertEqual(result.get_one(), (123, 456))
+        result = await self.connection.execute("SELECT * FROM returning_test")
+        self.assertEqual(await result.get_one(), (123, 456))
 
-    def test_execute_insert_returning_without_variables(self):
+    async def test_execute_insert_returning_without_variables(self):
         """Without primary_variables, the RETURNING system won't be used."""
         column1 = Column("id1", "returning_test")
         insert = Insert({}, primary_columns=(column1,))
-        self.connection.execute(insert)
+        await self.connection.execute(insert)
 
-        result = self.connection.execute("SELECT * FROM returning_test")
+        result = await self.connection.execute("SELECT * FROM returning_test")
 
-        self.assertEqual(result.get_one(), (123, 456))
+        self.assertEqual(await result.get_one(), (123, 456))
 
-    def test_execute_update_returning(self):
+    async def test_execute_update_returning(self):
         if self.database._version < 80200:
             return # Can't run this test with old PostgreSQL versions.
 
         column1 = Column("id1", "returning_test")
         column2 = Column("id2", "returning_test")
-        self.connection.execute(
+        await self.connection.execute(
             "INSERT INTO returning_test VALUES (1, 2)")
         update = Update({"id2": 3}, column1 == 1,
                         primary_columns=(column1, column2))
-        result = self.connection.execute(Returning(update))
-        self.assertEqual(result.get_one(), (1, 3))
+        result = await self.connection.execute(Returning(update))
+        self.assertEqual(await result.get_one(), (1, 3))
 
-    def test_uri_parameters(self):
+    async def test_uri_parameters(self):
         database = create_database(
             os.environ["STORM_POSTGRES_URI"] + "?isolation=autocommit&application_name=test_name&sslmode=verify-full")
 
         connection = database.connect()
-        self.addCleanup(connection.close)
+        self.addAsyncCleanup(connection.close)
 
-        result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+        result = await connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
         # It matches read committed in Postgres internel
-        self.assertEqual(result.get_one()[0], "read committed")
+        self.assertEqual((await result.get_one())[0], "read committed")
 
-        result = connection.execute("SHOW APPLICATION_NAME")
-        self.assertEqual(result.get_one()[0], "test_name")
+        result = await connection.execute("SHOW APPLICATION_NAME")
+        self.assertEqual((await result.get_one())[0], "test_name")
 
         dsn = database._dsn
         self.assertIn("sslmode=verify-full", dsn)
         self.assertIn("application_name=test_name", dsn)
         self.assertNotIn("isolation=autocommit", dsn)
 
-    def test_isolation_autocommit(self):
+    async def test_isolation_autocommit(self):
         database = create_database(
             os.environ["STORM_POSTGRES_URI"] + "?isolation=autocommit")
 
         connection = database.connect()
-        self.addCleanup(connection.close)
+        try:
+            result = await connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+            # It matches read committed in Postgres internel
+            self.assertEqual((await result.get_one())[0], "read committed")
 
-        result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        # It matches read committed in Postgres internel
-        self.assertEqual(result.get_one()[0], "read committed")
+            await connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
 
-        connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
+            result = await self.connection.execute("SELECT id FROM bin_test")
+            # I didn't commit, but data should already be there
+            self.assertEqual(await result.get_all(), [(1,)])
+            await connection.rollback()
+        finally:
+            await connection.close()
 
-        result = self.connection.execute("SELECT id FROM bin_test")
-        # I didn't commit, but data should already be there
-        self.assertEqual(result.get_all(), [(1,)])
-        connection.rollback()
-
-    def test_isolation_read_committed(self):
+    async def test_isolation_read_committed(self):
         database = create_database(
             os.environ["STORM_POSTGRES_URI"] + "?isolation=read-committed")
 
         connection = database.connect()
-        self.addCleanup(connection.close)
+        try:
+            result = await connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+            self.assertEqual((await result.get_one())[0], "read committed")
 
-        result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        self.assertEqual(result.get_one()[0], "read committed")
+            await connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
 
-        connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
+            result = await self.connection.execute("SELECT id FROM bin_test")
+            # Data should not be there already
+            self.assertEqual(await result.get_all(), [])
+            await connection.rollback()
 
-        result = self.connection.execute("SELECT id FROM bin_test")
-        # Data should not be there already
-        self.assertEqual(result.get_all(), [])
-        connection.rollback()
+            # Start a transaction
+            result = await connection.execute("SELECT 1")
+            self.assertEqual(await result.get_one(), (1,))
 
-        # Start a transaction
-        result = connection.execute("SELECT 1")
-        self.assertEqual(result.get_one(), (1,))
+            await self.connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
+            await self.connection.commit()
 
-        self.connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
-        self.connection.commit()
+            result = await connection.execute("SELECT id FROM bin_test")
+            # Data is already here!
+            self.assertEqual(await result.get_one(), (1,))
+            await connection.rollback()
+        finally:
+            await connection.close()
 
-        result = connection.execute("SELECT id FROM bin_test")
-        # Data is already here!
-        self.assertEqual(result.get_one(), (1,))
-        connection.rollback()
-
-    def test_isolation_serializable(self):
+    async def test_isolation_serializable(self):
         database = create_database(
             os.environ["STORM_POSTGRES_URI"] + "?isolation=serializable")
 
         connection = database.connect()
-        self.addCleanup(connection.close)
+        try:
+            result = await connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+            self.assertEqual((await result.get_one())[0], "serializable")
 
-        result = connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        self.assertEqual(result.get_one()[0], "serializable")
+            # Start a transaction
+            result = await connection.execute("SELECT 1")
+            self.assertEqual(await result.get_one(), (1,))
 
-        # Start a transaction
-        result = connection.execute("SELECT 1")
-        self.assertEqual(result.get_one(), (1,))
+            await self.connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
+            await self.connection.commit()
 
-        self.connection.execute("INSERT INTO bin_test VALUES (1, 'foo')")
-        self.connection.commit()
+            result = await connection.execute("SELECT id FROM bin_test")
+            # We can't see data yet, because transaction started before
+            self.assertEqual(await result.get_one(), None)
+            await connection.rollback()
+        finally:
+            await connection.close()
 
-        result = connection.execute("SELECT id FROM bin_test")
-        # We can't see data yet, because transaction started before
-        self.assertEqual(result.get_one(), None)
-        connection.rollback()
-
-    def test_default_isolation(self):
+    async def test_default_isolation(self):
         """
-        The default isolation level is REPEATABLE READ, but it's only supported
-        by psycopg2 2.4.2 and newer. Before, SERIALIZABLE is used instead.
+        The default isolation level is REPEATABLE READ, which is supported
+        by psycopg v3.
         """
-        result = self.connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
-        import psycopg2
-        psycopg2_version = psycopg2.__version__.split(None, 1)[0]
-        if psycopg2_version < "2.4.2":
-            self.assertEqual(result.get_one()[0], "serializable")
-        else:
-            self.assertEqual(result.get_one()[0], "repeatable read")
+        result = await self.connection.execute("SHOW TRANSACTION ISOLATION LEVEL")
+        import psycopg
+        # psycopg v3 supports REPEATABLE READ
+        self.assertEqual((await result.get_one())[0], "repeatable read")
 
     def test_unknown_serialization(self):
         self.assertRaises(ValueError, create_database,
@@ -680,29 +686,31 @@ class PostgresTest(DatabaseTest, TestHelper):
         exc = OperationalError("could not receive data from server")
         self.assertTrue(self.connection.is_disconnection_error(exc))
 
-    def test_json_element(self):
+    async def test_json_element(self):
         "JSONElement returns an element from a json field."
         connection = self.database.connect()
         json_value = Cast('{"a": 1}', "json")
         expr = JSONElement(json_value, "a")
         # Need to cast as text since newer psycopg versions decode JSON
         # automatically.
-        result = connection.execute(Select(Cast(expr, "text")))
-        self.assertEqual("1", result.get_one()[0])
-        result = connection.execute(Select(Func("pg_typeof", expr)))
-        self.assertEqual("json", result.get_one()[0])
+        result = await connection.execute(Select(Cast(expr, "text")))
+        self.assertEqual("1", (await result.get_one())[0])
+        result = await connection.execute(Select(Func("pg_typeof", expr)))
+        self.assertEqual("json", (await result.get_one())[0])
+        await connection.close()
 
-    def test_json_text_element(self):
+    async def test_json_text_element(self):
         "JSONTextElement returns an element from a json field as text."
         connection = self.database.connect()
         json_value = Cast('{"a": 1}', "json")
         expr = JSONTextElement(json_value, "a")
-        result = connection.execute(Select(expr))
-        self.assertEqual("1", result.get_one()[0])
-        result = connection.execute(Select(Func("pg_typeof", expr)))
-        self.assertEqual("text", result.get_one()[0])
+        result = await connection.execute(Select(expr))
+        self.assertEqual("1", (await result.get_one())[0])
+        result = await connection.execute(Select(Func("pg_typeof", expr)))
+        self.assertEqual("text", (await result.get_one())[0])
+        await connection.close()
 
-    def test_json_property(self):
+    async def test_json_property(self):
         """The JSON property is encoded as JSON"""
 
         class TestModel:
@@ -713,13 +721,14 @@ class PostgresTest(DatabaseTest, TestHelper):
 
         connection = self.database.connect()
         value = {"a": 3, "b": "foo", "c": None}
-        connection.execute(
+        await connection.execute(
             "INSERT INTO json_test (json) VALUES (?)", (json.dumps(value),))
-        connection.commit()
+        await connection.commit()
+        await connection.close()
 
         store = Store(self.database)
-        obj = store.find(TestModel).one()
-        store.close()
+        obj = await (await store.find(TestModel)).one()
+        await store.close()
         # The JSON object is decoded to python
         self.assertEqual(value, obj.json)
 
@@ -727,9 +736,9 @@ class PostgresTest(DatabaseTest, TestHelper):
 _max_prepared_transactions = None
 
 
-class PostgresTwoPhaseCommitTest(TwoPhaseCommitTest, TestHelper):
+class PostgresTwoPhaseCommitTest(TwoPhaseCommitTest, AsyncTestHelper):
 
-    def is_supported(self):
+    async def is_supported(self):
         uri = os.environ.get("STORM_POSTGRES_URI")
         if not uri:
             return False
@@ -737,28 +746,28 @@ class PostgresTwoPhaseCommitTest(TwoPhaseCommitTest, TestHelper):
         if _max_prepared_transactions is None:
             database = create_database(uri)
             connection = database.connect()
-            result = connection.execute("SHOW MAX_PREPARED_TRANSACTIONS")
-            _max_prepared_transactions = int(result.get_one()[0])
-            connection.close()
+            result = await connection.execute("SHOW MAX_PREPARED_TRANSACTIONS")
+            _max_prepared_transactions = int((await result.get_one())[0])
+            await connection.close()
         return _max_prepared_transactions > 0
 
     def create_database(self):
         self.database = create_database(os.environ["STORM_POSTGRES_URI"])
 
-    def create_tables(self):
-        self.connection.execute("CREATE TABLE test "
+    async def create_tables(self):
+        await self.connection.execute("CREATE TABLE test "
                                 "(id SERIAL PRIMARY KEY, title VARCHAR)")
-        self.connection.commit()
+        await self.connection.commit()
 
 
-class PostgresUnsupportedTest(UnsupportedDatabaseTest, TestHelper):
+class PostgresUnsupportedTest(UnsupportedDatabaseTest, AsyncTestHelper):
 
-    dbapi_module_names = ["psycopg2"]
+    dbapi_module_names = ["psycopg"]
     db_module_name = "postgres"
 
 
 class PostgresDisconnectionTest(DatabaseDisconnectionTest, TwoPhaseCommitDisconnectionTest,
-                                TestHelper):
+                                AsyncTestHelper):
 
     environment_variable = "STORM_POSTGRES_URI"
     host_environment_variable = "STORM_POSTGRES_HOST_URI"
@@ -771,18 +780,18 @@ class PostgresDisconnectionTest(DatabaseDisconnectionTest, TwoPhaseCommitDisconn
         else:
             return super().create_proxy(uri)
 
-    def test_rollback_swallows_InterfaceError(self):
+    async def test_rollback_swallows_InterfaceError(self):
         """Test that InterfaceErrors get caught on rollback().
 
         InterfaceErrors are a form of a disconnection error, so rollback()
         must swallow them and reconnect.
         """
         class FakeConnection:
-            def rollback(self):
+            async def rollback(self):
                 raise InterfaceError('connection already closed')
         self.connection._raw_connection = FakeConnection()
         try:
-            self.connection.rollback()
+            await self.connection.rollback()
         except Exception as exc:
             self.fail('Exception should have been swallowed: %s' % repr(exc))
 
@@ -796,30 +805,29 @@ class PostgresDisconnectionTestWithoutProxyBase:
     def is_supported(self):
         return bool(self.database_uri) and super().is_supported()
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.database = create_database(self.database_uri)
 
-    def test_terminated_backend(self):
+    async def test_terminated_backend(self):
         # The error raised when trying to use a connection that has been
         # terminated at the server is considered a disconnection error.
         connection = self.database.connect()
-        terminate_all_backends(self.database)
-        self.assertRaises(
-            DisconnectionError, connection.execute,
-            "SELECT current_database()")
+        await terminate_all_backends(self.database)
+        with self.assertRaises(DisconnectionError):
+            await connection.execute("SELECT current_database()")
 
 
 if has_subunit:
     # Some of the following tests are prone to segfaults, presumably in
     # _psycopg.so. Run them in a subprocess if possible.
     from subunit import IsolatedTestCase
-    class MisbehavingTestCase(TestHelper, IsolatedTestCase):
+    class MisbehavingTestCase(AsyncTestHelper, IsolatedTestCase):
         pass
 else:
     # If we can't run them in a subprocess we still want to create tests, but
     # prevent them from running, so that the skip is reported
-    class MisbehavingTestCase(TestHelper):
+    class MisbehavingTestCase(AsyncTestHelper):
         def is_supported(self):
             return False
 
@@ -836,8 +844,8 @@ class PostgresDisconnectionTestWithoutProxyTCPSockets(
 
     database_uri = os.environ.get("STORM_POSTGRES_HOST_URI")
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         if self.database.get_uri().host.startswith("/"):
             proxy, proxy_uri = create_proxy_and_uri(self.database.get_uri())
             self.addCleanup(proxy.close)
@@ -853,8 +861,8 @@ class PostgresDisconnectionTestWithPGBouncerBase:
             has_fixtures and has_pgbouncer and
             bool(os.environ.get("STORM_POSTGRES_HOST_URI")))
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         database_uri = URI(os.environ["STORM_POSTGRES_HOST_URI"])
         if database_uri.host.startswith("/"):
             proxy, database_uri = create_proxy_and_uri(database_uri)
@@ -873,25 +881,23 @@ class PostgresDisconnectionTestWithPGBouncerBase:
         pgbouncer_uri.port = self.pgbouncer.port
         self.database = create_database(pgbouncer_uri)
 
-    def test_terminated_backend(self):
+    async def test_terminated_backend(self):
         # The error raised when trying to use a connection through pgbouncer
         # that has been terminated at the server is considered a disconnection
         # error.
         connection = self.database.connect()
-        terminate_all_backends(self.database)
-        self.assertRaises(
-            DisconnectionError, connection.execute,
-            "SELECT current_database()")
+        await terminate_all_backends(self.database)
+        with self.assertRaises(DisconnectionError):
+            await connection.execute("SELECT current_database()")
 
-    def test_pgbouncer_stopped(self):
+    async def test_pgbouncer_stopped(self):
         # The error raised from a connection that is no longer connected
         # because pgbouncer has been immediately shutdown (via SIGTERM; see
         # man 1 pgbouncer) is considered a disconnection error.
         connection = self.database.connect()
         self.pgbouncer.stop()
-        self.assertRaises(
-            DisconnectionError, connection.execute,
-            "SELECT current_database()")
+        with self.assertRaises(DisconnectionError):
+            await connection.execute("SELECT current_database()")
 
 
 if has_fixtures:
@@ -899,7 +905,7 @@ if has_fixtures:
     from fixtures import TestWithFixtures
     class PostgresDisconnectionTestWithPGBouncer(
         PostgresDisconnectionTestWithPGBouncerBase,
-        TestWithFixtures, TestHelper): pass
+        TestWithFixtures, AsyncTestHelper): pass
 
 
 class PostgresTimeoutTracerTest(TimeoutTracerTestBase):
@@ -909,27 +915,27 @@ class PostgresTimeoutTracerTest(TimeoutTracerTestBase):
     def is_supported(self):
         return bool(os.environ.get("STORM_POSTGRES_URI"))
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.database = create_database(os.environ["STORM_POSTGRES_URI"])
         self.connection = self.database.connect()
         install_tracer(self.tracer)
         self.tracer.get_remaining_time = lambda: self.remaining_time
         self.remaining_time = 10.5
 
-    def tearDown(self):
-        self.connection.close()
-        super().tearDown()
+    async def asyncTearDown(self):
+        await self.connection.close()
+        await super().asyncTearDown()
 
-    def test_set_statement_timeout(self):
-        result = self.connection.execute("SHOW statement_timeout")
-        self.assertEqual(result.get_one(), ("10500ms",))
+    async def test_set_statement_timeout(self):
+        result = await self.connection.execute("SHOW statement_timeout")
+        self.assertEqual(await result.get_one(), ("10500ms",))
 
-    def test_connection_raw_execute_error(self):
+    async def test_connection_raw_execute_error(self):
         statement = "SELECT pg_sleep(0.5)"
         self.remaining_time = 0.001
         try:
-            self.connection.execute(statement)
+            await self.connection.execute(statement)
         except TimeoutError as e:
             self.assertEqual("SQL server cancelled statement", e.message)
             self.assertEqual(statement, e.statement)

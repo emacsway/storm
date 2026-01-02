@@ -19,18 +19,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from datetime import datetime, date, time, timedelta
-from time import sleep, time as now
+from time import time as now
+import asyncio
 import sys
 
 from storm.databases import dummy
 
 try:
-    from pysqlite2 import dbapi2 as sqlite
+    import aiosqlite
+    sqlite = aiosqlite  # For compatibility with existing references
 except ImportError:
-    try:
-        from sqlite3 import dbapi2 as sqlite
-    except ImportError:
-        sqlite = dummy
+    sqlite = dummy
+    aiosqlite = dummy
 
 from storm.variables import Variable, BytesVariable
 from storm.database import Database, Connection, ConnectionWrapper, Result
@@ -107,18 +107,18 @@ class SQLiteConnection(Connection):
             else:
                 yield param
 
-    def commit(self):
-        self._ensure_connected()
+    async def commit(self):
+        await self._ensure_connected()
         # See story at the end to understand why we do COMMIT manually.
         if self._in_transaction:
-            self.raw_execute("COMMIT", _end=True)
+            await self.raw_execute("COMMIT", _end=True)
 
-    def rollback(self):
+    async def rollback(self):
         # See story at the end to understand why we do ROLLBACK manually.
         if self._in_transaction:
-            self.raw_execute("ROLLBACK", _end=True)
+            await self.raw_execute("ROLLBACK", _end=True)
 
-    def raw_execute(self, statement, params=None, _end=False):
+    async def raw_execute(self, statement, params=None, _end=False):
         """Execute a raw statement with the given parameters.
 
         This method will automatically retry on locked database errors.
@@ -131,7 +131,7 @@ class SQLiteConnection(Connection):
         elif not self._in_transaction:
             # See story at the end to understand why we do BEGIN manually.
             self._in_transaction = True
-            self._raw_connection.execute("BEGIN")
+            await self._raw_connection.execute("BEGIN")
 
         # Remember the time at which we started the operation.  If pysqlite
         # handles the timeout correctly, we won't retry the operation, because
@@ -139,14 +139,14 @@ class SQLiteConnection(Connection):
         started = now()
         while True:
             try:
-                return Connection.raw_execute(self, statement, params)
+                return await Connection.raw_execute(self, statement, params)
             except OperationalError as e:
                 if str(e) != "database is locked":
                     raise
                 elif now() - started < self._database._timeout:
                     # pysqlite didn't handle the timeout correctly,
                     # so we sleep a little and then retry.
-                    sleep(0.1)
+                    await asyncio.sleep(0.1)
                 else:
                     # The operation failed due to being unable to get a
                     # lock on the database.  In this case, we are still
@@ -165,36 +165,40 @@ class SQLite(Database):
     def __init__(self, uri):
         super().__init__(uri)
         if sqlite is dummy:
-            raise DatabaseModuleError("'pysqlite2' module not found")
+            raise DatabaseModuleError("'aiosqlite' module not found")
         self._filename = uri.database or ":memory:"
         self._timeout = float(uri.options.get("timeout", 5))
         self._synchronous = uri.options.get("synchronous")
         self._journal_mode = uri.options.get("journal_mode")
         self._foreign_keys = uri.options.get("foreign_keys")
 
-    def _raw_connect(self):
+    async def _raw_connect(self):
         # See the story at the end to understand why we set isolation_level.
+        # aiosqlite.connect() is async
         raw_connection = ConnectionWrapper(
-            sqlite.connect(
+            await aiosqlite.connect(
                 self._filename, timeout=self._timeout, isolation_level=None),
             self)
         if self._synchronous is not None:
-            raw_connection.execute("PRAGMA synchronous = %s" %
+            await raw_connection.execute("PRAGMA synchronous = %s" %
                                    (self._synchronous,))
 
         if self._journal_mode is not None:
-            raw_connection.execute("PRAGMA journal_mode = %s" %
+            await raw_connection.execute("PRAGMA journal_mode = %s" %
                                    (self._journal_mode,))
 
         if self._foreign_keys is not None:
-            raw_connection.execute("PRAGMA foreign_keys = %s" %
+            await raw_connection.execute("PRAGMA foreign_keys = %s" %
                                    (self._foreign_keys,))
+
+        # Commit PRAGMA settings to ensure they persist
+        await raw_connection.commit()
 
         return raw_connection
 
-    def raw_connect(self):
+    async def raw_connect(self):
         with wrap_exceptions(self):
-            return self._raw_connect()
+            return await self._raw_connect()
 
 
 create_from_uri = SQLite

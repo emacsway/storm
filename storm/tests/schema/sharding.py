@@ -20,7 +20,7 @@
 #
 from storm.schema.schema import SchemaMissingError, UnappliedPatchesError
 from storm.schema.sharding import Sharding, PatchLevelMismatchError
-from storm.tests.mocker import MockerTestCase
+from storm.tests.mocker import AsyncMockerTestCase
 
 
 class FakeSchema:
@@ -56,15 +56,15 @@ class FakeStore:
     patch = 0  # Current patch level of the store
 
 
-class ShardingTest(MockerTestCase):
+class ShardingTest(AsyncMockerTestCase):
 
-    def setUp(self):
-        super().setUp()
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
         self.store = FakeStore()
         self.schema = FakeSchema()
         self.sharding = Sharding()
 
-    def test_upgrade_pristine_store(self):
+    async def test_upgrade_pristine_store(self):
         """
         Pristine L{Store}s get their L{Schema} created from scratch.
         """
@@ -72,7 +72,7 @@ class ShardingTest(MockerTestCase):
         self.sharding.upgrade()
         self.assertFalse(self.store.pristine)
 
-    def test_upgrade_apply_patches(self):
+    async def test_upgrade_apply_patches(self):
         """
         If a L{Store}s is not at the latest patch level, all pending
         patches get applied.
@@ -82,7 +82,7 @@ class ShardingTest(MockerTestCase):
         self.sharding.upgrade()
         self.assertEqual(2, self.store.patch)
 
-    def test_upgrade_multi_store(self):
+    async def test_upgrade_multi_store(self):
         """
         If a L{Store}s is not at the latest patch level, all pending
         patches get applied, one level at a time.
@@ -101,7 +101,7 @@ class ShardingTest(MockerTestCase):
             [(self.store, 1), (store2, 1), (self.store, 2), (store2, 2)],
             self.schema.applied)
 
-    def test_upgrade_patch_level_mismatch(self):
+    async def test_upgrade_patch_level_mismatch(self):
         """
         If not all L{Store}s are at the same patch level, an exception
         is raised.

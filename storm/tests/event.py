@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from storm.event import EventSystem
-from storm.tests.helper import TestHelper
+from storm.tests.helper import AsyncTestHelper
 
 
 class Marker:
@@ -39,13 +39,13 @@ class Marker:
 marker = Marker()
 
 
-class EventTest(TestHelper):
+class EventTest(AsyncTestHelper):
 
-    def setUp(self):
-        TestHelper.setUp(self)
+    async def asyncSetUp(self):
+        await AsyncTestHelper.asyncSetUp(self)
         self.event = EventSystem(marker)
 
-    def test_hook_unhook_emit(self):
+    async def test_hook_unhook_emit(self):
         called1 = []
         called2 = []
         def callback1(owner, arg1, arg2):
@@ -78,7 +78,7 @@ class EventTest(TestHelper):
                           (marker, 3, 4, 30, 40),
                          ])
 
-    def test_unhook_by_returning_false(self):
+    async def test_unhook_by_returning_false(self):
         called = []
         def callback(owner):
             called.append(owner)
@@ -93,7 +93,7 @@ class EventTest(TestHelper):
 
         self.assertEqual(called, [marker, marker])
 
-    def test_weak_reference(self):
+    async def test_weak_reference(self):
         marker = Marker()
 
         called = []

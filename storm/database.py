@@ -25,6 +25,7 @@ This is the common code for database support; specific databases are
 supported in modules in L{storm.databases}.
 """
 
+import asyncio
 from collections.abc import Callable
 from functools import wraps
 
@@ -64,19 +65,29 @@ class Result:
     def __del__(self):
         """Close the cursor."""
         try:
-            self.close()
+            # For async cursors, we can't await in __del__, so just mark as closed
+            # and ignore the coroutine/awaitable if returned
+            if not self._closed:
+                self._closed = True
+                result = self._raw_cursor.close()
+                # Ignore awaitable - cleanup will happen when event loop processes it
+                if hasattr(result, 'close') and callable(result.close):
+                    result.close()  # Prevent "coroutine was never awaited" warning
+                self._raw_cursor = None
         except:
             pass
 
-    def close(self):
+    async def close(self):
         """Close the underlying raw cursor, if it hasn't already been closed.
         """
         if not self._closed:
             self._closed = True
-            self._raw_cursor.close()
+            result = self._raw_cursor.close()
+            if hasattr(result, '__await__'):
+                await result
             self._raw_cursor = None
 
-    def get_one(self):
+    async def get_one(self):
         """Fetch one result from the cursor.
 
         The result will be converted to an appropriate format via
@@ -87,12 +98,12 @@ class Result:
 
         @return: A converted row or None, if no data is left.
         """
-        row = self._connection._check_disconnect(self._raw_cursor.fetchone)
+        row = await self._connection._check_disconnect(self._raw_cursor.fetchone)
         if row is not None:
             return tuple(self.from_database(row))
         return None
 
-    def get_all(self):
+    async def get_all(self):
         """Fetch all results from the cursor.
 
         The results will be converted to an appropriate format via
@@ -101,12 +112,12 @@ class Result:
         @raise DisconnectionError: Raised when the connection is lost.
             Reconnection happens automatically on rollback.
         """
-        result = self._connection._check_disconnect(self._raw_cursor.fetchall)
+        result = await self._connection._check_disconnect(self._raw_cursor.fetchall)
         if result:
             return [tuple(self.from_database(row)) for row in result]
         return result
 
-    def __iter__(self):
+    async def __aiter__(self):
         """Yield all results, one at a time.
 
         The results will be converted to an appropriate format via
@@ -116,7 +127,7 @@ class Result:
             Reconnection happens automatically on rollback.
         """
         while True:
-            results = self._connection._check_disconnect(
+            results = await self._connection._check_disconnect(
                 self._raw_cursor.fetchmany)
             if not results:
                 break
@@ -174,28 +185,38 @@ class CursorWrapper:
     def __getattr__(self, name):
         attr = getattr(self._cursor, name)
         if isinstance(attr, Callable):
-            @wraps(attr)
-            def wrapper(*args, **kwargs):
-                with wrap_exceptions(self._database):
-                    return attr(*args, **kwargs)
-
-            return wrapper
+            if asyncio.iscoroutinefunction(attr):
+                @wraps(attr)
+                async def async_wrapper(*args, **kwargs):
+                    with wrap_exceptions(self._database):
+                        return await attr(*args, **kwargs)
+                return async_wrapper
+            else:
+                @wraps(attr)
+                def wrapper(*args, **kwargs):
+                    with wrap_exceptions(self._database):
+                        return attr(*args, **kwargs)
+                return wrapper
         else:
             return attr
 
     def __setattr__(self, name, value):
         return setattr(self._cursor, name, value)
 
-    def __iter__(self):
+    async def __aiter__(self):
         with wrap_exceptions(self._database):
-            yield from self._cursor
+            async for row in self._cursor:
+                yield row
 
-    def __enter__(self):
+    async def __aenter__(self):
         return self
 
-    def __exit__(self, type_, value, tb):
+    async def __aexit__(self, type_, value, tb):
         with wrap_exceptions(self._database):
-            self.close()
+            if asyncio.iscoroutinefunction(self._cursor.close):
+                await self.close()
+            else:
+                self.close()
 
 
 class ConnectionWrapper:
@@ -208,31 +229,52 @@ class ConnectionWrapper:
     def __getattr__(self, name):
         attr = getattr(self._connection, name)
         if isinstance(attr, Callable):
-            @wraps(attr)
-            def wrapper(*args, **kwargs):
-                with wrap_exceptions(self._database):
-                    return attr(*args, **kwargs)
-
-            return wrapper
+            if asyncio.iscoroutinefunction(attr):
+                @wraps(attr)
+                async def async_wrapper(*args, **kwargs):
+                    with wrap_exceptions(self._database):
+                        return await attr(*args, **kwargs)
+                return async_wrapper
+            else:
+                @wraps(attr)
+                def wrapper(*args, **kwargs):
+                    with wrap_exceptions(self._database):
+                        result = attr(*args, **kwargs)
+                        # Check if the result is awaitable (handles decorators)
+                        if hasattr(result, '__await__'):
+                            async def awaiter():
+                                return await result
+                            return awaiter()
+                        return result
+                return wrapper
         else:
             return attr
 
     def __setattr__(self, name, value):
         return setattr(self._connection, name, value)
 
-    def __enter__(self):
+    async def __aenter__(self):
         return self
 
-    def __exit__(self, type_, value, tb):
+    async def __aexit__(self, type_, value, tb):
         with wrap_exceptions(self._database):
             if type_ is None and value is None and tb is None:
-                self.commit()
+                result = self.commit()
+                if hasattr(result, '__await__'):
+                    await result
             else:
-                self.rollback()
+                result = self.rollback()
+                if hasattr(result, '__await__'):
+                    await result
 
-    def cursor(self):
+    async def cursor(self):
         with wrap_exceptions(self._database):
-            return CursorWrapper(self._connection.cursor(), self._database)
+            result = self._connection.cursor()
+            if hasattr(result, '__await__'):
+                raw_cursor = await result
+            else:
+                raw_cursor = result
+            return CursorWrapper(raw_cursor, self._database)
 
 
 class Connection:
@@ -259,14 +301,18 @@ class Connection:
     def __init__(self, database, event=None):
         self._database = database # Ensures deallocation order.
         self._event = event
-        self._raw_connection = self._database.raw_connect()
+        self._raw_connection = None  # Will be created lazily on first use
 
     def __del__(self):
-        """Close the connection."""
-        try:
-            self.close()
-        except:
-            pass
+        """Cleanup the connection.
+
+        Note: In async mode, close() must be called explicitly via
+        'await connection.close()' or by using 'async with connection:'.
+        __del__ cannot call async methods.
+        """
+        # In async code, we cannot await close() from __del__.
+        # Users must explicitly close the connection or use async context manager.
+        pass
 
     def block_access(self):
         """Block access to the connection.
@@ -282,7 +328,7 @@ class Connection:
         """Unblock access to the connection."""
         self._blocked = False
 
-    def execute(self, statement, params=None, noresult=False):
+    async def execute(self, statement, params=None, noresult=False):
         """Execute a statement with the given parameters.
 
         @type statement: L{Expr} or C{str}
@@ -304,7 +350,7 @@ class Connection:
             raise ConnectionBlockedError("Access to connection is blocked")
         if self._event:
             self._event.emit("register-transaction")
-        self._ensure_connected()
+        await self._ensure_connected()
         if isinstance(statement, Expr):
             if params is not None:
                 raise ValueError("Can't pass parameters with expressions")
@@ -312,37 +358,39 @@ class Connection:
             statement = self.compile(statement, state)
             params = state.parameters
         statement = convert_param_marks(statement, "?", self.param_mark)
-        raw_cursor = self.raw_execute(statement, params)
+        raw_cursor = await self.raw_execute(statement, params)
         if noresult:
-            self._check_disconnect(raw_cursor.close)
+            await self._check_disconnect(raw_cursor.close)
             return None
         return self.result_factory(self, raw_cursor)
 
-    def close(self):
+    async def close(self):
         """Close the connection if it is not already closed."""
         if not self._closed:
             self._closed = True
             if self._raw_connection is not None:
-                self._raw_connection.close()
+                result = self._raw_connection.close()
+                if hasattr(result, '__await__'):
+                    await result
                 self._raw_connection = None
 
-    def begin(self, xid):
+    async def begin(self, xid):
         """Begin a two-phase transaction."""
         if self._two_phase_transaction:
             raise ProgrammingError("begin cannot be used inside a transaction")
-        self._ensure_connected()
+        await self._ensure_connected()
         raw_xid = self._raw_xid(xid)
-        self._check_disconnect(self._raw_connection.tpc_begin, raw_xid)
+        await self._check_disconnect(self._raw_connection.tpc_begin, raw_xid)
         self._two_phase_transaction = True
 
-    def prepare(self):
+    async def prepare(self):
         """Run the prepare phase of a two-phase transaction."""
         if not self._two_phase_transaction:
             raise ProgrammingError("prepare must be called inside a two-phase "
                                    "transaction")
-        self._check_disconnect(self._raw_connection.tpc_prepare)
+        await self._check_disconnect(self._raw_connection.tpc_prepare)
 
-    def commit(self, xid=None):
+    async def commit(self, xid=None):
         """Commit the connection.
 
         @param xid: Optionally the L{Xid} of a previously prepared
@@ -356,26 +404,26 @@ class Connection:
 
         """
         try:
-            self._ensure_connected()
+            await self._ensure_connected()
             if xid:
                 raw_xid = self._raw_xid(xid)
-                self._check_disconnect(self._raw_connection.tpc_commit, raw_xid)
+                await self._check_disconnect(self._raw_connection.tpc_commit, raw_xid)
             elif self._two_phase_transaction:
-                self._check_disconnect(self._raw_connection.tpc_commit)
+                await self._check_disconnect(self._raw_connection.tpc_commit)
                 self._two_phase_transaction = False
             else:
-                self._check_disconnect(self._raw_connection.commit)
+                await self._check_disconnect(self._raw_connection.commit)
         finally:
-            self._check_disconnect(trace, "connection_commit", self, xid)
+            await self._check_disconnect(trace, "connection_commit", self, xid)
 
-    def recover(self):
+    async def recover(self):
         """Return a list of L{Xid}\\ s representing pending transactions."""
-        self._ensure_connected()
-        raw_xids = self._check_disconnect(self._raw_connection.tpc_recover)
+        await self._ensure_connected()
+        raw_xids = await self._check_disconnect(self._raw_connection.tpc_recover)
         return [Xid(raw_xid[0], raw_xid[1], raw_xid[2])
                 for raw_xid in raw_xids]
 
-    def rollback(self, xid=None):
+    async def rollback(self, xid=None):
         """Rollback the connection.
 
         @param xid: Optionally the L{Xid} of a previously prepared
@@ -383,15 +431,24 @@ class Connection:
              of a transaction, and is intended for use in recovery.
         """
         try:
-            if self._state == STATE_CONNECTED:
+            if self._state == STATE_CONNECTED and self._raw_connection is not None:
                 try:
                     if xid:
                         raw_xid = self._raw_xid(xid)
-                        self._raw_connection.tpc_rollback(raw_xid)
+                        if asyncio.iscoroutinefunction(self._raw_connection.tpc_rollback):
+                            await self._raw_connection.tpc_rollback(raw_xid)
+                        else:
+                            self._raw_connection.tpc_rollback(raw_xid)
                     elif self._two_phase_transaction:
-                        self._raw_connection.tpc_rollback()
+                        if asyncio.iscoroutinefunction(self._raw_connection.tpc_rollback):
+                            await self._raw_connection.tpc_rollback()
+                        else:
+                            self._raw_connection.tpc_rollback()
                     else:
-                        self._raw_connection.rollback()
+                        if asyncio.iscoroutinefunction(self._raw_connection.rollback):
+                            await self._raw_connection.rollback()
+                        else:
+                            self._raw_connection.rollback()
                 except Error as exc:
                     if self.is_disconnection_error(exc):
                         self._raw_connection = None
@@ -405,7 +462,7 @@ class Connection:
                 self._two_phase_transaction = False
                 self._state = STATE_RECONNECT
         finally:
-            self._check_disconnect(trace, "connection_rollback", self, xid)
+            await self._check_disconnect(trace, "connection_rollback", self, xid)
 
     @staticmethod
     def to_database(params):
@@ -424,15 +481,18 @@ class Connection:
             else:
                 yield param
 
-    def build_raw_cursor(self):
+    async def build_raw_cursor(self):
         """Get a new dbapi cursor object.
 
         It is acceptable to override this method in subclasses, but it
         is not intended to be called externally.
         """
-        return self._raw_connection.cursor()
+        if asyncio.iscoroutinefunction(self._raw_connection.cursor):
+            return await self._raw_connection.cursor()
+        else:
+            return self._raw_connection.cursor()
 
-    def raw_execute(self, statement, params=None):
+    async def raw_execute(self, statement, params=None):
         """Execute a raw statement with the given parameters.
 
         It's acceptable to override this method in subclasses, but it
@@ -443,10 +503,10 @@ class Connection:
 
         @return: The dbapi cursor object, as fetched from L{build_raw_cursor}.
         """
-        raw_cursor = self._check_disconnect(self.build_raw_cursor)
-        self._prepare_execution(raw_cursor, params, statement)
+        raw_cursor = await self._check_disconnect(self.build_raw_cursor)
+        await self._prepare_execution(raw_cursor, params, statement)
         args = self._execution_args(params, statement)
-        self._run_execution(raw_cursor, args, params, statement)
+        await self._run_execution(raw_cursor, args, params, statement)
         return raw_cursor
 
     def _execution_args(self, params, statement):
@@ -457,33 +517,33 @@ class Connection:
             args = (statement,)
         return args
 
-    def _run_execution(self, raw_cursor, args, params, statement):
+    async def _run_execution(self, raw_cursor, args, params, statement):
         """Complete the statement execution, along with result reports."""
         try:
-            self._check_disconnect(raw_cursor.execute, *args)
+            await self._check_disconnect(raw_cursor.execute, *args)
         except Exception as error:
-            self._check_disconnect(
+            await self._check_disconnect(
                 trace, "connection_raw_execute_error", self, raw_cursor,
                 statement, params or (), error)
             raise
         else:
-            self._check_disconnect(
+            await self._check_disconnect(
                 trace, "connection_raw_execute_success", self, raw_cursor,
                 statement, params or ())
 
-    def _prepare_execution(self, raw_cursor, params, statement):
+    async def _prepare_execution(self, raw_cursor, params, statement):
         """Prepare the statement execution to be run."""
         try:
-            self._check_disconnect(
+            await self._check_disconnect(
                 trace, "connection_raw_execute", self, raw_cursor,
                 statement, params or ())
         except Exception as error:
-            self._check_disconnect(
+            await self._check_disconnect(
                 trace, "connection_raw_execute_error", self, raw_cursor,
                 statement, params or (), error)
             raise
 
-    def _ensure_connected(self):
+    async def _ensure_connected(self):
         """Ensure that we are connected to the database.
 
         If the connection is marked as dead, or if we can't reconnect,
@@ -491,19 +551,17 @@ class Connection:
         """
         if self._blocked:
             raise ConnectionBlockedError("Access to connection is blocked")
-        if self._state == STATE_CONNECTED:
-            return
-        elif self._state == STATE_DISCONNECTED:
-            raise DisconnectionError("Already disconnected")
-        elif self._state == STATE_RECONNECT:
+        if self._raw_connection is None or self._state != STATE_CONNECTED:
+            # Initial connection or reconnection needed
+            if self._state == STATE_DISCONNECTED:
+                raise DisconnectionError("Already disconnected")
             try:
-                self._raw_connection = self._database.raw_connect()
+                self._raw_connection = await self._database.raw_connect()
+                self._state = STATE_CONNECTED
             except DatabaseError as exc:
                 self._state = STATE_DISCONNECTED
                 self._raw_connection = None
                 raise DisconnectionError(str(exc))
-            else:
-                self._state = STATE_CONNECTED
 
     def is_disconnection_error(self, exc, extra_disconnection_errors=()):
         """Check whether an exception represents a database disconnection.
@@ -519,14 +577,22 @@ class Connection:
                                         xid.global_transaction_id,
                                         xid.branch_qualifier)
 
-    def _check_disconnect(self, function, *args, **kwargs):
+    async def _check_disconnect(self, function, *args, **kwargs):
         """Run the given function, checking for database disconnections."""
         # Allow the caller to specify additional exception types that
         # should be treated as possible disconnection errors.
         extra_disconnection_errors = kwargs.pop(
             'extra_disconnection_errors', ())
         try:
-            return function(*args, **kwargs)
+            if asyncio.iscoroutinefunction(function):
+                result = await function(*args, **kwargs)
+            else:
+                result = function(*args, **kwargs)
+                # Check if the result is awaitable (coroutine, Future, Task, etc.)
+                # This handles aiomysql/aiosqlite that use decorators
+                if hasattr(result, '__await__'):
+                    result = await result
+            return result
         except Exception as exc:
             if self.is_disconnection_error(exc, extra_disconnection_errors):
                 self._state = STATE_DISCONNECTED
@@ -575,7 +641,7 @@ class Database:
         """
         return self.connection_factory(self, event)
 
-    def raw_connect(self):
+    async def raw_connect(self):
         """Create a raw database connection.
 
         This is used by L{Connection} objects to connect to the

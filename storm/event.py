@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import asyncio
 import weakref
 
 from storm import has_cextensions
@@ -89,9 +90,61 @@ class EventSystem:
             callbacks = self._hooks.get(name)
             if callbacks:
                 for callback, data in tuple(callbacks):
-                    if callback(owner, *(args+data)) is False:
+                    if asyncio.iscoroutinefunction(callback):
+                        # For async callbacks, create a task to run them
+                        # This allows emit() to be called from synchronous code
+                        async def run_callback():
+                            result = await callback(owner, *(args+data))
+                            if result is False:
+                                callbacks.discard((callback, data))
+                        try:
+                            loop = asyncio.get_running_loop()
+                            loop.create_task(run_callback())
+                        except RuntimeError:
+                            # No event loop running, can't schedule async callback
+                            pass
+                    else:
+                        result = callback(owner, *(args+data))
+                        # Check if result is awaitable (handles decorators)
+                        if hasattr(result, '__await__'):
+                            # Schedule as a coroutine
+                            async def run_awaitable():
+                                r = await result
+                                if r is False:
+                                    callbacks.discard((callback, data))
+                            try:
+                                loop = asyncio.get_running_loop()
+                                loop.create_task(run_awaitable())
+                            except RuntimeError:
+                                pass
+                        elif result is False:
+                            callbacks.discard((callback, data))
+
+    async def emit_async(self, name, *args):
+        """Emit an event asynchronously, awaiting any async callbacks.
+
+        This method should be used when calling from async code and you need
+        to wait for async callbacks to complete (e.g., resolve-lazy-value).
+
+        @param name: The name of the event.
+        @param args: Additional arguments to pass to hooks.
+        """
+        owner = self._owner_ref()
+        if owner is not None:
+            callbacks = self._hooks.get(name)
+            if callbacks:
+                for callback, data in tuple(callbacks):
+                    if asyncio.iscoroutinefunction(callback):
+                        result = await callback(owner, *(args+data))
+                    else:
+                        result = callback(owner, *(args+data))
+                        # Check if result is awaitable (handles decorators)
+                        if hasattr(result, '__await__'):
+                            result = await result
+                    if result is False:
                         callbacks.discard((callback, data))
 
 
-if has_cextensions:
-    from storm.cextensions import EventSystem
+# C extension EventSystem is not async-compatible, so we always use the Python version
+# if has_cextensions:
+#     from storm.cextensions import EventSystem
